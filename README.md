@@ -157,8 +157,8 @@ sudo usermod -aG docker $USER
 ### Bước 2 — Clone repo
 
 ```bash
-git clone https://github.com/huyavm/Numerology-Divination.git
-cd Numerology-Divination
+git clone https://github.com/huynd94/huyen-bi.git
+cd huyen-bi
 ```
 
 ### Bước 3 — Tạo file .env
@@ -262,7 +262,7 @@ sudo -u postgres psql -c "CREATE DATABASE huyenbi OWNER huyenbi;"
 ### Bước 3 — Clone và cài dependencies
 
 ```bash
-git clone https://github.com/huyavm/Numerology-Divination.git /opt/huyen-bi
+git clone https://github.com/huynd94/huyen-bi.git /opt/huyen-bi
 cd /opt/huyen-bi
 pnpm install --no-frozen-lockfile
 ```

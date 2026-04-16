@@ -40,7 +40,7 @@ sudo usermod -aG docker $USER
 ### Clone và cấu hình
 
 ```bash
-git clone <url-repo> huyen-bi
+git clone https://github.com/huynd94/huyen-bi.git
 cd huyen-bi
 
 # Tạo file môi trường
@@ -106,7 +106,7 @@ sudo -u postgres psql -c "CREATE DATABASE huyenbi OWNER huyenbi;"
 ### 3. Clone và cài dependencies
 
 ```bash
-git clone <url-repo> /opt/huyen-bi
+git clone https://github.com/huynd94/huyen-bi.git /opt/huyen-bi
 cd /opt/huyen-bi
 pnpm install --no-frozen-lockfile
 ```
