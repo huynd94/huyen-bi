@@ -1,0 +1,46 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg2" cx="38%" cy="36%" r="72%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#1e0f40"/>
+      <stop offset="60%" stop-color="#100828"/>
+      <stop offset="100%" stop-color="#05020e"/>
+    </radialGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#f5df7e"/>
+      <stop offset="45%" stop-color="#c9a030"/>
+      <stop offset="100%" stop-color="#7a5012"/>
+    </linearGradient>
+    <mask id="cr2">
+      <rect width="512" height="512" fill="white"/>
+      <circle cx="288" cy="244" r="112" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Full bleed background (no rounded corners — maskable icons are clipped by OS) -->
+  <rect width="512" height="512" fill="url(#bg2)"/>
+
+  <!-- Starfield -->
+  <circle cx="120" cy="120" r="3" fill="#d4a83a" opacity="0.5"/>
+  <circle cx="400" cy="110" r="2" fill="#d4a83a" opacity="0.4"/>
+  <circle cx="90" cy="400" r="2.5" fill="#d4a83a" opacity="0.35"/>
+  <circle cx="430" cy="390" r="2" fill="#d4a83a" opacity="0.4"/>
+  <circle cx="70" cy="260" r="1.8" fill="#d4a83a" opacity="0.3"/>
+  <circle cx="450" cy="260" r="1.8" fill="#d4a83a" opacity="0.3"/>
+  <circle cx="440" cy="450" r="2.5" fill="#d4a83a" opacity="0.3"/>
+  <circle cx="155" cy="445" r="2" fill="#d4a83a" opacity="0.3"/>
+
+  <!-- Crescent moon (shifted slightly toward center for safe zone) -->
+  <circle cx="238" cy="272" r="132" fill="url(#g2)" mask="url(#cr2)"/>
+
+  <!-- 5-pointed star — center (368, 168), outer r=50, inner r=21 -->
+  <polygon
+    points="368,118 381,156 421,156 390,178 403,216 368,194 333,216 346,178 315,156 355,156"
+    fill="url(#g2)"/>
+
+  <!-- Star highlight -->
+  <circle cx="368" cy="168" r="7" fill="#f5df7e" opacity="0.45"/>
+
+  <!-- Small diamond accents -->
+  <polygon points="182,152 188,162 182,172 176,162" fill="#c9a030" opacity="0.55"/>
+  <polygon points="168,360 174,370 168,380 162,370" fill="#c9a030" opacity="0.45"/>
+</svg>

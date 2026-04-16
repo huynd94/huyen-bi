@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Thần Số Học & Bát Tự & Xem Quẻ"
+version = "1.0.0"
+id = "artifacts/mysticism-web"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18748
+
+[services.development]
+run = "pnpm --filter @workspace/mysticism-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/mysticism-web", "run", "build" ]
+publicDir = "artifacts/mysticism-web/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18748"
+BASE_PATH = "/"

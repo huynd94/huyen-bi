@@ -1,0 +1,87 @@
+version: "3.9"
+
+# ============================================================
+# Huyền Bí — Docker Compose
+# Gồm 3 service: postgres, api-server (Express), web (Nginx)
+#
+# Cách dùng:
+#   1. cp .env.example .env
+#   2. Chỉnh mật khẩu trong .env (POSTGRES_PASSWORD)
+#   3. docker compose up --build -d
+#   4. Mở http://localhost → cấu hình AI key qua Admin Panel
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # PostgreSQL — cơ sở dữ liệu
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: huyen-bi-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB:-huyenbi}
+      POSTGRES_USER:     ${POSTGRES_USER:-huyenbi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-huyenbi_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-huyenbi} -d ${POSTGRES_DB:-huyenbi}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ----------------------------------------------------------
+  # API Server — Express 5 backend
+  # Tự động tạo bảng DB khi khởi động (auto-migration)
+  # AI key được cấu hình qua Admin Panel trong giao diện web
+  # ----------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: huyen-bi-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV:              production
+      PORT:                  3001
+      DATABASE_URL:          postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:-huyenbi_secret}@postgres:5432/${POSTGRES_DB:-huyenbi}
+      CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY:-}
+      CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
+    networks:
+      - internal
+
+  # ----------------------------------------------------------
+  # Web — Nginx phục vụ static files + proxy /api/*
+  # Clerk publishable key được bake vào bundle lúc docker build
+  # ----------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+    container_name: huyen-bi-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-80}:80"
+    networks:
+      - internal
+
+# ----------------------------------------------------------
+# Volumes & Networks
+# ----------------------------------------------------------
+volumes:
+  postgres_data:
+
+networks:
+  internal:
+    driver: bridge

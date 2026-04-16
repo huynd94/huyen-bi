@@ -1,0 +1,45 @@
+# Dependencies (sẽ được cài lại trong Docker)
+node_modules
+**/node_modules
+
+# Build artifacts (sẽ được build lại trong Docker)
+**/dist
+**/dist/public
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Môi trường local
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test & coverage
+coverage
+*.test.ts
+*.spec.ts
+
+# Replit-specific
+.replit
+replit.nix
+.cache
+.local
+attached_assets
+
+# Mockup sandbox (không cần trong production)
+artifacts/mockup-sandbox/src

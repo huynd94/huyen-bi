@@ -1,0 +1,65 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="38%" cy="36%" r="72%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#1e0f40"/>
+      <stop offset="60%" stop-color="#100828"/>
+      <stop offset="100%" stop-color="#05020e"/>
+    </radialGradient>
+    <linearGradient id="gld" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#f5df7e"/>
+      <stop offset="45%" stop-color="#c9a030"/>
+      <stop offset="100%" stop-color="#7a5012"/>
+    </linearGradient>
+    <linearGradient id="gld2" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#edd060"/>
+      <stop offset="100%" stop-color="#a07820"/>
+    </linearGradient>
+    <mask id="crescent">
+      <rect width="512" height="512" fill="white"/>
+      <circle cx="298" cy="236" r="128" fill="black"/>
+    </mask>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+
+  <!-- Subtle outer border -->
+  <rect x="14" y="14" width="484" height="484" rx="84" stroke="#c9a030" stroke-width="2" fill="none" opacity="0.35"/>
+  <rect x="22" y="22" width="468" height="468" rx="78" stroke="#c9a030" stroke-width="0.75" fill="none" opacity="0.2"/>
+
+  <!-- Subtle starfield dots -->
+  <circle cx="148" cy="155" r="3.5" fill="#d4a83a" opacity="0.55"/>
+  <circle cx="390" cy="132" r="2.5" fill="#d4a83a" opacity="0.4"/>
+  <circle cx="112" cy="390" r="2" fill="#d4a83a" opacity="0.35"/>
+  <circle cx="430" cy="370" r="3" fill="#d4a83a" opacity="0.45"/>
+  <circle cx="420" cy="430" r="2" fill="#d4a83a" opacity="0.3"/>
+  <circle cx="165" cy="430" r="2.5" fill="#d4a83a" opacity="0.35"/>
+  <circle cx="80" cy="250" r="1.8" fill="#d4a83a" opacity="0.3"/>
+  <circle cx="450" cy="240" r="2" fill="#d4a83a" opacity="0.3"/>
+
+  <!-- Crescent moon glow layer -->
+  <circle cx="232" cy="268" r="152" fill="#c9800a" opacity="0.15" mask="url(#crescent)" filter="url(#glow)"/>
+
+  <!-- Crescent moon main shape -->
+  <circle cx="232" cy="268" r="150" fill="url(#gld)" mask="url(#crescent)"/>
+
+  <!-- Moon inner highlight -->
+  <circle cx="232" cy="268" r="150" fill="url(#gld2)" mask="url(#crescent)" opacity="0.25"/>
+
+  <!-- 5-pointed star (upper right of crescent) -->
+  <!-- Center: (375, 162), outer r=56, inner r=23 -->
+  <polygon
+    points="375,106 389,148 433,148 399,173 413,215 375,191 337,215 351,173 317,148 361,148"
+    fill="url(#gld)"/>
+
+  <!-- Star center dot glow -->
+  <circle cx="375" cy="162" r="8" fill="#f5df7e" opacity="0.5"/>
+
+  <!-- Small decorative diamond dots flanking moon tips -->
+  <polygon points="175,148 182,158 175,168 168,158" fill="#c9a030" opacity="0.6"/>
+  <polygon points="158,356 165,366 158,376 151,366" fill="#c9a030" opacity="0.5"/>
+</svg>
