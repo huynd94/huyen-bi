@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { Redirect } from "wouter";
+import { useUser } from "@clerk/react";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +10,8 @@ import { Trash2, MessageSquarePlus, Send } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 import { useAISettings } from "@/contexts/ai-settings";
+import { isClerkEnabled } from "@/lib/auth-config";
+import { readSseStream } from "@/lib/sse-stream";
 
 const SUGGESTED_QUESTIONS = [
   "Số vận mệnh 7 có ý nghĩa gì và hợp nghề nghiệp nào?",
@@ -27,6 +31,26 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export default function AIChatPage() {
+  // Chat history belongs to individual users, so the page is login-only when
+  // Clerk is enabled. If Clerk is disabled (e.g. local demo), fall through.
+  if (isClerkEnabled) return <AIChatPageGuarded />;
+  return <AIChatPageInner />;
+}
+
+function AIChatPageGuarded() {
+  const { isLoaded, isSignedIn } = useUser();
+  if (!isLoaded) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  return <AIChatPageInner />;
+}
+
+function AIChatPageInner() {
   const queryClient = useQueryClient();
   const { settings, activeKey, activeModel } = useAISettings();
   const [activeConvId, setActiveConvId] = useState<number | null>(null);
@@ -41,7 +65,7 @@ export default function AIChatPage() {
   const deleteConv = useDeleteOpenaiConversation();
   
   const { data: activeConvData, isLoading: isLoadingConvData } = useGetOpenaiConversation(activeConvId!, {
-    query: { enabled: !!activeConvId }
+    query: { queryKey: [`/api/openai/conversations/${activeConvId}`], enabled: !!activeConvId }
   });
 
   useEffect(() => {
@@ -94,28 +118,15 @@ export default function AIChatPage() {
       });
       if (!response.body) throw new Error("No response body");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split("\n")) {
-          if (!line.startsWith("data: ")) continue;
-          const dataStr = line.replace("data: ", "").trim();
-          if (!dataStr || dataStr === "[DONE]") continue;
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.done) break;
-            if (data.content) {
-              setLocalMessages((prev) => {
-                const copy = [...prev];
-                const last = copy[copy.length - 1];
-                if (last?.role === "assistant") last.content += data.content;
-                return copy;
-              });
-            }
-          } catch {}
+      for await (const { data } of readSseStream(response.body)) {
+        const content = (data as { content?: unknown })?.content;
+        if (typeof content === "string" && content.length > 0) {
+          setLocalMessages((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.role === "assistant") last.content += content;
+            return copy;
+          });
         }
       }
     } catch (err) {

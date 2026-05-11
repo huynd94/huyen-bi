@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { readSseStream } from '@/lib/sse-stream';
 
 export interface SSEHeaders {
   provider?: string;
@@ -48,38 +49,17 @@ export function useSSEChat(sseHeaders?: SSEHeaders) {
 
       if (!response.body) throw new Error('No response body');
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataStr = line.replace('data: ', '').trim();
-            if (!dataStr || dataStr === '[DONE]') continue;
-
-            try {
-              const data = JSON.parse(dataStr);
-              if (data.done) break;
-              if (data.content) {
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const lastMessage = newMessages[newMessages.length - 1];
-                  if (lastMessage && lastMessage.role === 'assistant') {
-                    lastMessage.content += data.content;
-                  }
-                  return newMessages;
-                });
-              }
-            } catch (err) {
-              console.error('SSE JSON parse error', err, dataStr);
+      for await (const { data } of readSseStream(response.body)) {
+        const content = (data as { content?: unknown })?.content;
+        if (typeof content === 'string' && content.length > 0) {
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant') {
+              lastMessage.content += content;
             }
-          }
+            return newMessages;
+          });
         }
       }
     } catch (err) {

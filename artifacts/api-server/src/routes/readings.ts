@@ -1,9 +1,40 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getAuth } from "@clerk/express";
 import { pool } from "@workspace/db";
 import crypto from "crypto";
 
 const router = Router();
+
+// Saved-reading input limits. Titles and notes are short user-facing strings;
+// input/result payloads are small key/value blobs produced by the modules
+// themselves. Caps are chosen to comfortably hold the largest legitimate
+// reading while rejecting oversized abuse.
+const MAX_JSON_FIELD_BYTES = 32 * 1024;
+
+const jsonRecord = z
+  .record(z.string(), z.unknown())
+  .refine(
+    (val) => Buffer.byteLength(JSON.stringify(val), "utf8") <= MAX_JSON_FIELD_BYTES,
+    { message: `field exceeds ${MAX_JSON_FIELD_BYTES} bytes` },
+  );
+
+const CreateReadingBody = z.object({
+  module: z.string().min(1).max(50),
+  title: z.string().min(1).max(200),
+  input_data: jsonRecord.optional(),
+  result_data: jsonRecord.optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+const PatchReadingBody = z
+  .object({
+    title: z.string().min(1).max(200).optional(),
+    notes: z.string().max(2000).nullable().optional(),
+  })
+  .refine((body) => body.title !== undefined || body.notes !== undefined, {
+    message: "at least one of `title` or `notes` must be provided",
+  });
 
 function requireAuth(req: any, res: any, next: any) {
   const auth = getAuth(req);
@@ -27,8 +58,12 @@ router.get("/readings", requireAuth, async (req: any, res) => {
 });
 
 router.post("/readings", requireAuth, async (req: any, res) => {
-  const { module, title, input_data, result_data, notes } = req.body;
-  if (!module || !title) return res.status(400).json({ error: "module và title là bắt buộc" });
+  const parsed = CreateReadingBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
+    return;
+  }
+  const { module, title, input_data, result_data, notes } = parsed.data;
   try {
     const { rows } = await pool.query(
       `INSERT INTO saved_readings (user_id, module, title, input_data, result_data, notes)
@@ -43,14 +78,22 @@ router.post("/readings", requireAuth, async (req: any, res) => {
 });
 
 router.patch("/readings/:id", requireAuth, async (req: any, res) => {
-  const { notes, title } = req.body;
+  const parsed = PatchReadingBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
+    return;
+  }
+  const { notes, title } = parsed.data;
   try {
     const { rows } = await pool.query(
       `UPDATE saved_readings SET notes = COALESCE($1, notes), title = COALESCE($2, title), updated_at = NOW()
        WHERE id = $3 AND user_id = $4 RETURNING *`,
       [notes, title, req.params.id, req.userId],
     );
-    if (!rows.length) return res.status(404).json({ error: "Không tìm thấy" });
+    if (!rows.length) {
+      res.status(404).json({ error: "Không tìm thấy" });
+      return;
+    }
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Database error" });
@@ -63,7 +106,10 @@ router.delete("/readings/:id", requireAuth, async (req: any, res) => {
       `DELETE FROM saved_readings WHERE id = $1 AND user_id = $2`,
       [req.params.id, req.userId],
     );
-    if (!rowCount) return res.status(404).json({ error: "Không tìm thấy" });
+    if (!rowCount) {
+      res.status(404).json({ error: "Không tìm thấy" });
+      return;
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Database error" });
@@ -76,7 +122,10 @@ router.post("/readings/:id/share", requireAuth, async (req: any, res) => {
       `SELECT id FROM saved_readings WHERE id = $1 AND user_id = $2`,
       [req.params.id, req.userId],
     );
-    if (!check.length) return res.status(404).json({ error: "Không tìm thấy" });
+    if (!check.length) {
+      res.status(404).json({ error: "Không tìm thấy" });
+      return;
+    }
 
     const token = crypto.randomBytes(12).toString("base64url");
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -99,7 +148,10 @@ router.get("/share/:token", async (req, res) => {
        WHERE st.token = $1 AND (st.expires_at IS NULL OR st.expires_at > NOW())`,
       [req.params.token],
     );
-    if (!rows.length) return res.status(404).json({ error: "Liên kết không hợp lệ hoặc đã hết hạn" });
+    if (!rows.length) {
+      res.status(404).json({ error: "Liên kết không hợp lệ hoặc đã hết hạn" });
+      return;
+    }
     res.json(rows[0]);
   } catch (err) {
     res.status(500).json({ error: "Database error" });

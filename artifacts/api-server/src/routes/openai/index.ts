@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db, conversations as conversationsTable, messages as messagesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { CreateOpenaiConversationBody, SendOpenaiMessageBody } from "@workspace/api-zod";
+import { requireClerkUser, type AuthenticatedRequest } from "../../lib/clerk-user";
 import { getManyConfig } from "../../lib/server-config";
 import { checkAndLogUsage, getClientIP } from "../../lib/rate-limit";
 
@@ -14,50 +15,94 @@ const SYSTEM_PROMPT = `Bạn là một nhà huyền học uyên bác, am tườn
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
 const DEFAULT_GEMINI_MODEL = "gemini-3.0-flash";
 
-router.get("/openai/conversations", async (_req, res) => {
-  const convs = await db.select().from(conversationsTable).orderBy(conversationsTable.createdAt);
+// All conversation routes require an authenticated Clerk user. `requireClerkUser`
+// attaches the resolved userId onto the request for ownership scoping.
+router.use("/openai/conversations", requireClerkUser);
+
+router.get("/openai/conversations", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
+  const convs = await db
+    .select()
+    .from(conversationsTable)
+    .where(eq(conversationsTable.userId, userId))
+    .orderBy(conversationsTable.createdAt);
   res.json(convs);
 });
 
 router.post("/openai/conversations", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
   const parsed = CreateOpenaiConversationBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
-  const [conv] = await db.insert(conversationsTable).values({ title: parsed.data.title }).returning();
+  const [conv] = await db
+    .insert(conversationsTable)
+    .values({ userId, title: parsed.data.title })
+    .returning();
   res.status(201).json(conv);
 });
 
 router.get("/openai/conversations/:id", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const [conv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, id));
+  const [conv] = await db
+    .select()
+    .from(conversationsTable)
+    .where(and(eq(conversationsTable.id, id), eq(conversationsTable.userId, userId)));
   if (!conv) { res.status(404).json({ error: "Not found" }); return; }
-  const msgs = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id)).orderBy(messagesTable.createdAt);
+  const msgs = await db
+    .select()
+    .from(messagesTable)
+    .where(eq(messagesTable.conversationId, id))
+    .orderBy(messagesTable.createdAt);
   res.json({ ...conv, messages: msgs });
 });
 
 router.delete("/openai/conversations/:id", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  // Verify ownership before touching messages so we never cascade-delete someone
+  // else's data from a forged id.
+  const [conv] = await db
+    .select({ id: conversationsTable.id })
+    .from(conversationsTable)
+    .where(and(eq(conversationsTable.id, id), eq(conversationsTable.userId, userId)));
+  if (!conv) { res.status(404).json({ error: "Not found" }); return; }
   await db.delete(messagesTable).where(eq(messagesTable.conversationId, id));
-  const deleted = await db.delete(conversationsTable).where(eq(conversationsTable.id, id)).returning();
-  if (!deleted.length) { res.status(404).json({ error: "Not found" }); return; }
+  await db
+    .delete(conversationsTable)
+    .where(and(eq(conversationsTable.id, id), eq(conversationsTable.userId, userId)));
   res.status(204).end();
 });
 
 router.get("/openai/conversations/:id/messages", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const msgs = await db.select().from(messagesTable).where(eq(messagesTable.conversationId, id)).orderBy(messagesTable.createdAt);
+  const [conv] = await db
+    .select({ id: conversationsTable.id })
+    .from(conversationsTable)
+    .where(and(eq(conversationsTable.id, id), eq(conversationsTable.userId, userId)));
+  if (!conv) { res.status(404).json({ error: "Not found" }); return; }
+  const msgs = await db
+    .select()
+    .from(messagesTable)
+    .where(eq(messagesTable.conversationId, id))
+    .orderBy(messagesTable.createdAt);
   res.json(msgs);
 });
 
 router.post("/openai/conversations/:id/messages", async (req, res) => {
+  const { userId } = req as unknown as AuthenticatedRequest;
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = SendOpenaiMessageBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: "Invalid body" }); return; }
 
-  const [conv] = await db.select().from(conversationsTable).where(eq(conversationsTable.id, id));
+  const [conv] = await db
+    .select()
+    .from(conversationsTable)
+    .where(and(eq(conversationsTable.id, id), eq(conversationsTable.userId, userId)));
   if (!conv) { res.status(404).json({ error: "Not found" }); return; }
 
   const prevMessages = await db

@@ -30,8 +30,10 @@ export const ListOpenaiConversationsResponse = zod.array(
 /**
  * @summary Create a new conversation
  */
+export const createOpenaiConversationBodyTitleMax = 200;
+
 export const CreateOpenaiConversationBody = zod.object({
-  title: zod.string(),
+  title: zod.string().min(1).max(createOpenaiConversationBodyTitleMax),
 });
 
 /**
@@ -88,20 +90,35 @@ export const SendOpenaiMessageParams = zod.object({
   id: zod.coerce.number(),
 });
 
+export const sendOpenaiMessageBodyContentMax = 4000;
+
 export const SendOpenaiMessageBody = zod.object({
-  content: zod.string(),
+  content: zod.string().min(1).max(sendOpenaiMessageBodyContentMax),
 });
 
 /**
  * @summary Get AI interpretation for a mysticism reading
  */
+export const aiInterpretMysticismBodyTypeMax = 50;
+
+export const aiInterpretMysticismBodyContextMax = 8000;
+
+export const aiInterpretMysticismBodyQuestionMax = 1000;
+
 export const AiInterpretMysticismBody = zod.object({
-  type: zod.string().describe("Type of reading: numerology, batu, or iching"),
+  type: zod
+    .string()
+    .min(1)
+    .max(aiInterpretMysticismBodyTypeMax)
+    .describe("Type of reading: numerology, batu, or iching"),
   context: zod
     .string()
+    .min(1)
+    .max(aiInterpretMysticismBodyContextMax)
     .describe("The reading data as a formatted string for AI to interpret"),
   question: zod
     .string()
+    .max(aiInterpretMysticismBodyQuestionMax)
     .optional()
     .describe("Optional specific question from the user"),
 });

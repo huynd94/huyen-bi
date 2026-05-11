@@ -207,6 +207,8 @@ components:
       properties:
         title:
           type: string
+          minLength: 1
+          maxLength: 200
       required:
         - title
     SendOpenaiMessageBody:
@@ -214,6 +216,8 @@ components:
       properties:
         content:
           type: string
+          minLength: 1
+          maxLength: 4000
       required:
         - content
     OpenaiConversationWithMessages:
@@ -247,12 +251,17 @@ components:
       properties:
         type:
           type: string
+          minLength: 1
+          maxLength: 50
           description: "Type of reading: numerology, batu, or iching"
         context:
           type: string
+          minLength: 1
+          maxLength: 8000
           description: "The reading data as a formatted string for AI to interpret"
         question:
           type: string
+          maxLength: 1000
           description: "Optional specific question from the user"
       required:
         - type

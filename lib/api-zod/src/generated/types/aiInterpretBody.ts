@@ -7,10 +7,21 @@
  */
 
 export interface AiInterpretBody {
-  /** Type of reading: numerology, batu, or iching */
+  /**
+   * Type of reading: numerology, batu, or iching
+   * @minLength 1
+   * @maxLength 50
+   */
   type: string;
-  /** The reading data as a formatted string for AI to interpret */
+  /**
+   * The reading data as a formatted string for AI to interpret
+   * @minLength 1
+   * @maxLength 8000
+   */
   context: string;
-  /** Optional specific question from the user */
+  /**
+   * Optional specific question from the user
+   * @maxLength 1000
+   */
   question?: string;
 }

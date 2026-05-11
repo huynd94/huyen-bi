@@ -175,7 +175,7 @@ export default function IChingPage() {
                     module="xem-que"
                     title={`Xem Quẻ — ${hexagram.symbol} ${hexagram.vietnameseName}`}
                     inputData={{}}
-                    resultData={{ queNumber: hexagram.number, queName: hexagram.name, symbol: hexagram.symbol }}
+                    resultData={{ queNumber: hexagram.index, queName: hexagram.name, symbol: hexagram.symbol }}
                   />
                 </div>
                 {/* Export bar */}

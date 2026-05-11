@@ -7,6 +7,12 @@
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
+    "test:admin": "tsx src/lib/clerk-admin.test.ts",
+    "test:openai-auth": "tsx src/lib/clerk-user.test.ts",
+    "test:cors": "tsx src/lib/cors-config.test.ts",
+    "test:rate-limit": "tsx src/lib/rate-limit.test.ts",
+    "test:input-limits": "tsx src/lib/input-limits.test.ts",
+    "test:health": "tsx src/routes/health.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -22,7 +28,8 @@
     "http-proxy-middleware": "^3.0.5",
     "openai": "^6.34.0",
     "pino": "^9",
-    "pino-http": "^10"
+    "pino-http": "^10",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -32,6 +39,7 @@
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
     "pino-pretty": "^13",
-    "thread-stream": "3.1.0"
+    "thread-stream": "3.1.0",
+    "tsx": "catalog:"
   }
 }
