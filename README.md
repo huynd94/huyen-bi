@@ -590,13 +590,49 @@ App hỗ trợ **3 chế độ AI**:
 | **OpenAI** | Người dùng tự nhập OpenAI API key |
 | **Google Gemini** | Người dùng tự nhập Gemini API key |
 
+### Cấp quyền admin cho một tài khoản Clerk
+
+Quyền admin hoàn toàn dựa trên **Clerk public metadata** — không còn mật khẩu admin riêng trong database. Backend chỉ chấp nhận request admin khi user Clerk có:
+
+```json
+{ "role": "admin" }
+```
+
+trong `publicMetadata`. Fresh deploy KHÔNG có admin mặc định — bạn phải cấp thủ công để tránh bị chiếm quyền bởi người đăng ký đầu tiên.
+
+**Các bước cấp admin:**
+
+1. Người cần làm admin đăng ký / đăng nhập tại `/sign-up` hoặc `/sign-in` của app.
+2. Vào [dashboard.clerk.com](https://dashboard.clerk.com) → chọn application → **Users** → tìm email tương ứng → click vào.
+3. Mở tab **Metadata** → section **Public metadata** → **Edit**.
+4. Đặt giá trị là:
+   ```json
+   {
+     "role": "admin"
+   }
+   ```
+5. **Save**. User không cần logout/login — session token kế tiếp sẽ carry metadata mới.
+
+Muốn automate cho nhiều user, dùng Clerk Backend API:
+
+```bash
+curl -X PATCH "https://api.clerk.com/v1/users/<USER_ID>/metadata" \
+  -H "Authorization: Bearer $CLERK_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"public_metadata": {"role": "admin"}}'
+```
+
+Thu hồi admin: đặt `publicMetadata` về `{}` hoặc `{ "role": "user" }`.
+
 ### Cài key hệ thống (Admin)
 
-1. Vào app → Navbar → nút **AI** → **Cài đặt AI**
-2. Cuộn xuống **Cài đặt Admin** → nhập mật khẩu admin *(lần đầu tự đặt)*
-3. Chọn Provider, nhập API Key, chọn Model
-4. Đặt giới hạn lượt gọi theo IP (mặc định: 20/giờ, 100/ngày)
-5. Nhấn **Lưu cấu hình Admin**
+1. Đăng nhập bằng tài khoản đã được cấp `role: "admin"`.
+2. Navbar → nút **AI** → **Cài đặt AI** → cuộn xuống **Cài đặt Admin (Key hệ thống)**.
+3. Chọn Provider, nhập API Key, chọn Model.
+4. Đặt giới hạn lượt gọi theo IP (mặc định: 20/giờ, 100/ngày).
+5. Nhấn **Lưu cấu hình Admin**.
+
+Nếu bị `403 Forbidden`, nghĩa là Clerk metadata chưa có `role: "admin"` — quay lại Clerk Dashboard kiểm tra spelling: key là `role` (chữ thường), giá trị là chuỗi `"admin"`, nằm trong **public metadata** chứ không phải **private metadata**.
 
 ### Các model được hỗ trợ
 
@@ -607,7 +643,7 @@ App hỗ trợ **3 chế độ AI**:
 
 ---
 
-## API Reference
+### API Reference
 
 Base URL: `http://localhost:3001` (hoặc domain của bạn)
 
@@ -615,28 +651,26 @@ Base URL: `http://localhost:3001` (hoặc domain của bạn)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/healthz` | Kiểm tra server |
+| `GET` | `/api/healthz` | Kiểm tra server (trả `{ status: "ok" }` — public) |
+| `GET` | `/api/admin/healthz` | Chi tiết DB / env / Clerk (yêu cầu admin) |
 | `GET` | `/api/config/public` | Thông tin cấu hình public |
 | `POST` | `/api/mysticism/ai-interpret` | Phân tích huyền học bằng AI (SSE) |
 
-### Tài khoản người dùng (yêu cầu đăng nhập)
+### API Chat AI (yêu cầu đăng nhập)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/readings` | Danh sách lá số đã lưu |
-| `POST` | `/api/readings` | Lưu lá số mới |
-| `PATCH` | `/api/readings/:id` | Sửa tiêu đề / ghi chú |
-| `DELETE` | `/api/readings/:id` | Xóa lá số |
-| `POST` | `/api/readings/:id/share` | Tạo link chia sẻ (30 ngày) |
-| `GET` | `/api/share/:token` | Xem lá số qua link chia sẻ (public) |
-
-### AI Chat
-
-| Method | Endpoint | Mô tả |
-|--------|----------|-------|
-| `GET` | `/api/openai/conversations` | Danh sách hội thoại |
+| `GET` | `/api/openai/conversations` | Danh sách hội thoại của chính user |
 | `POST` | `/api/openai/conversations` | Tạo hội thoại mới |
 | `POST` | `/api/openai/conversations/:id/messages` | Gửi tin nhắn (SSE streaming) |
+
+### API Admin (yêu cầu `publicMetadata.role = "admin"`)
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `POST` | `/api/admin/config` | Cấu hình provider / key / model / rate limit |
+| `GET`  | `/api/admin/usage` | Thống kê lượt dùng AI theo IP |
+| `GET`  | `/api/admin/healthz` | Health report chi tiết |
 
 ### Headers AI
 
@@ -645,6 +679,48 @@ x-ai-provider: server | openai | gemini
 x-ai-key:      <API key>         (chỉ khi provider = openai / gemini)
 x-ai-model:    gpt-5.4-nano | gemini-3.0-flash | ...
 ```
+
+---
+
+## Bảo mật & cấu hình vận hành
+
+App đã qua một đợt hardening (chi tiết trong `AUDIT_PLAN_PROGRESS.md`). Các cấu hình quan trọng khi deploy production:
+
+### Biến môi trường
+
+| Biến | Bắt buộc? | Vai trò |
+|------|-----------|---------|
+| `DATABASE_URL` | Yes | Postgres connection string. App không boot được nếu thiếu. |
+| `PORT` | Yes | Cổng mà API server bind. Thường `3001`. |
+| `CLERK_SECRET_KEY` | No* | Backend auth. Không có = mọi route user-scoped trả 401 (15 module tra cứu vẫn chạy). |
+| `CLERK_PUBLISHABLE_KEY` | No* | Cần **cặp đôi** với secret key để Clerk middleware hoạt động. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | No* | Frontend build. Để trống = tắt tính năng tài khoản / lưu lá số. |
+| `CORS_ALLOWED_ORIGINS` | No | Danh sách origin cho phép, phân tách bằng dấu phẩy. Production mặc định chỉ cho `https://huyenbi.io.vn`. |
+| `TRUST_PROXY` | No | Bật khi API sau reverse proxy (nginx/Caddy/LB). Giá trị: `loopback`, số hop, hoặc CIDR. **Sai cấu hình = rate limiter có thể bị bypass bằng X-Forwarded-For.** |
+| `LOG_LEVEL` | No | Mặc định `info`. |
+
+\* Thiếu `CLERK_*` không crash server, nhưng các feature có login sẽ tắt.
+
+### Giới hạn input và rate limit
+
+- Body HTTP giới hạn **64 kB** (`express.json({ limit })`). Request lớn hơn trả 413.
+- Mỗi field chat/reading có cap thêm qua zod: `title ≤ 200`, `notes ≤ 2000`, `message.content ≤ 4000`, `context ≤ 8000`, JSON `input_data`/`result_data` ≤ 32 kB mỗi field.
+- Khi dùng **key hệ thống**, rate limit theo IP (mặc định 20/giờ, 100/ngày). Tính atomic bằng `pg_advisory_xact_lock` nên không bị bypass dưới tải song song.
+- Khi user dùng key riêng (OpenAI/Gemini của họ), không bị rate limit — chi phí tự họ chịu.
+
+### CORS
+
+Production: mặc định chỉ `https://huyenbi.io.vn` được chấp nhận với `credentials: true`. Thêm origin phụ:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://preview.huyenbi.io.vn,https://alt-domain.com
+```
+
+Trong non-production, loopback (`localhost`, `127.0.0.1`) luôn được cho phép cho dev server.
+
+### Markdown AI output
+
+Nội dung AI (và mọi markdown) render qua parser tự viết không dùng `dangerouslySetInnerHTML` — an toàn trước XSS từ response AI bất thường.
 
 ---
 
