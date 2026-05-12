@@ -9,6 +9,26 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * Public server configuration. `adminConfigured` is present only when the caller is an authenticated admin, and is omitted entirely for anonymous and non-admin callers.
+
+ */
+export interface PublicConfig {
+  /** Whether the server has an AI API key configured. */
+  serverKeyConfigured: boolean;
+  /** Configured AI provider (e.g. `openai`, `gemini`, `server`). */
+  provider: string;
+  /** Configured AI model identifier. */
+  model: string;
+  /** Rate limit per hour when using the server-managed AI key. */
+  rateLimitPerHour: number;
+  /** Rate limit per day when using the server-managed AI key. */
+  rateLimitPerDay: number;
+  /** True when Clerk admin credentials are configured. Present only for admin callers; omitted for anonymous and non-admin callers.
+   */
+  adminConfigured?: boolean | null;
+}
+
 export interface OpenaiConversation {
   id: number;
   title: string;

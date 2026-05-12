@@ -24,6 +24,7 @@ import type {
   OpenaiConversationWithMessages,
   OpenaiError,
   OpenaiMessage,
+  PublicConfig,
   SendOpenaiMessageBody,
 } from "./api.schemas";
 
@@ -104,6 +105,83 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns server configuration safe to expose to anonymous callers. The `adminConfigured` field is only present when the caller is authenticated as an admin (Clerk `publicMetadata.role === "admin"`); it is omitted entirely for anonymous and non-admin callers to avoid leaking deployment provisioning state.
+
+ * @summary Get public (non-secret) runtime configuration
+ */
+export const getGetPublicConfigUrl = () => {
+  return `/api/config/public`;
+};
+
+export const getPublicConfig = async (
+  options?: RequestInit,
+): Promise<PublicConfig> => {
+  return customFetch<PublicConfig>(getGetPublicConfigUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPublicConfigQueryKey = () => {
+  return [`/api/config/public`] as const;
+};
+
+export const getGetPublicConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicConfigQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPublicConfig>>> = ({
+    signal,
+  }) => getPublicConfig({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPublicConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicConfig>>
+>;
+export type GetPublicConfigQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get public (non-secret) runtime configuration
+ */
+
+export function useGetPublicConfig<
+  TData = Awaited<ReturnType<typeof getPublicConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPublicConfigQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

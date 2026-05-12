@@ -2,6 +2,7 @@ import { Router } from "express";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AiInterpretMysticismBody } from "@workspace/api-zod";
+import { requireClerkUser } from "../../lib/clerk-user";
 import { getManyConfig } from "../../lib/server-config";
 import { checkAndLogUsage, getClientIP } from "../../lib/rate-limit";
 import { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL } from "../../lib/ai-constants";
@@ -23,6 +24,11 @@ function getSystemPrompt(type: string): string {
 }
 
 
+
+// Require an authenticated Clerk user before invoking the AI interpret
+// endpoint. Without this gate, anonymous callers with rotating IPs can drain
+// the system AI key even though the per-IP rate limit is in place.
+router.use("/mysticism/ai-interpret", requireClerkUser);
 
 router.post("/mysticism/ai-interpret", async (req, res) => {
   const parsed = AiInterpretMysticismBody.safeParse(req.body);

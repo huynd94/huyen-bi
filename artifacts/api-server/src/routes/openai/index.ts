@@ -110,6 +110,47 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
     .where(eq(messagesTable.conversationId, id))
     .orderBy(messagesTable.createdAt);
 
+  // Resolve provider / API key / model BEFORE touching the messages table or
+  // opening an SSE stream. Per spec post-opus-audit-remediation §5 (H3): if we
+  // insert the user row first, a spammer whose quota is already exhausted can
+  // still pile up rows each time checkAndLogUsage denies them. Checking here
+  // means rate-limit / missing-config rejections short-circuit as plain JSON
+  // (HTTP 429 / 503) before any state mutation.
+  const provider = (req.headers["x-ai-provider"] as string) || "openai";
+  const userApiKey = (req.headers["x-ai-key"] as string) || "";
+  const userModel = (req.headers["x-ai-model"] as string) || "";
+
+  let resolvedKey = userApiKey;
+  let resolvedProvider = provider;
+  let resolvedModel = userModel;
+  let usingServerKey = false;
+
+  if (provider === "server" || !userApiKey) {
+    const cfg = await getManyConfig(["ai_api_key", "ai_provider", "ai_model"]);
+    if (!cfg.ai_api_key) {
+      res.status(503).json({ error: "Hệ thống chưa cấu hình API key." });
+      return;
+    }
+    resolvedKey = cfg.ai_api_key;
+    resolvedProvider = cfg.ai_provider ?? "openai";
+    resolvedModel = userModel || cfg.ai_model || DEFAULT_OPENAI_MODEL;
+    usingServerKey = true;
+  }
+
+  if (usingServerKey) {
+    const ip = getClientIP(req);
+    const rl = await checkAndLogUsage(ip);
+    if (!rl.allowed) {
+      res.status(429).json({
+        error: "Rate limit exceeded",
+        limitPerHour: rl.limitPerHour,
+        limitPerDay: rl.limitPerDay,
+      });
+      return;
+    }
+  }
+
+  // All gates passed — persist the user message, then open the SSE stream.
   await db.insert(messagesTable).values({ conversationId: id, role: "user", content: parsed.data.content });
 
   res.setHeader("Content-Type", "text/event-stream");
@@ -121,10 +162,6 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   const onClose = () => { controller.abort(); };
   req.on("close", onClose);
 
-  const provider = (req.headers["x-ai-provider"] as string) || "openai";
-  const userApiKey = (req.headers["x-ai-key"] as string) || "";
-  const userModel = (req.headers["x-ai-model"] as string) || "";
-
   const chatMessages = [
     { role: "system" as const, content: SYSTEM_PROMPT },
     ...prevMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
@@ -135,50 +172,6 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   let streamCompleted = false;
 
   try {
-    // Xác định API key sẽ dùng
-    let resolvedKey = userApiKey;
-    let resolvedProvider = provider;
-    let resolvedModel = userModel;
-    let usingServerKey = false;
-
-    if (provider === "server" || !userApiKey) {
-      const cfg = await getManyConfig(["ai_api_key", "ai_provider", "ai_model"]);
-      if (!cfg.ai_api_key) {
-        const msg = "Hệ thống chưa cấu hình API key. Vui lòng nhập API key của bạn trong phần Cài đặt AI, hoặc liên hệ quản trị viên để cấu hình key hệ thống.";
-        if (!res.writableEnded) {
-          res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
-          fullResponse = msg;
-          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-          res.end();
-        }
-        req.off("close", onClose);
-        await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
-        return;
-      }
-      resolvedKey = cfg.ai_api_key;
-      resolvedProvider = cfg.ai_provider ?? "openai";
-      resolvedModel = userModel || cfg.ai_model || DEFAULT_OPENAI_MODEL;
-      usingServerKey = true;
-    }
-
-    // Kiểm tra rate limit khi dùng server key
-    if (usingServerKey) {
-      const ip = getClientIP(req);
-      const rl = await checkAndLogUsage(ip);
-      if (!rl.allowed) {
-        const msg = `Bạn đã đạt giới hạn sử dụng AI. Giới hạn: ${rl.limitPerHour} lượt/giờ, ${rl.limitPerDay} lượt/ngày. Vui lòng thử lại sau hoặc nhập API key riêng trong phần Cài đặt AI.`;
-        if (!res.writableEnded) {
-          res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
-          fullResponse = msg;
-          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-          res.end();
-        }
-        req.off("close", onClose);
-        await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
-        return;
-      }
-    }
-
     if (resolvedProvider === "gemini") {
       const model = resolvedModel || DEFAULT_GEMINI_MODEL;
       const genAI = new GoogleGenerativeAI(resolvedKey);

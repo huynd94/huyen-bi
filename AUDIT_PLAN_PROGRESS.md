@@ -1,7 +1,7 @@
 # Audit, Plan, and Progress
 
 ## Date
-2026-05-11
+2026-05-13 (updated — post-Opus re-audit remediation complete)
 
 ## Scope
 This file records:
@@ -413,7 +413,7 @@ Platform health probes (nginx, Kubernetes, uptime monitors) expect a liveness en
 
 ## Remaining Tasks
 
-All planned remediation tasks are complete. No more tasks queued.
+All planned remediation tasks from the original audit are complete. A follow-up adversarial re-audit surfaced 10 additional findings (C1, C2, H1, H2, H3, M1, M2, M3, L3, L7); those are remediated as part of the `post-opus-audit-remediation` spec — see the section below.
 
 ### Post-Audit: Dockerfile Node version fix (2026-05-12)
 
@@ -431,12 +431,29 @@ All planned remediation tasks are complete. No more tasks queued.
 ```bash
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/mysticism-web run test:markdown
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/mysticism-web run test:sse
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/mysticism-web run test:escape-html
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/mysticism-web run test:result-actions
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:admin
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:openai-auth
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:cors
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:rate-limit
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:input-limits
 corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:health
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:mysticism-auth
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:trust-proxy-wiring
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:security-headers
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:message-order
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:csrf
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:param-validators
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:readings-params
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:share-cap
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:logger-redact
+corepack pnpm --config.verify-deps-before-run=false --filter @workspace/api-server run test:public-config
+```
+
+### Full audit-remediation suite
+```bash
+corepack pnpm run test:audit-remediation
 ```
 
 ### Workspace verification
@@ -447,14 +464,74 @@ git diff --check
 ```
 
 ## Current Worktree Notes
-- Worktree is intentionally dirty because Tasks 0-8 are implemented but not committed.
-- `pnpm-lock.yaml` is expected to be changed due to dependency/script updates.
-- Existing modified files from Tasks 0-8 include root/package, API `app.ts` + routes (health / config / openai / readings / rate-limit), db schema, `openapi.yaml` + regenerated `lib/api-zod` and `lib/api-client-react`, frontend markdown/admin settings/ai-chat + new SSE helper, `.env.example`, and new regression tests.
+- Worktree is intentionally dirty because Tasks 0-8 plus the post-Opus remediation (C1–L7) are implemented but not committed.
+- `pnpm-lock.yaml` is expected to be changed due to dependency/script updates (`helmet` on the backend, `fast-check` on the frontend).
+- Modified files span root/package, API `app.ts` + routes (health / config / openai / mysticism / readings / rate-limit / origin-guard / param-validators / logger), db migrations, `openapi.yaml` + regenerated `lib/api-zod` and `lib/api-client-react`, frontend markdown/admin settings/ai-chat + new SSE helper + `escape-html` helper + `result-actions` refactor, `docker-compose.yml`, `DEPLOY.md`, `README.md`, `.env.example`, and new regression tests.
 
 ## Handoff Summary
-All eight remediation tasks (Tasks 0-8) are implemented and verified. Next session can:
-1. Review the uncommitted worktree and stage / commit the changes.
+All eight original remediation tasks (Tasks 0-8) plus the post-Opus re-audit remediation (10 findings: C1, C2, H1, H2, H3, M1, M2, M3, L3, L7) are implemented and verified. Next session can:
+1. Review the committed worktree.
 2. Re-run:
    - `corepack pnpm --config.verify-deps-before-run=false run typecheck`
    - `corepack pnpm --config.verify-deps-before-run=false run build`
-3. Optionally run all regression tests listed under "Current Useful Commands".
+   - `corepack pnpm run test:audit-remediation`
+3. Optionally run individual regression tests listed under "Current Useful Commands".
+
+---
+
+## Completed: Post-Opus Re-Audit Remediation (2026-05-13)
+
+A fresh adversarial re-audit surfaced 10 additional findings after Tasks 0-8 landed. The remediation spec lives at `.kiro/specs/post-opus-audit-remediation/` (requirements + design + tasks). All 46 sub-tasks are complete and verified via `pnpm run test:audit-remediation` (12 scripts, 7 of which are property tests with `fast-check` at `numRuns: 100`).
+
+### Findings remediated
+
+#### C1 — Clerk gate for `POST /mysticism/ai-interpret`
+Anonymous botnet with rotating IPs could drain the system AI key because the endpoint was rate-limited only by IP. Mounted `requireClerkUser` at the path level in `routes/mysticism/index.ts`, mirroring the `/openai/conversations` pattern from Task 3. Rate-limit bucket and streaming flow untouched. Regression: `test:mysticism-auth`.
+
+#### C2 — `TRUST_PROXY` wired into `docker-compose.yml`
+Task 5 hardened `getClientIP` to require opt-in via `TRUST_PROXY`, but compose default left it unset. nginx container sits in the same bridge network as the api container, so `req.ip` collapsed to nginx's IP → whole site shared one rate-limit bucket. Fixed by defaulting `TRUST_PROXY: ${TRUST_PROXY:-loopback,linklocal,uniquelocal}` in compose (covers Docker's private ranges without hard-coding IPs), adding a startup `logger.warn` when unset, and documenting three topologies (compose default, direct-exposed, CDN/hop-count) in `DEPLOY.md` with a `README.md` cross-reference. Regression: `test:trust-proxy-wiring`.
+
+#### H1 — `handlePrint` XSS + tabnabbing
+`result-actions.tsx#handlePrint` interpolated `title`/`moduleName`/`result` directly into a `document.write` HTML template and opened the popup without `noopener`. Extracted a pure `buildPrintDocument(doc, opts)` helper that builds the DOM imperatively (`createElement` + `textContent` + `document.title` setter), then `window.open("", "_blank")` + `printWindow.opener = null` to detach the tabnabbing back-reference. Added shared `escapeHtml` helper for future call-sites. Regression tests: `test:escape-html` (Property 1), `test:result-actions` (Property 2).
+
+#### H2 — Security response headers
+Zero CSP, HSTS, frame-options, nosniff, or referrer-policy headers. Added `helmet@^8` before CORS in `app.ts` with CSP directives derived from the actual Clerk domains (`*.clerk.dev`, `*.clerk.accounts.dev`, `api.clerk.com`, `img.clerk.com`, `challenges.cloudflare.com`), HSTS `max-age=15552000` + `includeSubDomains`, `frameguard: { action: "deny" }`, `referrerPolicy: "strict-origin-when-cross-origin"`, plus `crossOriginEmbedderPolicy: false` / `crossOriginResourcePolicy: "cross-origin"` to keep SSE and third-party AI endpoints working. Regression: `test:security-headers`.
+
+#### H3 — Rate-limit before `db.insert`
+`POST /openai/conversations/:id/messages` inserted the user row before calling `checkAndLogUsage`, so an authenticated spammer whose quota was exhausted could still inflate the messages table every iteration. Reordered the handler so provider/key resolution and rate-limit check run before any insert and before SSE headers; denied requests now return plain JSON `429 { error, limitPerHour, limitPerDay }` instead of an SSE frame. Regression: `test:message-order` (Property 4 via fast-check).
+
+#### M1 — CSRF defense-in-depth
+`express.urlencoded` was mounted globally, making `application/x-www-form-urlencoded` POSTs from other origins bypass CORS preflight. Added `artifacts/api-server/src/lib/origin-guard.ts`: state-changing methods (`POST`/`PATCH`/`PUT`/`DELETE`) on non-bypass paths must carry an `Origin` (or parseable `Referer` fallback) that satisfies `isOriginAllowed` from the existing CORS config. Mounted on `/api` after CORS, before body parsers. Also removed `express.urlencoded` entirely (no route consumes urlencoded bodies). Regression: `test:csrf` (Property 5 via fast-check).
+
+#### M2 — Numeric `:id` validation for readings
+Handlers passed `req.params.id` (string) straight into pg `int` columns, so `DELETE /readings/abc` leaked a generic 500. Added `artifacts/api-server/src/lib/param-validators.ts` exporting `parsePositiveIntParam(raw)` with a `/^[1-9]\d*$/` + `Number.isSafeInteger` predicate; applied at the top of PATCH/DELETE/share handlers; returns `400 { error: "Invalid reading id" }` before any DB query. Regressions: `test:param-validators` (Property 3), `test:readings-params`.
+
+#### M3 — Share-token dedupe with advisory lock
+Each `POST /readings/:id/share` created a new row unbounded. Chose Strategy A (dedupe to one active token per reading) over Strategy B (cap). Wrapped the share logic in a DB transaction guarded by `pg_advisory_xact_lock(hashtext($reading_id_text))`; `SELECT` the existing active token first, return it if present, otherwise generate + insert a new one with a 30-day expiry. Added an idempotent partial index `idx_share_tokens_reading_active ON share_tokens(reading_id, expires_at DESC) WHERE expires_at IS NOT NULL` to `migrate.ts`. Ownership check still runs before the transaction. Regression: `test:share-cap` (Property 6 via fast-check + in-memory advisory-lock simulator).
+
+#### L3 — Strip `adminConfigured` from anonymous public config
+`GET /api/config/public` returned `adminConfigured: boolean` to anonymous callers, leaking deployment provisioning state. Response now built without the key by default; only attached when `getAuth(req).userId` resolves and `clerkClient.users.getUser(...).publicMetadata` satisfies `hasAdminRole`. Errors swallowed silently. Updated `lib/api-spec/openapi.yaml` `PublicConfig` schema to make `adminConfigured` optional + `nullable: true`, regenerated zod + TS types, and relaxed the frontend `ServerInfo` type. Regression: `test:public-config`.
+
+#### L7 — Expand pino redact list
+Added `x-ai-key`, `x-clerk-secret-key`, `clerk-proxy-url`, `x-clerk-auth-token` to `redact.paths` alongside the existing `authorization` / `cookie` / `set-cookie` entries. Extracted `redactConfig` as a named export so tests can spin up a parallel pino instance with the identical policy. Regression: `test:logger-redact` (Property 7 via fast-check).
+
+### New dependencies
+- Backend: `helmet@^8`.
+- Frontend: `fast-check@^4.7.0` (backend already had it via catalog).
+
+### New test scripts (12 total)
+Backend: `test:param-validators`, `test:mysticism-auth`, `test:trust-proxy-wiring`, `test:security-headers`, `test:message-order`, `test:csrf`, `test:readings-params`, `test:share-cap`, `test:logger-redact`, `test:public-config`.
+Frontend: `test:escape-html`, `test:result-actions`.
+Root: `test:audit-remediation` runs all 12 in sequence.
+
+### Verification
+- `pnpm install` — clean.
+- `pnpm -r typecheck` — all 4 packages pass.
+- `pnpm run test:audit-remediation` — all 12 scripts pass (7 property tests, 5 integration tests).
+
+### Files touched
+- Backend: `app.ts`, `lib/logger.ts`, `lib/migrate.ts`, `lib/origin-guard.ts` (new), `lib/param-validators.ts` (new), `routes/config/index.ts`, `routes/mysticism/index.ts`, `routes/openai/index.ts`, `routes/readings.ts`, plus 10 new test files.
+- Frontend: `components/result-actions.tsx`, `contexts/ai-settings.tsx`, `lib/escape-html.ts` (new), plus 2 new test files.
+- API spec: `openapi.yaml` + regenerated `lib/api-zod/src/generated/*` and `lib/api-client-react/src/generated/*`.
+- Ops: `docker-compose.yml`, `DEPLOY.md`, `README.md`.
+- Package configs: `artifacts/api-server/package.json`, `artifacts/mysticism-web/package.json`, root `package.json`, `pnpm-lock.yaml`.

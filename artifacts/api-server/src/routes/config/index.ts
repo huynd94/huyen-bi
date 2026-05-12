@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
+import { clerkClient, getAuth } from "@clerk/express";
 import { getConfig, setConfig, getManyConfig } from "../../lib/server-config";
-import { requireClerkAdmin } from "../../lib/clerk-admin";
+import { hasAdminRole, requireClerkAdmin } from "../../lib/clerk-admin";
 import { pool } from "@workspace/db";
 import { DEFAULT_OPENAI_MODEL } from "../../lib/ai-constants";
 
@@ -22,7 +23,7 @@ const AdminConfigBody = z
   .strict();
 
 // GET /api/config/public — thông tin công khai (không lộ API key)
-router.get("/config/public", async (_req, res) => {
+router.get("/config/public", async (req, res) => {
   try {
     const cfg = await getManyConfig([
       "ai_provider",
@@ -32,14 +33,33 @@ router.get("/config/public", async (_req, res) => {
       "rate_limit_per_day",
     ]);
 
-    res.json({
+    // Build the response WITHOUT `adminConfigured` by default. The field leaks
+    // provisioning state to anonymous callers (L3), so it is gated behind an
+    // admin Clerk claim and only attached when the caller is proven admin.
+    const body: Record<string, unknown> = {
       serverKeyConfigured: !!cfg.ai_api_key,
       provider: cfg.ai_provider ?? "openai",
       model: cfg.ai_model ?? DEFAULT_OPENAI_MODEL,
       rateLimitPerHour: parseInt(cfg.rate_limit_per_hour ?? "20", 10),
       rateLimitPerDay: parseInt(cfg.rate_limit_per_day ?? "100", 10),
-      adminConfigured: !!(process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY),
-    });
+    };
+
+    try {
+      const auth = getAuth(req);
+      if (auth.userId) {
+        const user = await clerkClient.users.getUser(auth.userId);
+        if (hasAdminRole(user.publicMetadata)) {
+          body.adminConfigured = !!(
+            process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY
+          );
+        }
+      }
+    } catch {
+      // Swallow any Clerk lookup error — omit the field silently rather than
+      // failing the public config endpoint.
+    }
+
+    res.json(body);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

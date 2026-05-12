@@ -217,6 +217,57 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ---
 
+## Vì sao `TRUST_PROXY` bắt buộc với compose mặc định
+
+Khi API chạy sau một reverse proxy (nginx container, Caddy, CDN…), client IP thật nằm trong header `X-Forwarded-For` do proxy thêm vào. Express mặc định **không** tin header này: `req.ip` sẽ trả về IP của lớp proxy ngay phía trước, không phải IP client. Rate limiter của hệ thống (Task 5 trong `AUDIT_PLAN_PROGRESS.md`) chấm điểm theo `req.ip`, nên nếu không set `TRUST_PROXY`:
+
+- Mỗi request từ mọi client đều "trông giống" đến từ IP của proxy.
+- Toàn bộ traffic collapse về **một bucket rate-limit chung** → hoặc một vài client đốt hết quota của cả site, hoặc attacker biết limit chung rồi bypass cho các client còn lại.
+
+Biến `TRUST_PROXY` được forward thành `app.set("trust proxy", ...)` trong `artifacts/api-server/src/app.ts`. Chọn giá trị theo topology:
+
+### 1. Docker compose mặc định — `loopback,linklocal,uniquelocal`
+
+Đây là giá trị mặc định compose đang set (`docker-compose.yml` → service `api` → env `TRUST_PROXY:${TRUST_PROXY:-loopback,linklocal,uniquelocal}`).
+
+- `loopback` = `127.0.0.0/8`, `::1/128`
+- `linklocal` = `169.254.0.0/16`, `fe80::/10`
+- `uniquelocal` = tất cả RFC 1918 (`10/8`, `172.16/12`, `192.168/16`) + `fc00::/7`
+
+Docker bridge network mặc định nằm trong `172.16.0.0/12`, cùng với tầng loopback giữa PM2 và nginx khi chạy thủ công trên cùng VPS. Preset này bao trùm cả hai kịch bản "proxy cùng máy/cùng mạng riêng" mà không phụ thuộc IP cụ thể — an toàn khi `docker compose down -v && up` đổi IP container.
+
+Không override `TRUST_PROXY` là đúng cho luồng `docker compose up -d` mặc định.
+
+### 2. API expose trực tiếp (không proxy) — để trống
+
+Khi chạy `node dist/index.mjs` mở cổng public trực tiếp, hoặc khi client gọi thẳng `http://IP:3001`, **không** có lớp proxy nào thêm `X-Forwarded-For`. Nếu vẫn set `TRUST_PROXY=loopback` (hay bất kỳ giá trị nào), attacker có thể tự gửi header `X-Forwarded-For: 1.2.3.4` để giả mạo IP và bypass rate limit theo IP.
+
+Trong trường hợp này, unset biến (hoặc `TRUST_PROXY=`) — Express sẽ dùng socket address thật và bỏ qua `X-Forwarded-For`.
+
+> App log `warn` ở startup khi `TRUST_PROXY` unset để nhắc operator kiểm tra topology (không fail-fast vì direct-exposed là hợp lệ).
+
+### 3. Sau CDN / nhiều lớp proxy — số hop
+
+Khi có CDN (Cloudflare, Fastly) hoặc load balancer trước nginx, mỗi lớp proxy append một giá trị vào `X-Forwarded-For`. Để Express lấy đúng client IP, đặt số hop = số lớp proxy **đáng tin cậy** giữa client và API:
+
+```dotenv
+# Cloudflare → nginx (docker container) → api
+TRUST_PROXY=2
+```
+
+Preset subnet (`loopback,linklocal,uniquelocal`) không bao phủ được CDN vì IP Cloudflare nằm trong dải public — dùng hop-count cho topology này. Nếu đặt thấp hơn số hop thật, Express sẽ trust IP của proxy kế tiếp (không phải client); nếu đặt cao hơn, attacker có thể nhét IP giả vào đầu header.
+
+---
+
+> **Cảnh báo.** Set sai `TRUST_PROXY` là lỗ hổng bảo mật, không chỉ là bug cấu hình:
+> - `TRUST_PROXY=true` hay `TRUST_PROXY=0.0.0.0/0` khi đứng trước Internet = trust mọi IP. Attacker gửi `X-Forwarded-For: <bất kỳ>` để fake IP, lách rate limit per-IP và đầu độc log.
+> - `TRUST_PROXY=loopback` khi không có proxy = như trên, nhưng attacker phải ở loopback — chỉ nguy hiểm nếu có process nội bộ bị chiếm.
+> - Unset khi có proxy = rate limit collapse về 1 bucket chung (Finding C2 của re-audit).
+>
+> Sau khi đổi giá trị, verify bằng cách gọi API từ 2 client có IP khác nhau và query: `SELECT DISTINCT ip FROM rate_limits WHERE created_at > NOW() - INTERVAL '5 minutes';`. Hai IP thật phải xuất hiện riêng biệt.
+
+---
+
 ## Cấu hình HTTPS với Let's Encrypt (tuỳ chọn nhưng nên làm)
 
 ```bash

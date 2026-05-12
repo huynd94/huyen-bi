@@ -52,6 +52,13 @@ services:
       DATABASE_URL:          postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:-huyenbi_secret}@postgres:5432/${POSTGRES_DB:-huyenbi}
       CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY:-}
       CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
+      # When the api sits behind the nginx container in the same bridge network,
+      # Express needs to trust the XFF header added by nginx so `req.ip` reflects
+      # the real client. loopback,linklocal,uniquelocal covers Docker's private
+      # ranges without hard-coding an IP that shifts between recreations.
+      # Override this if you add a CDN upstream (use hop-count) or run without a
+      # proxy (leave blank). See DEPLOY.md.
+      TRUST_PROXY:           ${TRUST_PROXY:-loopback,linklocal,uniquelocal}
     networks:
       - internal
 

@@ -65,6 +65,14 @@ export async function runMigrations(): Promise<void> {
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       expires_at  TIMESTAMPTZ
     );
+
+    -- M3: partial index on active share tokens per reading.
+    -- Matches the query "active token for reading_id" used by POST /readings/:id/share
+    -- (filters on expires_at > NOW() ordered by expires_at DESC). IF NOT EXISTS keeps
+    -- this migration idempotent across restarts.
+    CREATE INDEX IF NOT EXISTS idx_share_tokens_reading_active
+      ON share_tokens(reading_id, expires_at DESC)
+      WHERE expires_at IS NOT NULL;
   `);
 
   console.log("[migrate] Bảng database sẵn sàng.");

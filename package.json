@@ -7,7 +7,8 @@
     "preinstall": "node -e \"const fs = require('node:fs'); for (const file of ['package-lock.json', 'yarn.lock']) { try { fs.rmSync(file); } catch {} } if (!String(process.env.npm_config_user_agent || '').startsWith('pnpm/')) { console.error('Use pnpm instead'); process.exit(1); }\"",
     "build": "corepack pnpm run typecheck && corepack pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "corepack pnpm run typecheck:libs && corepack pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "corepack pnpm run typecheck:libs && corepack pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "test:audit-remediation": "pnpm --filter @workspace/api-server run test:param-validators && pnpm --filter @workspace/api-server run test:mysticism-auth && pnpm --filter @workspace/api-server run test:trust-proxy-wiring && pnpm --filter @workspace/api-server run test:security-headers && pnpm --filter @workspace/api-server run test:message-order && pnpm --filter @workspace/api-server run test:csrf && pnpm --filter @workspace/api-server run test:readings-params && pnpm --filter @workspace/api-server run test:share-cap && pnpm --filter @workspace/api-server run test:logger-redact && pnpm --filter @workspace/api-server run test:public-config && pnpm --filter @workspace/mysticism-web run test:escape-html && pnpm --filter @workspace/mysticism-web run test:result-actions"
   },
   "private": true,
   "devDependencies": {

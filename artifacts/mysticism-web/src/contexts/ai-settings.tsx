@@ -19,7 +19,12 @@ export interface ServerInfo {
   model: string;
   rateLimitPerHour: number;
   rateLimitPerDay: number;
-  adminConfigured: boolean;
+  /**
+   * Admin-only field. Omitted entirely for anonymous and non-admin callers to
+   * avoid leaking deployment provisioning state (post-opus-audit-remediation L3).
+   * Generated OpenAPI type is `boolean | null`; treat `null`/`undefined` as `false`.
+   */
+  adminConfigured?: boolean | null;
 }
 
 interface AISettingsContextValue {

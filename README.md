@@ -195,6 +195,8 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 > Không cần điền API key AI ở đây — cấu hình qua Admin Panel sau khi deploy.
 >
 > Nếu chưa có Clerk keys, có thể bỏ trống — app vẫn chạy đủ 15 mô-đun.
+>
+> Biến `TRUST_PROXY` đã được set sẵn trong `docker-compose.yml` cho topology mặc định (nginx container → api container). Nếu deploy sau CDN hoặc expose API trực tiếp, xem [Vì sao `TRUST_PROXY` bắt buộc với compose mặc định](./DEPLOY.md#vì-sao-trust_proxy-bắt-buộc-với-compose-mặc-định) trong `DEPLOY.md`.
 
 ### Bước 4 — Build và chạy
 
