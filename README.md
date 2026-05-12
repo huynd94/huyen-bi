@@ -2,11 +2,13 @@
 
 > Nền tảng huyền học toàn diện: 15 mô-đun tra cứu bao gồm Thần Số Học, Bát Tự Tứ Trụ, Kinh Dịch, Cát Hung, Tử Vi Đẩu Số, Phong Thuỷ, Hợp Tuổi, Xem Ngày Tốt, Sao Hạn và Trợ lý AI — giao diện tiếng Việt, chủ đề tối huyền bí, tài khoản người dùng, lưu & chia sẻ lá số.
 
-![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.0-c9a227?style=for-the-badge&labelColor=0d0818)
+![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.1-c9a227?style=for-the-badge&labelColor=0d0818)
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)
+![Node](https://img.shields.io/badge/Node-22+-5FA04E?style=flat-square&logo=node.js)
+![pnpm](https://img.shields.io/badge/pnpm-10-F69220?style=flat-square&logo=pnpm)
 ![Clerk](https://img.shields.io/badge/Auth-Clerk-6C47FF?style=flat-square)
 ![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker)
 
@@ -26,6 +28,7 @@
 - [Cấu hình Clerk Production](#cấu-hình-clerk-production)
 - [Cấu hình AI (Admin Panel)](#cấu-hình-ai-admin-panel)
 - [API Reference](#api-reference)
+- [Bảo mật & cấu hình vận hành](#bảo-mật--cấu-hình-vận-hành)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
 
 ---
@@ -110,16 +113,22 @@
 ## Kiến trúc hệ thống
 
 ```
-monorepo (pnpm workspaces)
+monorepo (pnpm workspaces, pnpm@10 pinned via packageManager)
 ├── artifacts/
 │   ├── mysticism-web/     # React 19 + Vite 7 frontend
 │   └── api-server/        # Express 5 backend
+├── lib/
+│   ├── api-spec/          # OpenAPI 3.1 source
+│   ├── api-zod/           # Generated zod schemas (validation)
+│   ├── api-client-react/  # Generated react-query hooks
+│   └── db/                # Drizzle schema + pg pool
 ├── docker/
 │   └── nginx.conf         # Nginx: static files + proxy /api/*
-├── Dockerfile.api         # Backend: esbuild bundle
+├── Dockerfile.api         # Backend: esbuild bundle, Node 22
 ├── Dockerfile.web         # Frontend: Vite build → Nginx
 ├── docker-compose.yml     # Postgres + API + Web (3 service)
 ├── .env.example           # Mẫu biến môi trường
+├── AUDIT_PLAN_PROGRESS.md # Nhật ký audit & hardening
 └── DEPLOY.md              # Hướng dẫn deploy chi tiết
 ```
 
@@ -127,12 +136,13 @@ monorepo (pnpm workspaces)
 
 | Layer | Công nghệ |
 |-------|-----------|
-| Frontend | React 19.1 + Vite 7 + TypeScript + Tailwind CSS v4 + shadcn/ui |
-| Backend | Express 5 + PostgreSQL + Zod validation |
+| Frontend | React 19.1 + Vite 7 + TypeScript 5.9 + Tailwind CSS v4 + shadcn/ui |
+| Backend | Express 5 + PostgreSQL 16 + Drizzle ORM + Zod validation |
 | Auth | Clerk (Google OAuth + Email, JWT, proxy middleware) |
-| AI | OpenAI GPT / Google Gemini — key chung hoặc key riêng |
+| AI | OpenAI GPT / Google Gemini — key chung hoặc key riêng, stream qua SSE |
 | Proxy | Nginx 1.27 — static files + reverse proxy `/api/*` |
-| Container | Docker + Docker Compose v2 |
+| Container | Docker + Docker Compose v2, base image `node:22-slim` |
+| Runtime | Node 22+ (LTS), pnpm 10 (pin bằng `packageManager` trong root `package.json`) |
 
 ---
 
@@ -239,8 +249,8 @@ Phù hợp khi server đã có Node.js, PostgreSQL, và Nginx sẵn.
 
 | Công cụ | Phiên bản |
 |---------|-----------|
-| Node.js | 22+ |
-| pnpm | 10+ |
+| Node.js | 22+ (bắt buộc, pnpm 10+ phụ thuộc Node 22.13) |
+| pnpm | 10 (root pin `pnpm@10.32.0` qua `packageManager` — dùng corepack) |
 | PostgreSQL | 14+ |
 | Nginx | 1.20+ |
 
@@ -249,7 +259,10 @@ Phù hợp khi server đã có Node.js, PostgreSQL, và Nginx sẵn.
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
-sudo npm install -g pnpm@latest
+
+# pnpm được quản lý tự động bởi corepack (đi kèm Node 22).
+# Không cần npm install -g pnpm — `corepack enable` là đủ.
+sudo corepack enable
 ```
 
 ### Bước 2 — Tạo database
@@ -264,13 +277,17 @@ sudo -u postgres psql -c "CREATE DATABASE huyenbi OWNER huyenbi;"
 ```bash
 git clone https://github.com/huynd94/huyen-bi.git /opt/huyen-bi
 cd /opt/huyen-bi
-pnpm install --no-frozen-lockfile
+
+# `corepack pnpm` sẽ đọc `packageManager` trong package.json và dùng đúng phiên
+# bản pnpm đã pin. `--frozen-lockfile` bắt buộc lockfile khớp cho deploy
+# deterministic — thất bại = dấu hiệu lockfile ngoài sync với package.json.
+corepack pnpm install --frozen-lockfile
 ```
 
 ### Bước 4 — Build backend
 
 ```bash
-pnpm --filter @workspace/api-server run build
+corepack pnpm --filter @workspace/api-server run build
 ```
 
 ### Bước 5 — Build frontend
@@ -278,7 +295,7 @@ pnpm --filter @workspace/api-server run build
 ```bash
 PORT=3000 BASE_PATH=/ NODE_ENV=production \
   VITE_CLERK_PUBLISHABLE_KEY=pk_live_... \
-  pnpm --filter @workspace/mysticism-web run build
+  corepack pnpm --filter @workspace/mysticism-web run build
 # Static files xuất ra: artifacts/mysticism-web/dist/public/
 ```
 
@@ -292,26 +309,14 @@ pm2 start /opt/huyen-bi/artifacts/api-server/dist/index.mjs \
   --node-args="--enable-source-maps" \
   --env production
 
-# Đặt biến môi trường cho process
-pm2 set huyen-bi-api:NODE_ENV production
-pm2 set huyen-bi-api:PORT 3001
-pm2 set huyen-bi-api:DATABASE_URL "postgresql://huyenbi:mat_khau@localhost:5432/huyenbi"
-pm2 set huyen-bi-api:CLERK_SECRET_KEY "sk_live_..."
-
-# Lưu config và cài startup
-pm2 save
-pm2 startup
-```
-
-Hoặc dùng file `.env` riêng:
-
-```bash
-# Tạo file env cho backend
+# Biến môi trường cho backend — dùng file .env riêng
 cat > /opt/huyen-bi/.env.api << 'EOF'
 NODE_ENV=production
 PORT=3001
 DATABASE_URL=postgresql://huyenbi:mat_khau@localhost:5432/huyenbi
 CLERK_SECRET_KEY=sk_live_...
+CLERK_PUBLISHABLE_KEY=pk_live_...
+TRUST_PROXY=loopback
 EOF
 
 pm2 start /opt/huyen-bi/artifacts/api-server/dist/index.mjs \
@@ -321,6 +326,8 @@ pm2 start /opt/huyen-bi/artifacts/api-server/dist/index.mjs \
 
 pm2 save && pm2 startup
 ```
+
+> **Lưu ý:** `TRUST_PROXY=loopback` cần thiết khi Nginx chạy cùng máy — nếu không, rate limiter sẽ thấy mọi request đến từ `127.0.0.1` thay vì IP thật của client.
 
 ### Bước 7 — Cấu hình Nginx
 
@@ -439,15 +446,15 @@ cd /opt/huyen-bi
 git pull origin main
 
 # 3. Cài dependencies mới (nếu có)
-pnpm install --no-frozen-lockfile
+corepack pnpm install --frozen-lockfile
 
 # 4. Rebuild backend
-pnpm --filter @workspace/api-server run build
+corepack pnpm --filter @workspace/api-server run build
 
 # 5. Rebuild frontend
 PORT=3000 BASE_PATH=/ NODE_ENV=production \
   VITE_CLERK_PUBLISHABLE_KEY=pk_live_... \
-  pnpm --filter @workspace/mysticism-web run build
+  corepack pnpm --filter @workspace/mysticism-web run build
 
 # 6. Khởi động lại backend (PM2 tự reload)
 pm2 reload huyen-bi-api
@@ -474,7 +481,7 @@ docker compose up --build -d web
 # VPS thủ công:
 PORT=3000 BASE_PATH=/ NODE_ENV=production \
   VITE_CLERK_PUBLISHABLE_KEY=pk_live_... \
-  pnpm --filter @workspace/mysticism-web run build
+  corepack pnpm --filter @workspace/mysticism-web run build
 # Không cần restart Nginx hay PM2
 ```
 
@@ -489,7 +496,7 @@ git pull origin main
 docker compose up --build -d api
 
 # VPS thủ công:
-pnpm --filter @workspace/api-server run build
+corepack pnpm --filter @workspace/api-server run build
 pm2 reload huyen-bi-api
 ```
 
@@ -590,13 +597,49 @@ App hỗ trợ **3 chế độ AI**:
 | **OpenAI** | Người dùng tự nhập OpenAI API key |
 | **Google Gemini** | Người dùng tự nhập Gemini API key |
 
+### Cấp quyền admin cho một tài khoản Clerk
+
+Quyền admin hoàn toàn dựa trên **Clerk public metadata** — không còn mật khẩu admin riêng trong database. Backend chỉ chấp nhận request admin khi user Clerk có:
+
+```json
+{ "role": "admin" }
+```
+
+trong `publicMetadata`. Fresh deploy KHÔNG có admin mặc định — bạn phải cấp thủ công để tránh bị chiếm quyền bởi người đăng ký đầu tiên.
+
+**Các bước cấp admin:**
+
+1. Người cần làm admin đăng ký / đăng nhập tại `/sign-up` hoặc `/sign-in` của app.
+2. Vào [dashboard.clerk.com](https://dashboard.clerk.com) → chọn application → **Users** → tìm email tương ứng → click vào.
+3. Mở tab **Metadata** → section **Public metadata** → **Edit**.
+4. Đặt giá trị là:
+   ```json
+   {
+     "role": "admin"
+   }
+   ```
+5. **Save**. User không cần logout/login — session token kế tiếp sẽ carry metadata mới.
+
+Muốn automate cho nhiều user, dùng Clerk Backend API:
+
+```bash
+curl -X PATCH "https://api.clerk.com/v1/users/<USER_ID>/metadata" \
+  -H "Authorization: Bearer $CLERK_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"public_metadata": {"role": "admin"}}'
+```
+
+Thu hồi admin: đặt `publicMetadata` về `{}` hoặc `{ "role": "user" }`.
+
 ### Cài key hệ thống (Admin)
 
-1. Vào app → Navbar → nút **AI** → **Cài đặt AI**
-2. Cuộn xuống **Cài đặt Admin** → nhập mật khẩu admin *(lần đầu tự đặt)*
-3. Chọn Provider, nhập API Key, chọn Model
-4. Đặt giới hạn lượt gọi theo IP (mặc định: 20/giờ, 100/ngày)
-5. Nhấn **Lưu cấu hình Admin**
+1. Đăng nhập bằng tài khoản đã được cấp `role: "admin"`.
+2. Navbar → nút **AI** → **Cài đặt AI** → cuộn xuống **Cài đặt Admin (Key hệ thống)**.
+3. Chọn Provider, nhập API Key, chọn Model.
+4. Đặt giới hạn lượt gọi theo IP (mặc định: 20/giờ, 100/ngày).
+5. Nhấn **Lưu cấu hình Admin**.
+
+Nếu bị `403 Forbidden`, nghĩa là Clerk metadata chưa có `role: "admin"` — quay lại Clerk Dashboard kiểm tra spelling: key là `role` (chữ thường), giá trị là chuỗi `"admin"`, nằm trong **public metadata** chứ không phải **private metadata**.
 
 ### Các model được hỗ trợ
 
@@ -615,28 +658,39 @@ Base URL: `http://localhost:3001` (hoặc domain của bạn)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/healthz` | Kiểm tra server |
+| `GET` | `/api/healthz` | Kiểm tra server (trả `{ status: "ok" }` — public) |
+| `GET` | `/api/admin/healthz` | Chi tiết DB / env / Clerk (yêu cầu admin) |
 | `GET` | `/api/config/public` | Thông tin cấu hình public |
 | `POST` | `/api/mysticism/ai-interpret` | Phân tích huyền học bằng AI (SSE) |
 
-### Tài khoản người dùng (yêu cầu đăng nhập)
+### API Chat AI (yêu cầu đăng nhập)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/readings` | Danh sách lá số đã lưu |
+| `GET` | `/api/openai/conversations` | Danh sách hội thoại của chính user |
+| `POST` | `/api/openai/conversations` | Tạo hội thoại mới |
+| `GET` | `/api/openai/conversations/:id` | Chi tiết hội thoại + messages |
+| `DELETE` | `/api/openai/conversations/:id` | Xóa hội thoại (chỉ owner) |
+| `POST` | `/api/openai/conversations/:id/messages` | Gửi tin nhắn (SSE streaming) |
+
+### API Lá Số (yêu cầu đăng nhập)
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET` | `/api/readings` | Danh sách lá số đã lưu (scope theo user) |
 | `POST` | `/api/readings` | Lưu lá số mới |
 | `PATCH` | `/api/readings/:id` | Sửa tiêu đề / ghi chú |
-| `DELETE` | `/api/readings/:id` | Xóa lá số |
+| `DELETE` | `/api/readings/:id` | Xóa lá số (chỉ owner) |
 | `POST` | `/api/readings/:id/share` | Tạo link chia sẻ (30 ngày) |
-| `GET` | `/api/share/:token` | Xem lá số qua link chia sẻ (public) |
+| `GET` | `/api/share/:token` | Xem lá số qua link chia sẻ (public, không cần login) |
 
-### AI Chat
+### API Admin (yêu cầu `publicMetadata.role = "admin"`)
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
-| `GET` | `/api/openai/conversations` | Danh sách hội thoại |
-| `POST` | `/api/openai/conversations` | Tạo hội thoại mới |
-| `POST` | `/api/openai/conversations/:id/messages` | Gửi tin nhắn (SSE streaming) |
+| `POST` | `/api/admin/config` | Cấu hình provider / key / model / rate limit |
+| `GET`  | `/api/admin/usage` | Thống kê lượt dùng AI theo IP |
+| `GET`  | `/api/admin/healthz` | Health report chi tiết |
 
 ### Headers AI
 
@@ -645,6 +699,48 @@ x-ai-provider: server | openai | gemini
 x-ai-key:      <API key>         (chỉ khi provider = openai / gemini)
 x-ai-model:    gpt-5.4-nano | gemini-3.0-flash | ...
 ```
+
+---
+
+## Bảo mật & cấu hình vận hành
+
+App đã qua một đợt hardening (chi tiết trong `AUDIT_PLAN_PROGRESS.md`). Các cấu hình quan trọng khi deploy production:
+
+### Biến môi trường
+
+| Biến | Bắt buộc? | Vai trò |
+|------|-----------|---------|
+| `DATABASE_URL` | Yes | Postgres connection string. App không boot được nếu thiếu. |
+| `PORT` | Yes | Cổng mà API server bind. Thường `3001`. |
+| `CLERK_SECRET_KEY` | No* | Backend auth. Không có = mọi route user-scoped trả 401 (15 module tra cứu vẫn chạy). |
+| `CLERK_PUBLISHABLE_KEY` | No* | Cần **cặp đôi** với secret key để Clerk middleware hoạt động. |
+| `VITE_CLERK_PUBLISHABLE_KEY` | No* | Frontend build. Để trống = tắt tính năng tài khoản / lưu lá số. |
+| `CORS_ALLOWED_ORIGINS` | No | Danh sách origin cho phép, phân tách bằng dấu phẩy. Production mặc định chỉ cho `https://huyenbi.io.vn`. |
+| `TRUST_PROXY` | No | Bật khi API sau reverse proxy (nginx/Caddy/LB). Giá trị: `loopback`, số hop, hoặc CIDR. **Sai cấu hình = rate limiter có thể bị bypass bằng X-Forwarded-For.** |
+| `LOG_LEVEL` | No | Mặc định `info`. |
+
+\* Thiếu `CLERK_*` không crash server, nhưng các feature có login sẽ tắt.
+
+### Giới hạn input và rate limit
+
+- Body HTTP giới hạn **64 kB** (`express.json({ limit })`). Request lớn hơn trả 413.
+- Mỗi field chat/reading có cap thêm qua zod: `title ≤ 200`, `notes ≤ 2000`, `message.content ≤ 4000`, `context ≤ 8000`, JSON `input_data`/`result_data` ≤ 32 kB mỗi field.
+- Khi dùng **key hệ thống**, rate limit theo IP (mặc định 20/giờ, 100/ngày). Tính atomic bằng `pg_advisory_xact_lock` nên không bị bypass dưới tải song song.
+- Khi user dùng key riêng (OpenAI/Gemini của họ), không bị rate limit — chi phí tự họ chịu.
+
+### CORS
+
+Production: mặc định chỉ `https://huyenbi.io.vn` được chấp nhận với `credentials: true`. Thêm origin phụ:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://preview.huyenbi.io.vn,https://alt-domain.com
+```
+
+Trong non-production, loopback (`localhost`, `127.0.0.1`) luôn được cho phép cho dev server.
+
+### Markdown AI output
+
+Nội dung AI (và mọi markdown) render qua parser tự viết không dùng `dangerouslySetInnerHTML` — an toàn trước XSS từ response AI bất thường.
 
 ---
 
@@ -684,6 +780,9 @@ artifacts/mysticism-web/src/
 │   └── export-card-*.tsx     # Card xuất ảnh/PDF
 ├── lib/
 │   ├── readings-api.ts       # API client cho /api/readings
+│   ├── sse-stream.ts         # SSE parser (rolling buffer, chunk-safe)
+│   ├── auth-config.ts        # isClerkEnabled flag
+│   ├── reopen-reading.ts     # Mở lại lá số từ profile/share
 │   ├── numerology.ts         # Thần Số Học
 │   ├── batu.ts               # Bát Tự + Ngũ Hành
 │   ├── dai-van.ts            # Đại Vận 8 trụ
@@ -705,19 +804,24 @@ artifacts/mysticism-web/src/
     └── ai-settings.tsx       # AI provider context
 
 artifacts/api-server/src/
-├── app.ts                    # Express app + Clerk middleware
+├── app.ts                    # Express app + CORS + Clerk middleware + trust proxy
+├── index.ts                  # Server entry: migration → listen
 ├── middlewares/
 │   └── clerkProxyMiddleware.ts  # Proxy Clerk FAPI trong production
 ├── lib/
+│   ├── clerk-admin.ts        # requireClerkAdmin (publicMetadata.role check)
+│   ├── clerk-user.ts         # requireClerkUser (userId ownership guard)
+│   ├── cors-config.ts        # CORS allow-list builder
+│   ├── logger.ts             # Pino logger (redact auth headers)
 │   ├── migrate.ts            # Auto-migration khi server khởi động
-│   ├── server-config.ts      # Cấu hình admin
-│   └── rate-limit.ts         # Rate limit theo IP
+│   ├── rate-limit.ts         # Atomic rate limit (pg_advisory_xact_lock)
+│   └── server-config.ts      # Cấu hình admin (server_config table)
 └── routes/
+    ├── health.ts             # /healthz (public) + /admin/healthz (admin)
     ├── readings.ts           # CRUD lá số + share token
     ├── mysticism/            # SSE AI interpret
-    ├── openai/               # CRUD hội thoại AI
-    ├── config/               # /api/config/public
-    └── admin/                # /api/admin/*
+    ├── openai/               # CRUD hội thoại AI (user-scoped)
+    └── config/               # /api/config/public + /api/admin/config
 
 docker/
 └── nginx.conf                # Static files + proxy /api/* (SSE ready)

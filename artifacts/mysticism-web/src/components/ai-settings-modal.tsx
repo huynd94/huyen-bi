@@ -55,8 +55,6 @@ export function AISettingsModal({ open, onClose }: Props) {
   const [showAdminSection, setShowAdminSection] = useState(false);
 
   // Admin state
-  const [adminPassword, setAdminPassword] = useState("");
-  const [showAdminPw, setShowAdminPw] = useState(false);
   const [adminApiKey, setAdminApiKey] = useState("");
   const [showAdminApiKey, setShowAdminApiKey] = useState(false);
   const [adminProvider, setAdminProvider] = useState(serverInfo?.provider ?? "openai");
@@ -81,14 +79,12 @@ export function AISettingsModal({ open, onClose }: Props) {
   const currentGeminiModel = local.geminiModel || DEFAULT_GEMINI_MODEL;
 
   const handleAdminSave = async () => {
-    if (!adminPassword) { setAdminMsg("Nhập mật khẩu admin."); setAdminStatus("error"); return; }
     setAdminStatus("loading"); setAdminMsg("");
     try {
       const res = await fetch("/api/admin/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          adminPassword,
           provider: adminProvider,
           apiKey: adminApiKey,
           model: adminModel,
@@ -99,7 +95,7 @@ export function AISettingsModal({ open, onClose }: Props) {
       const data = await res.json();
       if (res.ok) {
         setAdminStatus("success");
-        setAdminMsg(serverInfo?.adminConfigured ? "Cập nhật thành công." : "Cấu hình thành công. Mật khẩu admin đã được đặt.");
+        setAdminMsg("Cập nhật thành công.");
         setAdminApiKey("");
         await reloadServerInfo();
       } else {
@@ -225,21 +221,8 @@ export function AISettingsModal({ open, onClose }: Props) {
 
             {showAdminSection && (
               <div className="px-4 pb-4 space-y-4 border-t border-border/20 pt-4">
-                {!serverInfo?.adminConfigured && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2 text-xs text-yellow-300">
-                    Chưa có admin. Lần đầu nhập mật khẩu sẽ tự động đặt làm mật khẩu admin.
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-foreground/70">Mật khẩu Admin</Label>
-                  <div className="relative">
-                    <Input type={showAdminPw ? "text" : "password"} value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)} placeholder="Mật khẩu admin..."
-                      className="bg-background/50 border-border/50 text-sm pr-16" />
-                    <button type="button" onClick={() => setShowAdminPw((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">{showAdminPw ? "Ẩn" : "Hiện"}</button>
-                  </div>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+                  Chỉ tài khoản Clerk có <code className="text-primary">publicMetadata.role = admin</code> mới được lưu cấu hình hệ thống.
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">

@@ -8,8 +8,10 @@
 | CPU | 1 vCPU |
 | Ổ cứng | 10 GB |
 | HĐH | Ubuntu 22.04 / Debian 12 / CentOS 9 |
-| Node.js | 20+ (nếu cài thủ công) |
+| Node.js | 22+ (bắt buộc — pnpm 10 cần Node ≥22.13) |
 | Docker | 24+ (nếu dùng Docker) |
+
+> **Quan trọng:** Repo pin `pnpm@10.32.0` qua field `packageManager` trong `package.json`. Dùng `corepack enable` để Node tự quản lý phiên bản pnpm — không cần `npm install -g pnpm`.
 
 ---
 
@@ -23,7 +25,34 @@
    - `Secret key` → bắt đầu bằng `sk_live_...`
 5. Trong phần **Domains**, thêm domain của VPS của bạn (ví dụ `huyenbi.com`)
 
-> **Lưu ý:** Nếu không cần tài khoản người dùng, có thể để trống hai biến Clerk — app vẫn chạy bình thường nhưng không có tính năng lưu lá số.
+> **Lưu ý:** Nếu không cần tài khoản người dùng, có thể để trống hai biến Clerk — app vẫn chạy bình thường nhưng không có tính năng lưu lá số và AI chat.
+
+---
+
+## Bước 2 — Cấp quyền Admin (sau khi deploy)
+
+Quyền admin dựa trên **Clerk public metadata** — không có mật khẩu admin trong database.
+
+1. Đăng ký / đăng nhập tại app đã deploy (`/sign-up`).
+2. Vào [dashboard.clerk.com](https://dashboard.clerk.com) → application → **Users** → tìm email → click vào.
+3. Tab **Metadata** → **Public metadata** → **Edit** → đặt:
+   ```json
+   {
+     "role": "admin"
+   }
+   ```
+4. **Save**. Không cần logout/login lại.
+
+Hoặc dùng API:
+
+```bash
+curl -X PATCH "https://api.clerk.com/v1/users/<USER_ID>/metadata" \
+  -H "Authorization: Bearer $CLERK_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"public_metadata": {"role": "admin"}}'
+```
+
+> Fresh deploy KHÔNG có admin mặc định — phải cấp thủ công. Điều này ngăn người lạ chiếm quyền admin trên deploy mới.
 
 ---
 
@@ -51,10 +80,16 @@ nano .env
 Điền đầy đủ vào `.env`:
 
 ```dotenv
+# Bắt buộc
 POSTGRES_PASSWORD=mat_khau_manh_cua_ban
+
+# Clerk (bỏ trống = tắt tính năng tài khoản)
 CLERK_SECRET_KEY=sk_live_...
 VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
+
+# Tuỳ chọn
 WEB_PORT=80
+# CORS_ALLOWED_ORIGINS=https://huyenbi.io.vn,https://preview.huyenbi.io.vn
 ```
 
 ### Build và chạy
@@ -64,6 +99,7 @@ docker compose up --build -d
 ```
 
 > Lần đầu build mất 3–5 phút do tải dependencies và compile TypeScript.
+> Dockerfile dùng `node:22-slim` và corepack tự kéo pnpm theo `packageManager` pin.
 
 ### Kiểm tra
 
@@ -71,6 +107,10 @@ docker compose up --build -d
 docker compose ps          # Xem trạng thái 3 container
 docker compose logs api    # Log của backend
 docker compose logs web    # Log của nginx
+
+# Health check
+curl http://localhost/api/healthz
+# Kỳ vọng: {"status":"ok"}
 ```
 
 Mở trình duyệt → `http://IP_VPS_CUA_BAN`
@@ -78,20 +118,24 @@ Mở trình duyệt → `http://IP_VPS_CUA_BAN`
 ### Cập nhật khi có code mới
 
 ```bash
-git pull
+git pull origin main
 docker compose up --build -d
 ```
+
+> Database schema tự động migrate khi API server khởi động — không cần chạy migration thủ công.
 
 ---
 
 ## Phương án B — Cài thủ công trên VPS (không dùng Docker)
 
-### 1. Cài Node.js 22 và pnpm
+### 1. Cài Node.js 22 và corepack
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
-sudo npm install -g pnpm@latest
+
+# Bật corepack — nó sẽ tự dùng pnpm@10.32.0 theo packageManager trong package.json
+sudo corepack enable
 ```
 
 ### 2. Cài PostgreSQL
@@ -108,32 +152,38 @@ sudo -u postgres psql -c "CREATE DATABASE huyenbi OWNER huyenbi;"
 ```bash
 git clone https://github.com/huynd94/huyen-bi.git /opt/huyen-bi
 cd /opt/huyen-bi
-pnpm install --no-frozen-lockfile
+
+# --frozen-lockfile đảm bảo build deterministic
+corepack pnpm install --frozen-lockfile
 ```
 
 ### 4. Biến môi trường cho backend
 
 ```bash
-cat > /opt/huyen-bi/artifacts/api-server/.env.production << 'EOF'
+cat > /opt/huyen-bi/.env.api << 'EOF'
 NODE_ENV=production
 PORT=3001
 DATABASE_URL=postgresql://huyenbi:mat_khau_manh@localhost:5432/huyenbi
 CLERK_SECRET_KEY=sk_live_...
+CLERK_PUBLISHABLE_KEY=pk_live_...
+TRUST_PROXY=loopback
 EOF
 ```
+
+> `TRUST_PROXY=loopback` cần thiết khi Nginx chạy cùng máy — nếu không, rate limiter sẽ thấy mọi request đến từ `127.0.0.1`.
 
 ### 5. Build backend
 
 ```bash
 cd /opt/huyen-bi
-pnpm --filter @workspace/api-server run build
+corepack pnpm --filter @workspace/api-server run build
 ```
 
 ### 6. Build frontend
 
 ```bash
 PORT=3000 BASE_PATH=/ VITE_CLERK_PUBLISHABLE_KEY=pk_live_... NODE_ENV=production \
-  pnpm --filter @workspace/mysticism-web run build
+  corepack pnpm --filter @workspace/mysticism-web run build
 # Static files xuất ra: artifacts/mysticism-web/dist/public/
 ```
 
@@ -144,8 +194,8 @@ sudo npm install -g pm2
 
 pm2 start /opt/huyen-bi/artifacts/api-server/dist/index.mjs \
   --name huyen-bi-api \
-  --env-file /opt/huyen-bi/artifacts/api-server/.env.production \
-  --node-args="--enable-source-maps"
+  --node-args="--enable-source-maps" \
+  --env-file /opt/huyen-bi/.env.api
 
 pm2 startup   # Tự khởi động cùng hệ thống
 pm2 save
@@ -187,30 +237,52 @@ Sau khi có domain thật và HTTPS, vào Clerk Dashboard:
 2. Làm theo hướng dẫn verify domain (thêm DNS TXT record)
 3. Clerk sẽ tự động cấp production instance
 
+> **Clerk proxy:** Trong production, request xác thực Clerk đi qua `/api/__clerk` trên server của bạn (Express tự proxy đến `clerk.dev`). Nginx đã cấu hình sẵn, không cần thêm gì.
+
 ---
 
 ## Cập nhật AI Keys sau khi deploy
 
 Keys AI (OpenAI / Gemini) **không** cần điền trong `.env`. Thay vào đó:
 
-1. Mở app trên trình duyệt
-2. Navbar → nút **AI (0)** → **Cài đặt Admin**
-3. Điền API key → Lưu
+1. Đăng nhập bằng tài khoản đã được cấp `role: "admin"` (xem Bước 2 ở trên).
+2. Navbar → nút **AI** → **Cài đặt AI** → cuộn xuống **Cài đặt Admin (Key hệ thống)**.
+3. Chọn Provider, nhập API Key, chọn Model, đặt rate limit.
+4. Nhấn **Lưu cấu hình Admin**.
+
+Nếu bị `403 Forbidden`: kiểm tra Clerk Dashboard → user → Public metadata phải có `{"role": "admin"}`.
 
 ---
 
 ## Kiểm tra sức khoẻ hệ thống
 
 ```bash
-# API server
+# Public health (luôn trả {"status":"ok"})
 curl http://localhost:3001/api/healthz
 
-# Readings API (cần đăng nhập để test đầy đủ)
-curl http://localhost:3001/api/readings
+# Admin health (cần auth — dùng trình duyệt khi đã đăng nhập admin)
+# GET /api/admin/healthz → trả DB status, env info, Clerk key presence
 
 # Qua nginx
 curl http://localhost/api/healthz
 ```
+
+---
+
+## Biến môi trường tham khảo
+
+| Biến | Bắt buộc | Mô tả |
+|------|----------|-------|
+| `DATABASE_URL` | Yes | Postgres connection string |
+| `PORT` | Yes | Cổng API server (thường `3001`) |
+| `CLERK_SECRET_KEY` | No* | Backend auth |
+| `CLERK_PUBLISHABLE_KEY` | No* | Backend Clerk middleware |
+| `VITE_CLERK_PUBLISHABLE_KEY` | No* | Frontend build (bake vào bundle) |
+| `CORS_ALLOWED_ORIGINS` | No | Thêm origin ngoài default `https://huyenbi.io.vn` |
+| `TRUST_PROXY` | No | `loopback` / số hop / CIDR khi có reverse proxy |
+| `LOG_LEVEL` | No | Mặc định `info` |
+
+\* Thiếu Clerk keys = tắt tính năng tài khoản, 15 module tra cứu vẫn chạy.
 
 ---
 
@@ -219,11 +291,13 @@ curl http://localhost/api/healthz
 ```
 /opt/huyen-bi/
 ├── artifacts/
-│   ├── api-server/dist/index.mjs     # Backend đã build
+│   ├── api-server/dist/index.mjs     # Backend đã build (esbuild bundle)
 │   └── mysticism-web/dist/public/    # Frontend đã build (static)
 ├── docker-compose.yml
-├── Dockerfile.api
-├── Dockerfile.web
+├── Dockerfile.api                    # node:22-slim, corepack pnpm
+├── Dockerfile.web                    # node:22-slim → nginx:1.27-alpine
 ├── docker/nginx.conf
-└── .env
+├── .env                              # Biến môi trường (KHÔNG commit)
+├── .env.api                          # Env riêng cho PM2 (VPS thủ công)
+└── AUDIT_PLAN_PROGRESS.md            # Nhật ký audit & hardening
 ```

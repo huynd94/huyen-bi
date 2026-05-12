@@ -1,13 +1,24 @@
 import { Router } from "express";
-import { createHash } from "crypto";
+import { z } from "zod";
 import { getConfig, setConfig, getManyConfig } from "../../lib/server-config";
+import { requireClerkAdmin } from "../../lib/clerk-admin";
 import { pool } from "@workspace/db";
 
 const router = Router();
 
-function hashPw(password: string): string {
-  return createHash("sha256").update("huyen-bi:" + password).digest("hex");
-}
+// Input limits on admin settings prevent oversized payloads from ever reaching
+// server_config. API keys and model names are short identifiers; rate limits
+// are small positive integers. Anything larger is either a mistake or an abuse
+// attempt, so reject at the boundary.
+const AdminConfigBody = z
+  .object({
+    provider: z.enum(["openai", "gemini", "server"]).optional(),
+    apiKey: z.string().max(500).optional(),
+    model: z.string().min(1).max(200).optional(),
+    rateLimitPerHour: z.number().int().min(0).max(1_000_000).optional(),
+    rateLimitPerDay: z.number().int().min(0).max(10_000_000).optional(),
+  })
+  .strict();
 
 // GET /api/config/public — thông tin công khai (không lộ API key)
 router.get("/config/public", async (_req, res) => {
@@ -18,7 +29,6 @@ router.get("/config/public", async (_req, res) => {
       "ai_api_key",
       "rate_limit_per_hour",
       "rate_limit_per_day",
-      "admin_password_hash",
     ]);
 
     res.json({
@@ -27,33 +37,21 @@ router.get("/config/public", async (_req, res) => {
       model: cfg.ai_model ?? "gpt-5.4-nano",
       rateLimitPerHour: parseInt(cfg.rate_limit_per_hour ?? "20", 10),
       rateLimitPerDay: parseInt(cfg.rate_limit_per_day ?? "100", 10),
-      adminConfigured: !!cfg.admin_password_hash,
+      adminConfigured: !!(process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY),
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/admin/config — cập nhật cấu hình (cần mật khẩu admin)
-router.post("/admin/config", async (req, res) => {
-  const { adminPassword, provider, apiKey, model, rateLimitPerHour, rateLimitPerDay, newAdminPassword } = req.body;
-
-  if (!adminPassword) {
-    res.status(400).json({ error: "Cần nhập mật khẩu admin" });
+// POST /api/admin/config — cập nhật cấu hình (cần Clerk admin claim)
+router.post("/admin/config", requireClerkAdmin, async (req, res) => {
+  const parsed = AdminConfigBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
     return;
   }
-
-  const storedHash = await getConfig("admin_password_hash");
-
-  if (storedHash) {
-    if (hashPw(adminPassword) !== storedHash) {
-      res.status(401).json({ error: "Mật khẩu admin không đúng" });
-      return;
-    }
-  } else {
-    // Lần đầu tiên — tự động đặt mật khẩu
-    await setConfig("admin_password_hash", hashPw(adminPassword));
-  }
+  const { provider, apiKey, model, rateLimitPerHour, rateLimitPerDay } = parsed.data;
 
   // Cập nhật các giá trị được cung cấp
   const updates: Promise<void>[] = [];
@@ -65,27 +63,13 @@ router.post("/admin/config", async (req, res) => {
     updates.push(setConfig("rate_limit_per_hour", String(rateLimitPerHour)));
   if (rateLimitPerDay !== undefined)
     updates.push(setConfig("rate_limit_per_day", String(rateLimitPerDay)));
-  if (newAdminPassword)
-    updates.push(setConfig("admin_password_hash", hashPw(newAdminPassword)));
 
   await Promise.all(updates);
   res.json({ success: true });
 });
 
-// GET /api/admin/usage — thống kê lượt dùng (cần mật khẩu admin)
-router.get("/admin/usage", async (req, res) => {
-  const password = req.headers["x-admin-password"] as string;
-  if (!password) {
-    res.status(401).json({ error: "Cần mật khẩu admin" });
-    return;
-  }
-
-  const storedHash = await getConfig("admin_password_hash");
-  if (!storedHash || hashPw(password) !== storedHash) {
-    res.status(401).json({ error: "Mật khẩu admin không đúng" });
-    return;
-  }
-
+// GET /api/admin/usage — thống kê lượt dùng (cần Clerk admin claim)
+router.get("/admin/usage", requireClerkAdmin, async (_req, res) => {
   const client = await pool.connect();
   try {
     const [hourRes, dayRes, totalRes] = await Promise.all([

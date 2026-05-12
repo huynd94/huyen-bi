@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import React, { useMemo, type ReactElement, type ReactNode } from "react";
 
 interface MarkdownRendererProps {
   content: string;
@@ -11,12 +11,38 @@ interface Token {
   items?: string[];
 }
 
-function parseInline(text: string): string {
-  return text
-    .replace(/\*\*\*(.+?)\*\*\*/g, "<strong><em>$1</em></strong>")
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/`(.+?)`/g, "<code>$1</code>");
+function parseInline(text: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  const tokenPattern = /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|`.+?`)/g;
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(tokenPattern)) {
+    const token = match[0];
+    const index = match.index ?? 0;
+
+    if (index > lastIndex) {
+      nodes.push(text.slice(lastIndex, index));
+    }
+
+    const key = nodes.length;
+    if (token.startsWith("***") && token.endsWith("***")) {
+      nodes.push(<strong key={key}><em>{token.slice(3, -3)}</em></strong>);
+    } else if (token.startsWith("**") && token.endsWith("**")) {
+      nodes.push(<strong key={key}>{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("*") && token.endsWith("*")) {
+      nodes.push(<em key={key}>{token.slice(1, -1)}</em>);
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      nodes.push(<code key={key}>{token.slice(1, -1)}</code>);
+    }
+
+    lastIndex = index + token.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
 }
 
 function tokenize(markdown: string): Token[] {
@@ -73,31 +99,34 @@ function tokenize(markdown: string): Token[] {
   return tokens;
 }
 
-function renderToken(token: Token, idx: number): JSX.Element | null {
+function renderToken(token: Token, idx: number): ReactElement | null {
   switch (token.type) {
     case "h1":
       return (
         <h1
           key={idx}
           className="text-2xl font-serif font-bold text-primary mt-6 mb-3 leading-snug border-b border-primary/20 pb-2"
-          dangerouslySetInnerHTML={{ __html: parseInline(token.content) }}
-        />
+        >
+          {parseInline(token.content)}
+        </h1>
       );
     case "h2":
       return (
         <h2
           key={idx}
           className="text-xl font-serif font-semibold text-primary/90 mt-5 mb-2 leading-snug"
-          dangerouslySetInnerHTML={{ __html: parseInline(token.content) }}
-        />
+        >
+          {parseInline(token.content)}
+        </h2>
       );
     case "h3":
       return (
         <h3
           key={idx}
           className="text-base font-semibold text-primary/80 mt-4 mb-1.5 uppercase tracking-wider"
-          dangerouslySetInnerHTML={{ __html: parseInline(token.content) }}
-        />
+        >
+          {parseInline(token.content)}
+        </h3>
       );
     case "hr":
       return (
@@ -112,8 +141,9 @@ function renderToken(token: Token, idx: number): JSX.Element | null {
         <blockquote
           key={idx}
           className="border-l-2 border-primary/50 pl-4 my-3 italic text-foreground/75 bg-primary/5 py-2 pr-3 rounded-r-md"
-          dangerouslySetInnerHTML={{ __html: parseInline(token.content) }}
-        />
+        >
+          {parseInline(token.content)}
+        </blockquote>
       );
     case "ul":
       return (
@@ -121,7 +151,7 @@ function renderToken(token: Token, idx: number): JSX.Element | null {
           {(token.items || []).map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-foreground/85 leading-relaxed">
               <span className="mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full bg-primary/60" />
-              <span dangerouslySetInnerHTML={{ __html: parseInline(item) }} />
+              <span>{parseInline(item)}</span>
             </li>
           ))}
         </ul>
@@ -134,7 +164,7 @@ function renderToken(token: Token, idx: number): JSX.Element | null {
               <span className="shrink-0 w-5 h-5 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-xs font-semibold text-primary mt-0.5">
                 {i + 1}
               </span>
-              <span dangerouslySetInnerHTML={{ __html: parseInline(item) }} />
+              <span>{parseInline(item)}</span>
             </li>
           ))}
         </ol>
@@ -144,8 +174,9 @@ function renderToken(token: Token, idx: number): JSX.Element | null {
         <p
           key={idx}
           className="text-foreground/85 leading-relaxed my-2"
-          dangerouslySetInnerHTML={{ __html: parseInline(token.content) }}
-        />
+        >
+          {parseInline(token.content)}
+        </p>
       );
     case "empty":
       return null;

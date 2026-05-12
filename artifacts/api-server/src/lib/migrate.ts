@@ -7,6 +7,12 @@ CREATE TABLE IF NOT EXISTS conversations (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Ownership (added in Task 3). Nullable so legacy rows stay in the table but are
+-- unreachable — user-scoped queries always require a match on user_id.
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS user_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_conversations_user
+  ON conversations(user_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS messages (
   id              SERIAL PRIMARY KEY,
   conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,

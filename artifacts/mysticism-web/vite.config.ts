@@ -17,7 +17,7 @@ if (!isBuild) {
   }
 }
 
-const basePath = process.env.BASE_PATH;
+const basePath = process.env.BASE_PATH ?? (isBuild ? "/" : undefined);
 
 if (!basePath) {
   throw new Error(
