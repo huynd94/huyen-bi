@@ -415,6 +415,16 @@ Platform health probes (nginx, Kubernetes, uptime monitors) expect a liveness en
 
 All planned remediation tasks are complete. No more tasks queued.
 
+### Post-Audit: Dockerfile Node version fix (2026-05-12)
+
+**Problem:** `Dockerfile.api` and `Dockerfile.web` used `node:20-slim` + `corepack prepare pnpm@latest`. When pnpm 11 released (requires `node:sqlite` → Node ≥22.13), Docker builds broke with `ERR_UNKNOWN_BUILTIN_MODULE`. Additionally, `minimumReleaseAge: 1440` in `pnpm-workspace.yaml` blocked transitive deps missing the `time` field in npm registry metadata.
+
+**Fix applied:**
+1. Both Dockerfiles changed to `FROM node:22-slim`.
+2. Removed `corepack prepare pnpm@latest --activate` — corepack now reads `packageManager` from `package.json`.
+3. Added `"packageManager": "pnpm@10.32.0"` to root `package.json` for deterministic builds.
+4. Documentation (`README.md`, `DEPLOY.md`) updated to reflect Node 22 requirement, corepack usage, `--frozen-lockfile`, admin via Clerk metadata, `TRUST_PROXY`, CORS config, and new API endpoints.
+
 ## Current Useful Commands
 
 ### Regression tests
