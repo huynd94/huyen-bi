@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getConfig, setConfig, getManyConfig } from "../../lib/server-config";
 import { requireClerkAdmin } from "../../lib/clerk-admin";
 import { pool } from "@workspace/db";
+import { DEFAULT_OPENAI_MODEL } from "../../lib/ai-constants";
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.get("/config/public", async (_req, res) => {
     res.json({
       serverKeyConfigured: !!cfg.ai_api_key,
       provider: cfg.ai_provider ?? "openai",
-      model: cfg.ai_model ?? "gpt-5.4-nano",
+      model: cfg.ai_model ?? DEFAULT_OPENAI_MODEL,
       rateLimitPerHour: parseInt(cfg.rate_limit_per_hour ?? "20", 10),
       rateLimitPerDay: parseInt(cfg.rate_limit_per_day ?? "100", 10),
       adminConfigured: !!(process.env.CLERK_SECRET_KEY && process.env.CLERK_PUBLISHABLE_KEY),

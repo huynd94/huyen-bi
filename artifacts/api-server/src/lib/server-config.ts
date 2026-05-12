@@ -1,8 +1,9 @@
 import { pool } from "@workspace/db";
+import { DEFAULT_OPENAI_MODEL } from "./ai-constants";
 
 const DEFAULTS: Record<string, string> = {
   ai_provider: "openai",
-  ai_model: "gpt-5.4-nano",
+  ai_model: DEFAULT_OPENAI_MODEL,
   rate_limit_per_hour: "20",
   rate_limit_per_day: "100",
 };

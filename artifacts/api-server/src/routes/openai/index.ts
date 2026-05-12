@@ -7,13 +7,13 @@ import { CreateOpenaiConversationBody, SendOpenaiMessageBody } from "@workspace/
 import { requireClerkUser, type AuthenticatedRequest } from "../../lib/clerk-user";
 import { getManyConfig } from "../../lib/server-config";
 import { checkAndLogUsage, getClientIP } from "../../lib/rate-limit";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL } from "../../lib/ai-constants";
 
 const router = Router();
 
 const SYSTEM_PROMPT = `Bạn là một nhà huyền học uyên bác, am tường Thần số học (Numerology), Bát tự Tứ Trụ, Kinh Dịch (I Ching), và các phép huyền bí phương Đông và phương Tây. Bạn trả lời bằng tiếng Việt, với giọng văn sâu sắc, thấu đáo nhưng vẫn gần gũi. Hãy trả lời như một người thầy thông thái đang khai sáng cho người học trò.`;
 
-const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
-const DEFAULT_GEMINI_MODEL = "gemini-3.0-flash";
+
 
 // All conversation routes require an authenticated Clerk user. `requireClerkUser`
 // attaches the resolved userId onto the request for ownership scoping.
@@ -116,6 +116,11 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // Create AbortController to signal cancellation on client disconnect
+  const controller = new AbortController();
+  const onClose = () => { controller.abort(); };
+  req.on("close", onClose);
+
   const provider = (req.headers["x-ai-provider"] as string) || "openai";
   const userApiKey = (req.headers["x-ai-key"] as string) || "";
   const userModel = (req.headers["x-ai-model"] as string) || "";
@@ -127,6 +132,7 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
   ];
 
   let fullResponse = "";
+  let streamCompleted = false;
 
   try {
     // Xác định API key sẽ dùng
@@ -139,10 +145,13 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       const cfg = await getManyConfig(["ai_api_key", "ai_provider", "ai_model"]);
       if (!cfg.ai_api_key) {
         const msg = "Hệ thống chưa cấu hình API key. Vui lòng nhập API key của bạn trong phần Cài đặt AI, hoặc liên hệ quản trị viên để cấu hình key hệ thống.";
-        res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
-        fullResponse = msg;
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
+          fullResponse = msg;
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+        req.off("close", onClose);
         await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
         return;
       }
@@ -158,10 +167,13 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
       const rl = await checkAndLogUsage(ip);
       if (!rl.allowed) {
         const msg = `Bạn đã đạt giới hạn sử dụng AI. Giới hạn: ${rl.limitPerHour} lượt/giờ, ${rl.limitPerDay} lượt/ngày. Vui lòng thử lại sau hoặc nhập API key riêng trong phần Cài đặt AI.`;
-        res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
-        fullResponse = msg;
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content: msg })}\n\n`);
+          fullResponse = msg;
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+        req.off("close", onClose);
         await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
         return;
       }
@@ -176,31 +188,64 @@ router.post("/openai/conversations/:id/messages", async (req, res) => {
         .slice(0, -1)
         .map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
       const chat = modelWithSystem.startChat({ history });
-      const result = await chat.sendMessageStream(parsed.data.content);
+      const result = await chat.sendMessageStream(parsed.data.content, { signal: controller.signal });
       for await (const chunk of result.stream) {
+        if (controller.signal.aborted) break;
         const text = chunk.text();
-        if (text) { fullResponse += text; res.write(`data: ${JSON.stringify({ content: text })}\n\n`); }
+        if (text) {
+          fullResponse += text;
+          if (!res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+          }
+        }
       }
     } else {
       const model = resolvedModel || DEFAULT_OPENAI_MODEL;
       const client = new OpenAI({ apiKey: resolvedKey });
       const stream = await client.chat.completions.create({
         model, max_completion_tokens: 8192, messages: chatMessages, stream: true,
-      });
+      }, { signal: controller.signal });
       for await (const chunk of stream) {
+        if (controller.signal.aborted) break;
         const content = chunk.choices[0]?.delta?.content;
-        if (content) { fullResponse += content; res.write(`data: ${JSON.stringify({ content })}\n\n`); }
+        if (content) {
+          fullResponse += content;
+          if (!res.writableEnded) {
+            res.write(`data: ${JSON.stringify({ content })}\n\n`);
+          }
+        }
       }
     }
+
+    // Stream completed successfully (not aborted)
+    streamCompleted = true;
   } catch (err: any) {
+    // If aborted due to client disconnect, just stop — no need to write error
+    if (controller.signal.aborted) {
+      req.off("close", onClose);
+      return;
+    }
     const msg = `Lỗi kết nối AI: ${err?.message || "Lỗi không xác định"}`;
-    res.write(`data: ${JSON.stringify({ content: `\n\n*${msg}*` })}\n\n`);
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ content: `\n\n*${msg}*` })}\n\n`);
+    }
     fullResponse += `\n\n*${msg}*`;
+    // Still save the error response to maintain conversation history
+    streamCompleted = true;
   }
 
-  await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
-  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  res.end();
+  // Remove close listener after normal completion
+  req.off("close", onClose);
+
+  // Only save assistant message if stream completed successfully (not aborted)
+  if (streamCompleted) {
+    await db.insert(messagesTable).values({ conversationId: id, role: "assistant", content: fullResponse });
+  }
+
+  if (!res.writableEnded) {
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  }
 });
 
 export default router;

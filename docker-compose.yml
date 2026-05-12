@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ============================================================
 # Huyền Bí — Docker Compose
 # Gồm 3 service: postgres, api-server (Express), web (Nginx)

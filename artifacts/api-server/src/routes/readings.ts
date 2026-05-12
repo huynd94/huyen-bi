@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getAuth } from "@clerk/express";
 import { pool } from "@workspace/db";
 import crypto from "crypto";
+import { requireClerkUser, type AuthenticatedRequest } from "../lib/clerk-user";
 
 const router = Router();
 
@@ -36,15 +36,7 @@ const PatchReadingBody = z
     message: "at least one of `title` or `notes` must be provided",
   });
 
-function requireAuth(req: any, res: any, next: any) {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  req.userId = userId;
-  next();
-}
-
-router.get("/readings", requireAuth, async (req: any, res) => {
+router.get("/readings", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, module, title, input_data, result_data, notes, created_at, updated_at
@@ -57,7 +49,7 @@ router.get("/readings", requireAuth, async (req: any, res) => {
   }
 });
 
-router.post("/readings", requireAuth, async (req: any, res) => {
+router.post("/readings", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   const parsed = CreateReadingBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
@@ -77,7 +69,7 @@ router.post("/readings", requireAuth, async (req: any, res) => {
   }
 });
 
-router.patch("/readings/:id", requireAuth, async (req: any, res) => {
+router.patch("/readings/:id", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   const parsed = PatchReadingBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
@@ -100,7 +92,7 @@ router.patch("/readings/:id", requireAuth, async (req: any, res) => {
   }
 });
 
-router.delete("/readings/:id", requireAuth, async (req: any, res) => {
+router.delete("/readings/:id", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   try {
     const { rowCount } = await pool.query(
       `DELETE FROM saved_readings WHERE id = $1 AND user_id = $2`,
@@ -116,7 +108,7 @@ router.delete("/readings/:id", requireAuth, async (req: any, res) => {
   }
 });
 
-router.post("/readings/:id/share", requireAuth, async (req: any, res) => {
+router.post("/readings/:id/share", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   try {
     const { rows: check } = await pool.query(
       `SELECT id FROM saved_readings WHERE id = $1 AND user_id = $2`,

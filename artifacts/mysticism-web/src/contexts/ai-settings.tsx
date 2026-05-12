@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL } from "../lib/ai-constants";
+
+export { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL };
 
 export type AIProvider = "server" | "openai" | "gemini";
 
@@ -30,9 +33,6 @@ interface AISettingsContextValue {
 }
 
 const STORAGE_KEY = "huyen-bi-ai-settings";
-
-export const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
-export const DEFAULT_GEMINI_MODEL = "gemini-3.0-flash";
 
 const defaultSettings: AISettings = {
   provider: "server",
