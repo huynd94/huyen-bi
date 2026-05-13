@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { readSseStream } from '@/lib/sse-stream';
+import { UNAUTHENTICATED_AI_MESSAGE } from '@/lib/ai-auth-messages';
 
 export interface SSEHeaders {
   provider?: string;
@@ -37,6 +38,15 @@ export function useSSEChat(sseHeaders?: SSEHeaders) {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setMessages((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.role === 'assistant') last.content = UNAUTHENTICATED_AI_MESSAGE;
+            return copy;
+          });
+          return;
+        }
         const err = await response.json().catch(() => ({ error: 'Lỗi kết nối' }));
         setMessages((prev) => {
           const copy = [...prev];
