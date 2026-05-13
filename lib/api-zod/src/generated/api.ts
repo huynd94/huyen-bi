@@ -16,6 +16,37 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * Returns server configuration safe to expose to anonymous callers. The `adminConfigured` field is only present when the caller is authenticated as an admin (Clerk `publicMetadata.role === "admin"`); it is omitted entirely for anonymous and non-admin callers to avoid leaking deployment provisioning state.
+
+ * @summary Get public (non-secret) runtime configuration
+ */
+export const GetPublicConfigResponse = zod
+  .object({
+    serverKeyConfigured: zod
+      .boolean()
+      .describe("Whether the server has an AI API key configured."),
+    provider: zod
+      .string()
+      .describe("Configured AI provider (e.g. `openai`, `gemini`, `server`)."),
+    model: zod.string().describe("Configured AI model identifier."),
+    rateLimitPerHour: zod
+      .number()
+      .describe("Rate limit per hour when using the server-managed AI key."),
+    rateLimitPerDay: zod
+      .number()
+      .describe("Rate limit per day when using the server-managed AI key."),
+    adminConfigured: zod
+      .boolean()
+      .nullish()
+      .describe(
+        "True when Clerk admin credentials are configured. Present only for admin callers; omitted for anonymous and non-admin callers.\n",
+      ),
+  })
+  .describe(
+    "Public server configuration. `adminConfigured` is present only when the caller is an authenticated admin, and is omitted entirely for anonymous and non-admin callers.\n",
+  );
+
+/**
  * @summary List all conversations
  */
 export const ListOpenaiConversationsResponseItem = zod.object({

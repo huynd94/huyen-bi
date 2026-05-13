@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getAuth } from "@clerk/express";
 import { pool } from "@workspace/db";
 import crypto from "crypto";
+import { requireClerkUser, type AuthenticatedRequest } from "../lib/clerk-user";
+import { parsePositiveIntParam } from "../lib/param-validators";
 
 const router = Router();
 
@@ -36,15 +37,7 @@ const PatchReadingBody = z
     message: "at least one of `title` or `notes` must be provided",
   });
 
-function requireAuth(req: any, res: any, next: any) {
-  const auth = getAuth(req);
-  const userId = auth?.userId;
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-  req.userId = userId;
-  next();
-}
-
-router.get("/readings", requireAuth, async (req: any, res) => {
+router.get("/readings", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT id, module, title, input_data, result_data, notes, created_at, updated_at
@@ -57,7 +50,7 @@ router.get("/readings", requireAuth, async (req: any, res) => {
   }
 });
 
-router.post("/readings", requireAuth, async (req: any, res) => {
+router.post("/readings", requireClerkUser, async (req: AuthenticatedRequest, res) => {
   const parsed = CreateReadingBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
@@ -77,7 +70,12 @@ router.post("/readings", requireAuth, async (req: any, res) => {
   }
 });
 
-router.patch("/readings/:id", requireAuth, async (req: any, res) => {
+router.patch("/readings/:id", requireClerkUser, async (req: AuthenticatedRequest, res) => {
+  const id = parsePositiveIntParam(req.params.id);
+  if (id === null) {
+    res.status(400).json({ error: "Invalid reading id" });
+    return;
+  }
   const parsed = PatchReadingBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid body", issues: parsed.error.issues });
@@ -88,7 +86,7 @@ router.patch("/readings/:id", requireAuth, async (req: any, res) => {
     const { rows } = await pool.query(
       `UPDATE saved_readings SET notes = COALESCE($1, notes), title = COALESCE($2, title), updated_at = NOW()
        WHERE id = $3 AND user_id = $4 RETURNING *`,
-      [notes, title, req.params.id, req.userId],
+      [notes, title, id, req.userId],
     );
     if (!rows.length) {
       res.status(404).json({ error: "Không tìm thấy" });
@@ -100,11 +98,16 @@ router.patch("/readings/:id", requireAuth, async (req: any, res) => {
   }
 });
 
-router.delete("/readings/:id", requireAuth, async (req: any, res) => {
+router.delete("/readings/:id", requireClerkUser, async (req: AuthenticatedRequest, res) => {
+  const id = parsePositiveIntParam(req.params.id);
+  if (id === null) {
+    res.status(400).json({ error: "Invalid reading id" });
+    return;
+  }
   try {
     const { rowCount } = await pool.query(
       `DELETE FROM saved_readings WHERE id = $1 AND user_id = $2`,
-      [req.params.id, req.userId],
+      [id, req.userId],
     );
     if (!rowCount) {
       res.status(404).json({ error: "Không tìm thấy" });
@@ -116,25 +119,69 @@ router.delete("/readings/:id", requireAuth, async (req: any, res) => {
   }
 });
 
-router.post("/readings/:id/share", requireAuth, async (req: any, res) => {
+router.post("/readings/:id/share", requireClerkUser, async (req: AuthenticatedRequest, res) => {
+  const id = parsePositiveIntParam(req.params.id);
+  if (id === null) {
+    res.status(400).json({ error: "Invalid reading id" });
+    return;
+  }
   try {
+    // Ownership check runs BEFORE the transaction — it is a read-only guard
+    // and requires no serialization with concurrent share calls.
     const { rows: check } = await pool.query(
       `SELECT id FROM saved_readings WHERE id = $1 AND user_id = $2`,
-      [req.params.id, req.userId],
+      [id, req.userId],
     );
     if (!check.length) {
       res.status(404).json({ error: "Không tìm thấy" });
       return;
     }
 
-    const token = crypto.randomBytes(12).toString("base64url");
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await pool.query(
-      `INSERT INTO share_tokens (token, reading_id, expires_at) VALUES ($1, $2, $3)
-       ON CONFLICT (token) DO NOTHING`,
-      [token, req.params.id, expiresAt],
-    );
-    res.json({ token, expiresAt });
+    // Dedupe within a transaction guarded by an advisory lock keyed on the
+    // reading id. Concurrent share calls for the same reading serialize here,
+    // so we return exactly one active token per reading (Requirement 8, M3).
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `SELECT pg_advisory_xact_lock(hashtext($1))`,
+        [String(id)],
+      );
+
+      const { rows: existing } = await client.query(
+        `SELECT token, expires_at
+         FROM share_tokens
+         WHERE reading_id = $1 AND expires_at > NOW()
+         ORDER BY expires_at DESC
+         LIMIT 1`,
+        [id],
+      );
+
+      if (existing.length) {
+        await client.query("COMMIT");
+        res.json({ token: existing[0].token, expiresAt: existing[0].expires_at });
+        return;
+      }
+
+      const token = crypto.randomBytes(12).toString("base64url");
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      await client.query(
+        `INSERT INTO share_tokens (token, reading_id, expires_at) VALUES ($1, $2, $3)
+         ON CONFLICT (token) DO NOTHING`,
+        [token, id, expiresAt],
+      );
+      await client.query("COMMIT");
+      res.json({ token, expiresAt });
+    } catch (txErr) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // ignore rollback failure; the outer catch below will still 500.
+      }
+      throw txErr;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     res.status(500).json({ error: "Database error" });
   }

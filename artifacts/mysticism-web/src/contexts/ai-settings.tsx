@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL } from "../lib/ai-constants";
+
+export { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL };
 
 export type AIProvider = "server" | "openai" | "gemini";
 
@@ -16,7 +19,12 @@ export interface ServerInfo {
   model: string;
   rateLimitPerHour: number;
   rateLimitPerDay: number;
-  adminConfigured: boolean;
+  /**
+   * Admin-only field. Omitted entirely for anonymous and non-admin callers to
+   * avoid leaking deployment provisioning state (post-opus-audit-remediation L3).
+   * Generated OpenAPI type is `boolean | null`; treat `null`/`undefined` as `false`.
+   */
+  adminConfigured?: boolean | null;
 }
 
 interface AISettingsContextValue {
@@ -30,9 +38,6 @@ interface AISettingsContextValue {
 }
 
 const STORAGE_KEY = "huyen-bi-ai-settings";
-
-export const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
-export const DEFAULT_GEMINI_MODEL = "gemini-3.0-flash";
 
 const defaultSettings: AISettings = {
   provider: "server",

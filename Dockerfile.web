@@ -21,7 +21,7 @@ COPY lib/                                       ./lib/
 
 # supportedArchitectures trong package.json đảm bảo pnpm cài native binaries
 # cho cả x64 lẫn arm64 (rollup, lightningcss, ...) — không cần workaround thủ công.
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy toàn bộ source code của frontend + shared libs
 COPY artifacts/mysticism-web/ ./artifacts/mysticism-web/

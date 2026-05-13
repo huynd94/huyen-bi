@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: config
+    description: Public and admin configuration endpoints
   - name: openai
     description: OpenAI AI chat and operations
   - name: mysticism
@@ -28,6 +30,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /config/public:
+    get:
+      operationId: getPublicConfig
+      tags: [config]
+      summary: Get public (non-secret) runtime configuration
+      description: >
+        Returns server configuration safe to expose to anonymous callers.
+        The `adminConfigured` field is only present when the caller is
+        authenticated as an admin (Clerk `publicMetadata.role === "admin"`);
+        it is omitted entirely for anonymous and non-admin callers to avoid
+        leaking deployment provisioning state.
+      responses:
+        "200":
+          description: Public configuration
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicConfig"
   /openai/conversations:
     get:
       operationId: listOpenaiConversations
@@ -168,6 +188,40 @@ components:
           type: string
       required:
         - status
+    PublicConfig:
+      type: object
+      description: >
+        Public server configuration. `adminConfigured` is present only when
+        the caller is an authenticated admin, and is omitted entirely for
+        anonymous and non-admin callers.
+      properties:
+        serverKeyConfigured:
+          type: boolean
+          description: Whether the server has an AI API key configured.
+        provider:
+          type: string
+          description: Configured AI provider (e.g. `openai`, `gemini`, `server`).
+        model:
+          type: string
+          description: Configured AI model identifier.
+        rateLimitPerHour:
+          type: integer
+          description: Rate limit per hour when using the server-managed AI key.
+        rateLimitPerDay:
+          type: integer
+          description: Rate limit per day when using the server-managed AI key.
+        adminConfigured:
+          type: boolean
+          nullable: true
+          description: >
+            True when Clerk admin credentials are configured. Present only for
+            admin callers; omitted for anonymous and non-admin callers.
+      required:
+        - serverKeyConfigured
+        - provider
+        - model
+        - rateLimitPerHour
+        - rateLimitPerDay
     OpenaiConversation:
       type: object
       properties:

@@ -2,8 +2,10 @@ import { Router } from "express";
 import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AiInterpretMysticismBody } from "@workspace/api-zod";
+import { requireClerkUser } from "../../lib/clerk-user";
 import { getManyConfig } from "../../lib/server-config";
 import { checkAndLogUsage, getClientIP } from "../../lib/rate-limit";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_GEMINI_MODEL } from "../../lib/ai-constants";
 
 const router = Router();
 
@@ -21,8 +23,12 @@ function getSystemPrompt(type: string): string {
   return SYSTEM_PROMPTS[type] ?? `Bạn là nhà huyền học uyên bác, trả lời bằng tiếng Việt với giọng văn sâu sắc và thấu đáo.`;
 }
 
-const DEFAULT_OPENAI_MODEL = "gpt-5.4-nano";
-const DEFAULT_GEMINI_MODEL = "gemini-3.0-flash";
+
+
+// Require an authenticated Clerk user before invoking the AI interpret
+// endpoint. Without this gate, anonymous callers with rotating IPs can drain
+// the system AI key even though the per-IP rate limit is in place.
+router.use("/mysticism/ai-interpret", requireClerkUser);
 
 router.post("/mysticism/ai-interpret", async (req, res) => {
   const parsed = AiInterpretMysticismBody.safeParse(req.body);
@@ -43,6 +49,11 @@ router.post("/mysticism/ai-interpret", async (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // Create AbortController to signal cancellation on client disconnect
+  const controller = new AbortController();
+  const onClose = () => { controller.abort(); };
+  req.on("close", onClose);
+
   try {
     // Xác định API key sẽ dùng
     let resolvedKey = userApiKey;
@@ -53,9 +64,12 @@ router.post("/mysticism/ai-interpret", async (req, res) => {
     if (provider === "server" || !userApiKey) {
       const cfg = await getManyConfig(["ai_api_key", "ai_provider", "ai_model"]);
       if (!cfg.ai_api_key) {
-        res.write(`data: ${JSON.stringify({ content: "Hệ thống chưa cấu hình API key. Vui lòng nhập API key của bạn trong phần Cài đặt AI, hoặc liên hệ quản trị viên để cấu hình key hệ thống." })}\n\n`);
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content: "Hệ thống chưa cấu hình API key. Vui lòng nhập API key của bạn trong phần Cài đặt AI, hoặc liên hệ quản trị viên để cấu hình key hệ thống." })}\n\n`);
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+        req.off("close", onClose);
         return;
       }
       resolvedKey = cfg.ai_api_key;
@@ -69,9 +83,12 @@ router.post("/mysticism/ai-interpret", async (req, res) => {
       const ip = getClientIP(req);
       const rl = await checkAndLogUsage(ip);
       if (!rl.allowed) {
-        res.write(`data: ${JSON.stringify({ content: `Bạn đã đạt giới hạn sử dụng AI. Giới hạn: ${rl.limitPerHour} lượt/giờ, ${rl.limitPerDay} lượt/ngày. Vui lòng thử lại sau hoặc nhập API key riêng trong phần Cài đặt AI.` })}\n\n`);
-        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-        res.end();
+        if (!res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content: `Bạn đã đạt giới hạn sử dụng AI. Giới hạn: ${rl.limitPerHour} lượt/giờ, ${rl.limitPerDay} lượt/ngày. Vui lòng thử lại sau hoặc nhập API key riêng trong phần Cài đặt AI.` })}\n\n`);
+          res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+          res.end();
+        }
+        req.off("close", onClose);
         return;
       }
     }
@@ -80,11 +97,16 @@ router.post("/mysticism/ai-interpret", async (req, res) => {
       const model = resolvedModel || DEFAULT_GEMINI_MODEL;
       const genAI = new GoogleGenerativeAI(resolvedKey);
       const geminiModel = genAI.getGenerativeModel({ model, systemInstruction: systemPrompt });
-      const result = await geminiModel.generateContentStream(userMessage);
+      const result = await geminiModel.generateContentStream({
+        contents: [{ role: "user", parts: [{ text: userMessage }] }],
+      }, { signal: controller.signal });
 
       for await (const chunk of result.stream) {
+        if (controller.signal.aborted) break;
         const text = chunk.text();
-        if (text) res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        if (text && !res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content: text })}\n\n`);
+        }
       }
     } else {
       const model = resolvedModel || DEFAULT_OPENAI_MODEL;
@@ -97,20 +119,35 @@ router.post("/mysticism/ai-interpret", async (req, res) => {
           { role: "user", content: userMessage },
         ],
         stream: true,
-      });
+      }, { signal: controller.signal });
 
       for await (const chunk of stream) {
+        if (controller.signal.aborted) break;
         const content = chunk.choices[0]?.delta?.content;
-        if (content) res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        if (content && !res.writableEnded) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
       }
     }
   } catch (err: any) {
+    // If aborted due to client disconnect, just stop — no need to write error
+    if (controller.signal.aborted) {
+      req.off("close", onClose);
+      return;
+    }
     const msg = err?.message || "Lỗi không xác định";
-    res.write(`data: ${JSON.stringify({ content: `\n\n*Lỗi kết nối AI: ${msg}*` })}\n\n`);
+    if (!res.writableEnded) {
+      res.write(`data: ${JSON.stringify({ content: `\n\n*Lỗi kết nối AI: ${msg}*` })}\n\n`);
+    }
   }
 
-  res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-  res.end();
+  // Remove close listener after normal completion
+  req.off("close", onClose);
+
+  if (!res.writableEnded) {
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  }
 });
 
 export default router;

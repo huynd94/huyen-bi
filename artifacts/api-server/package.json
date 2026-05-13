@@ -13,6 +13,17 @@
     "test:rate-limit": "tsx src/lib/rate-limit.test.ts",
     "test:input-limits": "tsx src/lib/input-limits.test.ts",
     "test:health": "tsx src/routes/health.test.ts",
+    "test:sse-preservation": "tsx src/routes/sse-preservation.test.ts",
+    "test:param-validators": "tsx src/lib/param-validators.test.ts",
+    "test:mysticism-auth": "tsx src/routes/mysticism/ai-interpret-auth.test.ts",
+    "test:trust-proxy-wiring": "tsx src/lib/trust-proxy-wiring.test.ts",
+    "test:security-headers": "tsx src/lib/security-headers.test.ts",
+    "test:message-order": "tsx src/routes/openai/message-order.test.ts",
+    "test:csrf": "tsx src/lib/origin-guard.test.ts",
+    "test:readings-params": "tsx src/routes/readings-params.test.ts",
+    "test:share-cap": "tsx src/routes/readings/share-dedupe.test.ts",
+    "test:logger-redact": "tsx src/lib/logger-redact.test.ts",
+    "test:public-config": "tsx src/routes/config/public-config.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -25,6 +36,7 @@
     "cors": "^2",
     "drizzle-orm": "catalog:",
     "express": "^5",
+    "helmet": "^8",
     "http-proxy-middleware": "^3.0.5",
     "openai": "^6.34.0",
     "pino": "^9",
@@ -38,6 +50,7 @@
     "@types/node": "catalog:",
     "esbuild": "^0.27.3",
     "esbuild-plugin-pino": "^2.3.3",
+    "fast-check": "^4.7.0",
     "pino-pretty": "^13",
     "thread-stream": "3.1.0",
     "tsx": "catalog:"
