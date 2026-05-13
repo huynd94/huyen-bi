@@ -28,8 +28,9 @@
 - [Cấu hình Clerk Production](#cấu-hình-clerk-production)
 - [Cấu hình AI (Admin Panel)](#cấu-hình-ai-admin-panel)
 - [API Reference](#api-reference)
-- [Bảo mật & cấu hình vận hành](#bảo-mật--cấu-hình-vận-hành)
+- [Bảo mật & Chất lượng](#bảo-mật--chất-lượng)
 - [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+- [Nhật ký phát triển](#nhật-ký-phát-triển)
 
 ---
 
@@ -128,7 +129,6 @@ monorepo (pnpm workspaces, pnpm@10 pinned via packageManager)
 ├── Dockerfile.web         # Frontend: Vite build → Nginx
 ├── docker-compose.yml     # Postgres + API + Web (3 service)
 ├── .env.example           # Mẫu biến môi trường
-├── AUDIT_PLAN_PROGRESS.md # Nhật ký audit & hardening
 └── DEPLOY.md              # Hướng dẫn deploy chi tiết
 ```
 
@@ -704,11 +704,31 @@ x-ai-model:    gpt-5.4-nano | gemini-3.0-flash | ...
 
 ---
 
-## Bảo mật & cấu hình vận hành
+## Bảo mật & Chất lượng
 
-App đã qua một đợt hardening (chi tiết trong `AUDIT_PLAN_PROGRESS.md`). Các cấu hình quan trọng khi deploy production:
+Hệ thống đã trải qua **2 đợt audit bảo mật toàn diện** (8 task gốc + 10 finding bổ sung) và **1 đợt bugfix theo phương pháp property-based testing**. Tổng cộng **30+ regression test** bao phủ mọi vector tấn công đã phát hiện.
 
-### Biến môi trường
+### Tổng quan Security Posture
+
+| Lớp bảo vệ | Cơ chế | Ghi chú |
+|-------------|--------|---------|
+| **XSS Prevention** | MarkdownRenderer dùng React nodes, không `dangerouslySetInnerHTML` | Hỗ trợ bold/italic/code/link an toàn |
+| **Authentication** | Clerk JWT — `requireClerkUser` middleware | Mọi route user-scoped đều yêu cầu đăng nhập |
+| **Authorization** | Clerk `publicMetadata.role === "admin"` | Không có admin mặc định, phải cấp thủ công |
+| **CORS** | Allow-list cứng, mặc định `https://huyenbi.io.vn` | Loopback chỉ cho phép ở non-production |
+| **CSRF** | Origin guard trên state-changing methods | Chặn cross-origin form POST bypass CORS preflight |
+| **Rate Limiting** | Atomic counting với `pg_advisory_xact_lock` | Không bypass được dưới tải song song |
+| **Trust Proxy** | Opt-in `TRUST_PROXY` env var | Mặc định an toàn cho direct-exposed deployments |
+| **Input Validation** | Transport 64 kB + per-field zod schemas | Từ OpenAPI spec → generated zod → runtime check |
+| **Security Headers** | Helmet v8 (CSP, HSTS, X-Frame-Options, nosniff) | CSP whitelist Clerk domains |
+| **SSE Robustness** | Rolling buffer parser, chunk-safe | Không mất event khi JSON split across chunks |
+| **Log Redaction** | Pino redact `authorization`, `x-ai-key`, Clerk tokens | Không rò rỉ secret vào log |
+| **Ownership Isolation** | User-scoped queries (`WHERE user_id = $1`) | Không đọc/xóa/sửa data người khác |
+| **Share Token Dedupe** | Advisory lock + partial index | Một reading chỉ có 1 active share token |
+
+### Cấu hình vận hành quan trọng
+
+#### Biến môi trường
 
 | Biến | Bắt buộc? | Vai trò |
 |------|-----------|---------|
@@ -723,14 +743,14 @@ App đã qua một đợt hardening (chi tiết trong `AUDIT_PLAN_PROGRESS.md`).
 
 \* Thiếu `CLERK_*` không crash server, nhưng các feature có login sẽ tắt.
 
-### Giới hạn input và rate limit
+#### Giới hạn input và rate limit
 
 - Body HTTP giới hạn **64 kB** (`express.json({ limit })`). Request lớn hơn trả 413.
 - Mỗi field chat/reading có cap thêm qua zod: `title ≤ 200`, `notes ≤ 2000`, `message.content ≤ 4000`, `context ≤ 8000`, JSON `input_data`/`result_data` ≤ 32 kB mỗi field.
 - Khi dùng **key hệ thống**, rate limit theo IP (mặc định 20/giờ, 100/ngày). Tính atomic bằng `pg_advisory_xact_lock` nên không bị bypass dưới tải song song.
 - Khi user dùng key riêng (OpenAI/Gemini của họ), không bị rate limit — chi phí tự họ chịu.
 
-### CORS
+#### CORS
 
 Production: mặc định chỉ `https://huyenbi.io.vn` được chấp nhận với `credentials: true`. Thêm origin phụ:
 
@@ -740,9 +760,47 @@ CORS_ALLOWED_ORIGINS=https://preview.huyenbi.io.vn,https://alt-domain.com
 
 Trong non-production, loopback (`localhost`, `127.0.0.1`) luôn được cho phép cho dev server.
 
-### Markdown AI output
+#### Markdown AI output
 
-Nội dung AI (và mọi markdown) render qua parser tự viết không dùng `dangerouslySetInnerHTML` — an toàn trước XSS từ response AI bất thường.
+Nội dung AI (và mọi markdown) render qua parser tự viết không dùng `dangerouslySetInnerHTML` — an toàn trước XSS từ response AI bất thường. Parser hỗ trợ: headings, bold/italic, inline code, ordered/unordered lists, blockquotes, horizontal rules, và **links** (`[text](url)`).
+
+#### Bộ test bảo mật
+
+Chạy toàn bộ regression suite (30+ test scripts):
+
+```bash
+corepack pnpm run test:audit-remediation
+```
+
+Hoặc chạy từng nhóm:
+
+```bash
+# Frontend
+pnpm --filter @workspace/mysticism-web run test:markdown
+pnpm --filter @workspace/mysticism-web run test:sse
+pnpm --filter @workspace/mysticism-web run test:escape-html
+pnpm --filter @workspace/mysticism-web run test:result-actions
+pnpm --filter @workspace/mysticism-web run test:unauth-exploration
+pnpm --filter @workspace/mysticism-web run test:unauth-preservation
+pnpm --filter @workspace/mysticism-web run test:unauth-smoke
+
+# Backend
+pnpm --filter @workspace/api-server run test:admin
+pnpm --filter @workspace/api-server run test:openai-auth
+pnpm --filter @workspace/api-server run test:mysticism-auth
+pnpm --filter @workspace/api-server run test:cors
+pnpm --filter @workspace/api-server run test:rate-limit
+pnpm --filter @workspace/api-server run test:input-limits
+pnpm --filter @workspace/api-server run test:health
+pnpm --filter @workspace/api-server run test:security-headers
+pnpm --filter @workspace/api-server run test:csrf
+pnpm --filter @workspace/api-server run test:param-validators
+pnpm --filter @workspace/api-server run test:message-order
+pnpm --filter @workspace/api-server run test:trust-proxy-wiring
+pnpm --filter @workspace/api-server run test:share-cap
+pnpm --filter @workspace/api-server run test:logger-redact
+pnpm --filter @workspace/api-server run test:public-config
+```
 
 ---
 
@@ -828,6 +886,70 @@ artifacts/api-server/src/
 docker/
 └── nginx.conf                # Static files + proxy /api/* (SSE ready)
 ```
+
+---
+
+## Nhật ký phát triển
+
+Lịch sử các đợt nâng cấp và hardening quan trọng, sắp xếp theo thời gian gần nhất.
+
+### v4.1.1 — Bugfix: Thông báo đăng nhập thân thiện cho AI (2026-05-13)
+
+**Vấn đề:** Khi người dùng chưa đăng nhập bấm nút AI trên bất kỳ trang nào trong 7 trang huyền học, UI hiển thị chuỗi kỹ thuật thô `"Lỗi: Unauthorized"` bằng tiếng Anh — không có hướng dẫn, không có link đăng nhập.
+
+**Giải pháp:**
+- Thêm hằng số `UNAUTHENTICATED_AI_MESSAGE` chứa thông điệp tiếng Việt + link markdown `/sign-in`
+- `useSSEChat`: phân biệt HTTP 401 với các lỗi khác, hiển thị thông báo thân thiện thay vì raw error
+- `useAISSEChat`: chặn sớm khi Clerk báo `isSignedIn === false` (không phát sinh network request)
+- `MarkdownRenderer`: thêm hỗ trợ cú pháp link `[text](url)` để CTA render thành link nhấp được
+- Không sửa bất kỳ trang AI nào — fix ở tầng hook dùng chung, 7 trang tự động hưởng lợi
+
+**Phương pháp:** Property-based testing (fast-check) với 2 correctness properties:
+1. *Bug Condition* — mọi input thuộc bug domain đều hiển thị thông báo thân thiện
+2. *Preservation* — mọi input ngoài bug domain giữ nguyên hành vi byte-for-byte
+
+**Test coverage:** 5 test files mới (exploration, preservation PBT, smoke 7 pages × 2 states).
+
+---
+
+### v4.1.0 — Security Hardening: Post-Opus Re-Audit (2026-05-13)
+
+**Scope:** 10 finding bổ sung từ đợt adversarial re-audit sau khi 8 task gốc hoàn thành.
+
+| ID | Mức độ | Tóm tắt |
+|----|--------|---------|
+| C1 | Critical | Clerk gate cho `/mysticism/ai-interpret` — chặn botnet drain AI key |
+| C2 | Critical | `TRUST_PROXY` wired vào docker-compose — rate limit không còn collapse |
+| H1 | High | XSS + tabnabbing trong `handlePrint` → DOM builder an toàn |
+| H2 | High | Security headers (Helmet v8: CSP, HSTS, X-Frame-Options) |
+| H3 | High | Rate-limit trước `db.insert` — chặn spam messages table |
+| M1 | Medium | CSRF origin guard cho state-changing methods |
+| M2 | Medium | Numeric `:id` validation — chặn 500 từ invalid params |
+| M3 | Medium | Share-token dedupe với advisory lock |
+| L3 | Low | Strip `adminConfigured` từ anonymous public config |
+| L7 | Low | Mở rộng pino redact list (AI key, Clerk tokens) |
+
+**Test:** 12 regression scripts mới, 7 trong đó là property tests (`fast-check`, `numRuns: 100`).
+
+---
+
+### v4.0.0 — Security Hardening: Initial Audit (2026-05-12)
+
+**Scope:** 8 task remediation từ đợt audit đầu tiên.
+
+| Task | Tóm tắt |
+|------|---------|
+| 0 | Khôi phục quality gate (typecheck + build) |
+| 1 | Loại bỏ XSS path trong MarkdownRenderer |
+| 2 | Admin endpoints bảo vệ bằng Clerk admin claim (thay password) |
+| 3 | AI Chat yêu cầu đăng nhập + user ownership isolation |
+| 4 | CORS restrict — allow-list thay vì reflect-all |
+| 5 | Rate limit atomic + trust proxy opt-in |
+| 6 | Input size limits (transport 64 kB + per-field zod) |
+| 7 | SSE parser rolling buffer (chunk-safe) |
+| 8 | Health endpoint minimize (public chỉ trả `{ status: "ok" }`) |
+
+**Kết quả:** Từ 0 test → 20+ regression tests. Từ 3 critical vulnerabilities → 0.
 
 ---
 
