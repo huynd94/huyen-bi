@@ -13,7 +13,7 @@ interface Token {
 
 function parseInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
-  const tokenPattern = /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|`.+?`)/g;
+  const tokenPattern = /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|`.+?`|\[.+?\]\(.+?\))/g;
   let lastIndex = 0;
 
   for (const match of text.matchAll(tokenPattern)) {
@@ -25,7 +25,16 @@ function parseInline(text: string): ReactNode[] {
     }
 
     const key = nodes.length;
-    if (token.startsWith("***") && token.endsWith("***")) {
+    if (token.startsWith("[") && token.includes("](")) {
+      const labelEnd = token.indexOf("](");
+      const label = token.slice(1, labelEnd);
+      const href = token.slice(labelEnd + 2, -1);
+      nodes.push(
+        <a key={key} href={href} className="text-primary underline underline-offset-2 hover:text-primary/80">
+          {label}
+        </a>
+      );
+    } else if (token.startsWith("***") && token.endsWith("***")) {
       nodes.push(<strong key={key}><em>{token.slice(3, -3)}</em></strong>);
     } else if (token.startsWith("**") && token.endsWith("**")) {
       nodes.push(<strong key={key}>{token.slice(2, -2)}</strong>);
