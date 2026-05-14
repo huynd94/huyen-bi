@@ -1,6 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { AmbientBg } from "@/components/ambient-bg";
 import { TiltCard } from "@/components/tilt-card";
 import { useScrollRevealAll } from "@/hooks/use-scroll-reveal";
 import { Link } from "wouter";
@@ -246,7 +245,6 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground relative">
-      <AmbientBg />
       <Navbar />
 
       {/* ── Hero ── */}

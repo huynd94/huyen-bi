@@ -168,7 +168,7 @@ function AIChatPageInner() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/8 via-background to-background pointer-events-none" />
       <Navbar />
       
-      <main className="flex-1 flex pt-16 z-10 relative overflow-hidden h-[100dvh]">
+      <main id="main" tabIndex={-1} className="flex-1 flex pt-16 z-10 relative overflow-hidden h-[100dvh] outline-none">
         {/* Sidebar */}
         <div className={`${sidebarOpen ? "w-72" : "w-0"} border-r border-border/50 bg-card/20 backdrop-blur-md flex flex-col transition-all duration-300 overflow-hidden shrink-0`}>
           <div className="p-4 border-b border-border/50 space-y-2">

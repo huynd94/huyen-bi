@@ -6,6 +6,34 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
+/**
+ * InputGroup — container gom input/textarea và các addon (icon, text,
+ * button) thành một control thống nhất.
+ *
+ * Mục đích: tạo input có icon prefix/suffix (ví dụ: ô search có icon
+ * kính lúp, ô số tiền có ký hiệu đơn vị), hoặc input với button kèm
+ * theo (copy, clear, submit). Border + focus ring nằm trên container,
+ * input bên trong tự bỏ border riêng để không có "double border".
+ *
+ * Lưu ý a11y: container dùng `role="group"` để screen reader hiểu là
+ * một nhóm control. Khi control con có `aria-invalid="true"`, toàn
+ * bộ container đổi sang trạng thái lỗi (`border-destructive`,
+ * `ring-destructive/20`). Focus ring di chuyển ra container nhờ
+ * `has-[[data-slot=input-group-control]:focus-visible]`.
+ *
+ * @example
+ * ```tsx
+ * <InputGroup>
+ *   <InputGroupAddon align="inline-start">
+ *     <SearchIcon />
+ *   </InputGroupAddon>
+ *   <InputGroupInput placeholder="Tìm lá số..." />
+ *   <InputGroupAddon align="inline-end">
+ *     <InputGroupButton onClick={onClear}>Clear</InputGroupButton>
+ *   </InputGroupAddon>
+ * </InputGroup>
+ * ```
+ */
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -55,6 +83,19 @@ const inputGroupAddonVariants = cva(
   }
 )
 
+/**
+ * InputGroupAddon — phần phụ kiện đặt trong {@link InputGroup}. Có
+ * thể chứa icon, text, kbd hint, hoặc {@link InputGroupButton}.
+ *
+ * Prop `align`:
+ * - `"inline-start"` (mặc định): bên trái input.
+ * - `"inline-end"`: bên phải input.
+ * - `"block-start"`: phía trên input (chuyển container sang flex-col).
+ * - `"block-end"`: phía dưới input (chuyển container sang flex-col).
+ *
+ * Click vào vùng addon (không phải button) sẽ tự focus input bên
+ * trong group — tăng affordance giống native `<label>`.
+ */
 function InputGroupAddon({
   className,
   align = "inline-start",
@@ -95,6 +136,18 @@ const inputGroupButtonVariants = cva(
   }
 )
 
+/**
+ * InputGroupButton — button thu gọn dùng bên trong
+ * {@link InputGroupAddon} (clear, submit, copy,...). Mặc định
+ * `type="button"` để không submit form ngoài ý muốn, `variant="ghost"`
+ * để hoà với background của container.
+ *
+ * Prop `size`: `"xs"` (mặc định, h-6), `"sm"` (h-8), `"icon-xs"`
+ * (vuông 6×6), `"icon-sm"` (vuông 8×8).
+ *
+ * Lưu ý a11y: khi chỉ có icon, gắn `aria-label` để screen reader
+ * biết hành động (ví dụ: `aria-label="Xoá nội dung"`).
+ */
 function InputGroupButton({
   className,
   type = "button",
@@ -114,6 +167,11 @@ function InputGroupButton({
   )
 }
 
+/**
+ * InputGroupText — text/inline content (label phụ, đơn vị, hint)
+ * trong {@link InputGroupAddon}. Render `<span>` với màu muted và
+ * icon SVG con tự áp `size-4`.
+ */
 function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   return (
     <span
@@ -126,6 +184,14 @@ function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
   )
 }
 
+/**
+ * InputGroupInput — `<Input>` đã tinh chỉnh để dùng trong
+ * {@link InputGroup}: bỏ border/shadow/focus-ring riêng, kế thừa từ
+ * container; nền trong suốt để hoà với background của group.
+ *
+ * Tự gắn `data-slot="input-group-control"` để container chuyển focus
+ * ring và error state đúng lúc qua selector `:has()`.
+ */
 function InputGroupInput({
   className,
   ...props
@@ -142,6 +208,15 @@ function InputGroupInput({
   )
 }
 
+/**
+ * InputGroupTextarea — phiên bản textarea cho {@link InputGroup}.
+ * Bỏ resize handle (`resize-none`), bỏ border/shadow riêng, padding
+ * dọc `py-3` để cao hơn input single-line.
+ *
+ * Dùng cho ô comment có icon prefix, hoặc textarea với button đính
+ * kèm (gửi, đính kèm file). Container tự chuyển sang chiều cao auto
+ * khi chứa `<textarea>` (`has-[>textarea]:h-auto`).
+ */
 function InputGroupTextarea({
   className,
   ...props

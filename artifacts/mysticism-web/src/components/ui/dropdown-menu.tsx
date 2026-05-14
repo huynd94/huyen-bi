@@ -6,18 +6,63 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * DropdownMenu — wrapper trực tiếp `@radix-ui/react-dropdown-menu` Root.
+ *
+ * Mục đích: menu thả xuống kích hoạt từ một nút (action menu, user
+ * menu, more options). Hỗ trợ item thường, checkbox, radio, sub-menu
+ * lồng nhau, và keyboard shortcuts hiển thị qua {@link DropdownMenuShortcut}.
+ *
+ * Props: kế thừa props của Radix Root — `open`, `onOpenChange`,
+ * `defaultOpen`, `modal` (mặc định `true`), `dir`.
+ *
+ * Lưu ý a11y: Radix gắn `role="menu"`, `role="menuitem"`,
+ * `role="menuitemcheckbox"`, `role="menuitemradio"` tự động; bàn phím
+ * hỗ trợ `↑/↓` di chuyển, `Enter`/`Space` chọn, `→` mở sub-menu, `←`
+ * đóng sub-menu, `Esc` đóng menu, ký tự đầu để type-ahead.
+ *
+ * @example
+ * ```tsx
+ * <DropdownMenu>
+ *   <DropdownMenuTrigger asChild>
+ *     <Button variant="outline">Thao tác</Button>
+ *   </DropdownMenuTrigger>
+ *   <DropdownMenuContent>
+ *     <DropdownMenuLabel>Quản lý lá số</DropdownMenuLabel>
+ *     <DropdownMenuSeparator />
+ *     <DropdownMenuItem>Xem chi tiết</DropdownMenuItem>
+ *     <DropdownMenuItem>Chia sẻ</DropdownMenuItem>
+ *     <DropdownMenuItem className="text-destructive">Xoá</DropdownMenuItem>
+ *   </DropdownMenuContent>
+ * </DropdownMenu>
+ * ```
+ */
 const DropdownMenu = DropdownMenuPrimitive.Root
 
+/** Trigger mở {@link DropdownMenu}. Dùng `asChild` để render component tuỳ ý. */
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
+/** Gom nhóm các item liên quan trong cùng menu (không thêm style mặc định). */
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 
+/** Portal render nội dung menu vào cuối `<body>` để tránh stacking context. */
 const DropdownMenuPortal = DropdownMenuPrimitive.Portal
 
+/** Wrapper cho sub-menu lồng nhau — dùng cùng {@link DropdownMenuSubTrigger} và {@link DropdownMenuSubContent}. */
 const DropdownMenuSub = DropdownMenuPrimitive.Sub
 
+/** Group cho các {@link DropdownMenuRadioItem} — chỉ một item được chọn tại một thời điểm. */
 const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
+/**
+ * Trigger để mở sub-menu lồng nhau bên trong {@link DropdownMenuSub}.
+ * Tự render icon `ChevronRight` ở cuối để hint hướng mở.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ *
+ * Lưu ý a11y: nhấn `→` (hoặc hover) để mở sub-menu, `←` để đóng.
+ */
 const DropdownMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
@@ -40,6 +85,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
 DropdownMenuSubTrigger.displayName =
   DropdownMenuPrimitive.SubTrigger.displayName
 
+/** Container cho các item của sub-menu lồng nhau, áp animation slide-in theo `data-side`. */
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
@@ -56,6 +102,16 @@ const DropdownMenuSubContent = React.forwardRef<
 DropdownMenuSubContent.displayName =
   DropdownMenuPrimitive.SubContent.displayName
 
+/**
+ * Container chính của menu — render qua Portal, áp animation slide-in
+ * theo `data-side`, giới hạn chiều cao tối đa bằng
+ * `--radix-dropdown-menu-content-available-height` để tránh tràn viewport.
+ *
+ * Props chính:
+ * - `sideOffset` (mặc định `4`): khoảng cách giữa content và trigger.
+ * - `side`, `align`: vị trí relative tới trigger (Radix tính lại nếu
+ *   bị che, ví dụ chuyển từ `bottom` sang `top`).
+ */
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
@@ -75,6 +131,13 @@ const DropdownMenuContent = React.forwardRef<
 ))
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
+/**
+ * Item thường trong menu — `role="menuitem"`. Click hoặc `Enter`
+ * kích hoạt và đóng menu (trừ khi `event.preventDefault()` trong `onSelect`).
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const DropdownMenuItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
@@ -93,6 +156,11 @@ const DropdownMenuItem = React.forwardRef<
 ))
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
+/**
+ * Item dạng checkbox — `role="menuitemcheckbox"` với
+ * `aria-checked`. Hiển thị icon `Check` khi `checked`. Dùng `checked`
+ * + `onCheckedChange` để controlled.
+ */
 const DropdownMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
@@ -117,6 +185,11 @@ const DropdownMenuCheckboxItem = React.forwardRef<
 DropdownMenuCheckboxItem.displayName =
   DropdownMenuPrimitive.CheckboxItem.displayName
 
+/**
+ * Item dạng radio — `role="menuitemradio"`. Phải đặt trong
+ * {@link DropdownMenuRadioGroup} để chia sẻ trạng thái. Hiển thị
+ * `Circle` solid khi item được chọn.
+ */
 const DropdownMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
@@ -139,6 +212,13 @@ const DropdownMenuRadioItem = React.forwardRef<
 ))
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
 
+/**
+ * Label cho nhóm item (ví dụ tiêu đề section) — không nhận focus,
+ * không kích hoạt được.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const DropdownMenuLabel = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
@@ -157,6 +237,7 @@ const DropdownMenuLabel = React.forwardRef<
 ))
 DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName
 
+/** Đường kẻ ngang phân cách các nhóm item (`role="separator"`). */
 const DropdownMenuSeparator = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
@@ -169,6 +250,10 @@ const DropdownMenuSeparator = React.forwardRef<
 ))
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
+/**
+ * Hiển thị phím tắt bên cạnh item (ví dụ `⌘K`) — chỉ thuần thị giác,
+ * không tự bind shortcut. App phải tự xử lý keyboard handler tương ứng.
+ */
 const DropdownMenuShortcut = ({
   className,
   ...props

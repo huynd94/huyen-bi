@@ -5,6 +5,16 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 
+/**
+ * ItemGroup — container nhóm nhiều `Item` thành một danh sách.
+ *
+ * Mục đích: trình bày danh sách các item theo cột (ví dụ list lá số đã
+ * lưu, list cài đặt). Đặt `role="list"` để screen reader hiểu cấu trúc.
+ *
+ * Lưu ý a11y: vì root đã set `role="list"`, các con `Item` trực tiếp nên
+ * mang ý nghĩa "list item"; nếu không thêm role tự động, screen reader
+ * vẫn xem chúng như mục trong list nhờ semantic của `role="list"` cha.
+ */
 function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -16,6 +26,15 @@ function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * ItemSeparator — đường kẻ ngang giữa các `Item` (dùng `Separator` Radix).
+ *
+ * Mục đích: phân tách trực quan giữa các item liên tiếp trong một group.
+ *
+ * Lưu ý a11y: `Separator` của Radix mặc định gắn `role="separator"`; nếu
+ * separator chỉ mang tính trang trí, có thể truyền `decorative` để bỏ
+ * role nhằm tránh ồn cho screen reader.
+ */
 function ItemSeparator({
   className,
   ...props
@@ -51,6 +70,37 @@ const itemVariants = cva(
   }
 )
 
+/**
+ * Item — một dòng/ô nội dung gồm media + title + description + actions.
+ *
+ * Mục đích: dùng cho các danh sách giàu thông tin (ví dụ từng lá bài
+ * trong lịch sử rút, từng feature trong trang setting). Hỗ trợ `asChild`
+ * để render dưới dạng `<a>`/`<button>` tuỳ ngữ cảnh.
+ *
+ * Lưu ý a11y: khi item là link/button (`asChild` với `<a>` hoặc
+ * `<button>`), focus ring đã được cấu hình qua `focus-visible:ring`
+ * giúp người dùng bàn phím dễ định vị. Đảm bảo nội dung text chính nằm
+ * trong `ItemTitle` và mô tả phụ trong `ItemDescription` để screen reader
+ * đọc theo thứ tự ngữ nghĩa.
+ *
+ * @example
+ * ```tsx
+ * <ItemGroup>
+ *   <Item asChild>
+ *     <a href="/readings/123">
+ *       <ItemMedia variant="icon"><Sparkles /></ItemMedia>
+ *       <ItemContent>
+ *         <ItemTitle>Lá Tử Vi #123</ItemTitle>
+ *         <ItemDescription>Bốc lúc 21:00 hôm qua</ItemDescription>
+ *       </ItemContent>
+ *       <ItemActions>
+ *         <Button size="sm">Mở</Button>
+ *       </ItemActions>
+ *     </a>
+ *   </Item>
+ * </ItemGroup>
+ * ```
+ */
 function Item({
   className,
   variant = "default",
@@ -88,6 +138,16 @@ const itemMediaVariants = cva(
   }
 )
 
+/**
+ * ItemMedia — vùng hiển thị media phụ ở đầu `Item` (icon, ảnh, hoặc SVG).
+ *
+ * Mục đích: chuẩn hoá kích thước và padding cho các loại media đi kèm
+ * item: `default` (không nền), `icon` (khung 32px), `image` (khung 40px).
+ *
+ * Lưu ý a11y: media thường thuần trang trí; thêm `aria-hidden` cho SVG
+ * khi item đã có tiêu đề mô tả đầy đủ. Với `<img>`, luôn cung cấp `alt`
+ * (chuỗi rỗng nếu trang trí).
+ */
 function ItemMedia({
   className,
   variant = "default",
@@ -103,6 +163,16 @@ function ItemMedia({
   )
 }
 
+/**
+ * ItemContent — vùng nội dung chính (title + description) của một `Item`.
+ *
+ * Mục đích: chiếm phần flex-1 còn lại trong item, xếp các text con theo
+ * cột với khoảng cách hợp lý.
+ *
+ * Lưu ý a11y: là vùng trình bày, không thêm role. Khi đặt nhiều block
+ * `ItemContent` cạnh nhau (ví dụ phần meta phụ ở phải), block kế tiếp
+ * tự `flex-none` nhờ selector `[&+[data-slot=item-content]]:flex-none`.
+ */
 function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -116,6 +186,15 @@ function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * ItemTitle — tiêu đề ngắn của một item.
+ *
+ * Mục đích: dòng text chính nhận diện item; cho phép kèm icon nhỏ.
+ *
+ * Lưu ý a11y: render dưới dạng `<div>` không phải heading; nếu item nằm
+ * trong landmark có cấu trúc heading riêng, không cần đổi tag. Khi cần
+ * cấp bậc heading rõ ràng, bọc thêm `<h3>`/`<h4>` bên ngoài.
+ */
 function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -129,6 +208,16 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * ItemDescription — mô tả phụ cho một item.
+ *
+ * Mục đích: cung cấp ngữ cảnh thêm (ví dụ thời gian, trạng thái) bên
+ * dưới `ItemTitle`. Tự động giới hạn 2 dòng (`line-clamp-2`).
+ *
+ * Lưu ý a11y: vì có `line-clamp` cắt nội dung, nội dung dài có thể bị
+ * ẩn về mặt thị giác — đảm bảo text quan trọng nằm trong khoảng nhìn
+ * thấy hoặc cung cấp tooltip để truy cập đầy đủ.
+ */
 function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
@@ -143,6 +232,17 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
   )
 }
 
+/**
+ * ItemActions — vùng chứa các nút thao tác ở cuối `Item`.
+ *
+ * Mục đích: nhóm các button thứ cấp (ví dụ "Mở", "Xoá") canh phải item
+ * với khoảng cách đều.
+ *
+ * Lưu ý a11y: để không trùng nhãn với toàn bộ item (đặc biệt khi item
+ * là link `asChild`), cân nhắc gắn `aria-label` mô tả ngữ cảnh hoặc
+ * dùng `event.stopPropagation()` để click action không kích hoạt link
+ * cha (tuỳ UX dự định).
+ */
 function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -153,6 +253,15 @@ function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * ItemHeader — hàng header tuỳ chọn ở đầu một `Item` phức hợp.
+ *
+ * Mục đích: dùng cho các item nhiều dòng nơi cần dòng tiêu đề riêng,
+ * ví dụ hiển thị nhãn + actions tách biệt khỏi body.
+ *
+ * Lưu ý a11y: là wrapper trình bày, không thêm role. Bên trong nếu có
+ * heading thật sự, dùng tag heading chuẩn để giữ cấu trúc.
+ */
 function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -166,6 +275,14 @@ function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * ItemFooter — hàng footer tuỳ chọn ở cuối một `Item` phức hợp.
+ *
+ * Mục đích: phù hợp cho meta phụ (ví dụ timestamp, badge trạng thái)
+ * nằm dưới phần body chính của item.
+ *
+ * Lưu ý a11y: thuần wrapper trình bày, không thêm role.
+ */
 function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

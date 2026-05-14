@@ -3,7 +3,6 @@ import { useUser, useClerk, Show } from "@clerk/react";
 import { useLocation, Link, Redirect } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { AmbientBg } from "@/components/ambient-bg";
 import { readingsApi, type SavedReading } from "@/lib/readings-api";
 import { cn } from "@/lib/utils";
 import { isClerkEnabled } from "@/lib/auth-config";
@@ -303,7 +302,6 @@ function ProfilePageInner() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <AmbientBg />
       <Navbar />
 
       <div className="relative z-10 flex-1 max-w-5xl mx-auto w-full px-4 pt-24 pb-16">

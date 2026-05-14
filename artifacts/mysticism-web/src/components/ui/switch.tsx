@@ -3,6 +3,30 @@ import * as SwitchPrimitives from "@radix-ui/react-switch"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Switch — công tắc bật/tắt dựa trên Radix Switch.
+ *
+ * Mục đích: bật/tắt tức thì một thiết lập (ví dụ: chế độ tối, nhận
+ * thông báo, hiển thị nâng cao). Dùng Switch khi thay đổi áp dụng
+ * ngay lập tức; nếu cần "Lưu" để xác nhận, ưu tiên {@link Checkbox}.
+ *
+ * Props: kế thừa toàn bộ props của `SwitchPrimitives.Root` —
+ * `checked`, `defaultChecked`, `onCheckedChange`, `disabled`,
+ * `required`, `name`, `value`, `id`,...
+ *
+ * Lưu ý a11y: Radix render `<button role="switch">` với `aria-checked`
+ * đồng bộ trạng thái; bàn phím `Space`/`Enter` toggle. Luôn ghép với
+ * `<Label htmlFor>` để screen reader đọc được ý nghĩa của switch;
+ * tránh chỉ đặt nhãn "Bật/Tắt" trừu tượng.
+ *
+ * @example
+ * ```tsx
+ * <div className="flex items-center gap-2">
+ *   <Switch id="dark-mode" checked={dark} onCheckedChange={setDark} />
+ *   <Label htmlFor="dark-mode">Chế độ tối</Label>
+ * </div>
+ * ```
+ */
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>

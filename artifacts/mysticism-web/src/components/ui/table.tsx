@@ -2,6 +2,40 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Table — bảng dữ liệu cơ bản dựa trên `<table>` chuẩn.
+ *
+ * Mục đích: hiển thị dữ liệu bảng (ví dụ: lịch sử lá số, danh sách
+ * sao, bảng so sánh tử vi). Tự bọc trong `<div>` có
+ * `overflow-auto` để cuộn ngang trên màn hình hẹp.
+ *
+ * Props: kế thừa toàn bộ thuộc tính HTML của `<table>` —
+ * `className`, `onClick`, `role`, `aria-*`,...
+ *
+ * Lưu ý a11y: nên dùng cùng {@link TableCaption} (nếu cần mô tả) và
+ * `<th scope="col">` qua {@link TableHead} để screen reader hiểu cấu
+ * trúc bảng. Tránh dùng `<table>` cho layout — chỉ dùng cho dữ liệu
+ * thật.
+ *
+ * @example
+ * ```tsx
+ * <Table>
+ *   <TableCaption>Lịch sử 10 lá số gần nhất.</TableCaption>
+ *   <TableHeader>
+ *     <TableRow>
+ *       <TableHead>Ngày</TableHead>
+ *       <TableHead>Loại</TableHead>
+ *     </TableRow>
+ *   </TableHeader>
+ *   <TableBody>
+ *     <TableRow>
+ *       <TableCell>2025-01-15</TableCell>
+ *       <TableCell>Tử vi</TableCell>
+ *     </TableRow>
+ *   </TableBody>
+ * </Table>
+ * ```
+ */
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
@@ -16,6 +50,7 @@ const Table = React.forwardRef<
 ))
 Table.displayName = "Table"
 
+/** Phần header của bảng — render `<thead>`. Mỗi `<tr>` con tự có border-bottom. */
 const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -24,6 +59,7 @@ const TableHeader = React.forwardRef<
 ))
 TableHeader.displayName = "TableHeader"
 
+/** Thân bảng — render `<tbody>`. Hàng cuối cùng tự bỏ border-bottom. */
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -36,6 +72,10 @@ const TableBody = React.forwardRef<
 ))
 TableBody.displayName = "TableBody"
 
+/**
+ * Footer của bảng — render `<tfoot>`. Có nền `bg-muted/50` và
+ * font-weight đậm để phân biệt với body (ví dụ: dòng tổng cộng).
+ */
 const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
@@ -51,6 +91,11 @@ const TableFooter = React.forwardRef<
 ))
 TableFooter.displayName = "TableFooter"
 
+/**
+ * Một hàng trong bảng — render `<tr>` với hover state và
+ * `data-[state=selected]` để highlight khi được chọn (kết hợp với
+ * `<Checkbox>` hoặc selection state ngoài).
+ */
 const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement>
@@ -66,6 +111,10 @@ const TableRow = React.forwardRef<
 ))
 TableRow.displayName = "TableRow"
 
+/**
+ * Ô tiêu đề cột — render `<th>`. Nên đặt thuộc tính `scope="col"` qua
+ * props khi dùng để screen reader liên kết đúng dữ liệu với tiêu đề.
+ */
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
@@ -81,6 +130,7 @@ const TableHead = React.forwardRef<
 ))
 TableHead.displayName = "TableHead"
 
+/** Ô dữ liệu — render `<td>` với padding chuẩn và align middle. */
 const TableCell = React.forwardRef<
   HTMLTableCellElement,
   React.TdHTMLAttributes<HTMLTableCellElement>
@@ -96,6 +146,11 @@ const TableCell = React.forwardRef<
 ))
 TableCell.displayName = "TableCell"
 
+/**
+ * Caption mô tả nội dung bảng — render `<caption>`. Hiển thị bên dưới
+ * bảng (`caption-bottom` ở Table root) và được screen reader đọc trước
+ * khi vào dữ liệu, nên dùng để cung cấp ngữ cảnh ngắn gọn.
+ */
 const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement>

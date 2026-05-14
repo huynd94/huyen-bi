@@ -54,10 +54,11 @@
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  /* Border radius scale — 4 mức tách rời (Requirement 1.6) */
+  --radius-sm: 0.25rem;   /*  4px — input, badge */
+  --radius-md: 0.375rem;  /*  6px — button */
+  --radius-lg: 0.75rem;   /* 12px — card */
+  --radius-xl: 1.25rem;   /* 20px — hero, dialog lớn */
 }
 
 /* ── Dark Mode (default) ── */
@@ -102,7 +103,24 @@
   --app-font-sans: 'Plus Jakarta Sans', sans-serif;
   --app-font-serif: 'Playfair Display', serif;
   --app-font-mono: 'Space Mono', monospace;
-  --radius: 0rem;
+
+  /* Type scale (Requirement 1.3) */
+  --font-size-display: 3rem;       /* 48px */
+  --font-size-h1: 2.25rem;         /* 36px */
+  --font-size-h2: 1.75rem;         /* 28px */
+  --font-size-h3: 1.375rem;        /* 22px */
+  --font-size-body: 1rem;          /* 16px */
+  --font-size-small: 0.875rem;     /* 14px */
+  --line-height-display: 1.1;
+  --line-height-h1: 1.1;
+  --line-height-h2: 1.1;
+  --line-height-h3: 1.1;
+  --line-height-body: 1.5;
+  --line-height-small: 1.4;
+
+  /* Shadow scale — giới hạn 2 mức (Requirement 10.6) */
+  --shadow-sm: 0 1px 2px hsl(var(--background) / 0.4);
+  --shadow-md: 0 4px 12px hsl(var(--background) / 0.5);
 }
 
 .dark {
@@ -130,41 +148,43 @@
 }
 
 /* ── Light Mode ── */
+/* HSL values calibrated to đạt WCAG 2.1 AA (4.5:1 cho text thường, 3:1 cho UI). */
 .light {
   --button-outline: rgba(0,0,0, .08);
   --badge-outline: rgba(0,0,0, .04);
+  --opaque-button-border-intensity: 9;
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .06);
 
-  --background: 40 30% 96%;
-  --foreground: 260 40% 12%;
-  --border: 40 20% 80%;
-  --card: 40 20% 99%;
-  --card-foreground: 260 40% 12%;
-  --card-border: 40 20% 82%;
-  --popover: 40 20% 99%;
-  --popover-foreground: 260 40% 12%;
-  --popover-border: 40 20% 82%;
-  --primary: 43 74% 40%;
+  --background: 40 30% 98%;
+  --foreground: 260 40% 10%;
+  --border: 260 10% 80%;
+  --card: 40 30% 100%;
+  --card-foreground: 260 40% 10%;
+  --card-border: 260 10% 80%;
+  --popover: 40 30% 100%;
+  --popover-foreground: 260 40% 10%;
+  --popover-border: 260 10% 80%;
+  --primary: 43 74% 42%;
   --primary-foreground: 0 0% 100%;
   --secondary: 270 20% 92%;
   --secondary-foreground: 260 40% 15%;
-  --muted: 40 15% 91%;
-  --muted-foreground: 260 20% 45%;
-  --accent: 43 74% 40%;
+  --muted: 40 20% 92%;
+  --muted-foreground: 260 20% 30%;
+  --accent: 43 74% 42%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 65% 45%;
+  --destructive: 0 65% 42%;
   --destructive-foreground: 0 0% 100%;
-  --input: 40 20% 80%;
-  --ring: 43 74% 40%;
-  --sidebar: 40 20% 98%;
-  --sidebar-foreground: 260 40% 12%;
-  --sidebar-border: 40 20% 82%;
-  --sidebar-primary: 43 74% 40%;
+  --input: 260 10% 80%;
+  --ring: 43 74% 42%;
+  --sidebar: 40 30% 98%;
+  --sidebar-foreground: 260 40% 10%;
+  --sidebar-border: 260 10% 80%;
+  --sidebar-primary: 43 74% 42%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 270 20% 92%;
   --sidebar-accent-foreground: 260 40% 15%;
-  --sidebar-ring: 43 74% 40%;
+  --sidebar-ring: 43 74% 42%;
 }
 
 @layer base {
@@ -340,13 +360,49 @@
   animation: magic-line-grow 1.2s ease-out forwards;
 }
 
-/* ── Star Cursor ── */
+/* ── Star Cursor ──
+ *
+ * Activation is gated by the `mystic-cursor-enabled` class on `<html>`
+ * which is owned by `src/components/mystic-cursor.tsx`. That component
+ * combines three signals before adding the class:
+ *
+ *   1. `(hover: hover)`              — Requirement 17.1
+ *   2. NOT `(prefers-reduced-motion)` — Requirement 17.4
+ *   3. user toggle in localStorage    — Requirement 17.5
+ *
+ * The `(hover: hover)` media query below is kept as a defence-in-depth
+ * guard so the rules are inert on touch devices even if the class were
+ * added by mistake.
+ *
+ * Sub-selectors implement Requirement 17.2 (`text` on input/textarea/
+ * contenteditable) and 17.3 (`pointer` on a/button/role=button/select/
+ * label[for]).
+ */
 @media (hover: hover) {
-  html, body, * {
+  :root.mystic-cursor-enabled,
+  :root.mystic-cursor-enabled body,
+  :root.mystic-cursor-enabled * {
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 19.5,12.5 30.5,12.5 21.5,19 24.9,29.5 16,23 7.1,29.5 10.5,19 1.5,12.5 12.5,12.5' fill='%23f5c842' stroke='%23a07c10' stroke-width='1.2'/%3E%3C%2Fsvg%3E") 16 16, auto !important;
   }
-  input, textarea, [contenteditable] { cursor: text !important; }
-  a, button, [role="button"], select, label[for] { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 19.5,12.5 30.5,12.5 21.5,19 24.9,29.5 16,23 7.1,29.5 10.5,19 1.5,12.5 12.5,12.5' fill='%23f5c842' stroke='%23a07c10' stroke-width='1.2'/%3E%3C%2Fsvg%3E") 16 16, pointer !important; }
+  :root.mystic-cursor-enabled input,
+  :root.mystic-cursor-enabled textarea,
+  :root.mystic-cursor-enabled [contenteditable] { cursor: text !important; }
+  :root.mystic-cursor-enabled a,
+  :root.mystic-cursor-enabled button,
+  :root.mystic-cursor-enabled [role="button"],
+  :root.mystic-cursor-enabled select,
+  :root.mystic-cursor-enabled label[for] {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpolygon points='16,2 19.5,12.5 30.5,12.5 21.5,19 24.9,29.5 16,23 7.1,29.5 10.5,19 1.5,12.5 12.5,12.5' fill='%23f5c842' stroke='%23a07c10' stroke-width='1.2'/%3E%3C%2Fsvg%3E") 16 16, pointer !important;
+  }
+}
+
+/* Reduced-motion users always see the system cursor regardless of class. */
+@media (prefers-reduced-motion: reduce) {
+  :root.mystic-cursor-enabled,
+  :root.mystic-cursor-enabled body,
+  :root.mystic-cursor-enabled * {
+    cursor: auto !important;
+  }
 }
 
 /* ── Print Styles ── */

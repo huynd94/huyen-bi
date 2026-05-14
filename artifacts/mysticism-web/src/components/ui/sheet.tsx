@@ -7,14 +7,53 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Sheet — wrapper trực tiếp của `@radix-ui/react-dialog` Root, render
+ * như một panel trượt từ một trong bốn cạnh màn hình (top/right/bottom/left).
+ *
+ * Mục đích: panel phụ/side drawer cho navigation, filter, hoặc form
+ * dài; khác {@link Dialog} ở chỗ Sheet pin vào cạnh màn hình thay vì
+ * căn giữa, hợp với các flow phụ trợ không cần chiếm trọn vùng nhìn.
+ *
+ * Props: kế thừa props của Radix Dialog Root — `open`, `onOpenChange`,
+ * `defaultOpen`, `modal` (mặc định `true`).
+ *
+ * Lưu ý a11y: Radix tự bẫy focus, gắn `role="dialog"` /
+ * `aria-modal="true"`, đóng bằng `Esc`, và trả focus về trigger sau khi
+ * đóng. Bắt buộc lồng {@link SheetTitle} bên trong {@link SheetContent}
+ * — dùng `sr-only` nếu muốn ẩn về mặt thị giác.
+ *
+ * @example
+ * ```tsx
+ * <Sheet>
+ *   <SheetTrigger asChild>
+ *     <Button variant="outline">Mở bộ lọc</Button>
+ *   </SheetTrigger>
+ *   <SheetContent side="right">
+ *     <SheetHeader>
+ *       <SheetTitle>Bộ lọc lá số</SheetTitle>
+ *       <SheetDescription>Tinh chỉnh kết quả hiển thị.</SheetDescription>
+ *     </SheetHeader>
+ *     <div className="py-4">...</div>
+ *     <SheetFooter>
+ *       <SheetClose asChild><Button>Áp dụng</Button></SheetClose>
+ *     </SheetFooter>
+ *   </SheetContent>
+ * </Sheet>
+ * ```
+ */
 const Sheet = SheetPrimitive.Root
 
+/** Trigger mở {@link Sheet}. Dùng `asChild` để render component tuỳ ý. */
 const SheetTrigger = SheetPrimitive.Trigger
 
+/** Nút đóng sheet — có thể đặt ở bất kỳ đâu trong nội dung. */
 const SheetClose = SheetPrimitive.Close
 
+/** Portal render sheet vào cuối `<body>` để tránh stacking context. */
 const SheetPortal = SheetPrimitive.Portal
 
+/** Lớp phủ (overlay) tối nền khi sheet mở, fade in/out theo `data-state`. */
 const SheetOverlay = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
@@ -53,6 +92,19 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+/**
+ * Container chính của sheet. Tự động kèm Portal + Overlay, focus trap,
+ * animation slide-in/out từ cạnh tương ứng `side`, và nút "X" đóng ở
+ * góc trên phải (kèm `<span class="sr-only">Close</span>` cho screen
+ * reader).
+ *
+ * Props bổ sung:
+ * - `side`: `"top" | "right" | "bottom" | "left"` (mặc định `"right"`)
+ *   — chọn cạnh màn hình mà panel pin vào.
+ *
+ * Lưu ý a11y: bắt buộc lồng {@link SheetTitle}; cân nhắc thêm
+ * {@link SheetDescription} để Radix có target cho `aria-describedby`.
+ */
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
@@ -74,6 +126,7 @@ const SheetContent = React.forwardRef<
 ))
 SheetContent.displayName = SheetPrimitive.Content.displayName
 
+/** Phần header của sheet — chứa Title và Description. */
 const SheetHeader = ({
   className,
   ...props
@@ -88,6 +141,10 @@ const SheetHeader = ({
 )
 SheetHeader.displayName = "SheetHeader"
 
+/**
+ * Footer chứa action buttons. Trên mobile xếp dọc (`flex-col-reverse`),
+ * từ `sm:` trở lên xếp ngang về phải.
+ */
 const SheetFooter = ({
   className,
   ...props
@@ -102,6 +159,7 @@ const SheetFooter = ({
 )
 SheetFooter.displayName = "SheetFooter"
 
+/** Tiêu đề sheet. Liên kết với content qua `aria-labelledby` (Radix tự gắn). */
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
@@ -114,6 +172,7 @@ const SheetTitle = React.forwardRef<
 ))
 SheetTitle.displayName = SheetPrimitive.Title.displayName
 
+/** Mô tả ngắn — liên kết với content qua `aria-describedby` (Radix tự gắn). */
 const SheetDescription = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>

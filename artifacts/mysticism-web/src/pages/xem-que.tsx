@@ -111,7 +111,7 @@ export default function IChingPage() {
         )}
       </div>
 
-      <main className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative">
+      <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Kinh Dịch</h1>

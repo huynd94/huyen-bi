@@ -4,6 +4,30 @@ import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Checkbox — wrapper Radix Checkbox Root.
+ *
+ * Mục đích: ô tick/bỏ tick dạng nhỏ (16×16) cho form, danh sách lọc,
+ * điều khoản đồng ý,... Hỗ trợ cả trạng thái `indeterminate` qua prop
+ * `checked={"indeterminate"}`.
+ *
+ * Props: kế thừa toàn bộ props của `CheckboxPrimitive.Root` —
+ * `checked`, `defaultChecked`, `onCheckedChange`, `disabled`, `required`,
+ * `name`, `value`, `id`,...
+ *
+ * Lưu ý a11y: Radix render thẻ `<button role="checkbox">` với
+ * `aria-checked` đồng bộ trạng thái; bàn phím `Space` toggle. Luôn cặp
+ * với `<Label htmlFor>` hoặc bọc trong `<Label>` để screen reader đọc
+ * được nhãn; tránh chỉ dùng text bên cạnh không liên kết.
+ *
+ * @example
+ * ```tsx
+ * <div className="flex items-center gap-2">
+ *   <Checkbox id="agree" checked={agreed} onCheckedChange={setAgreed} />
+ *   <Label htmlFor="agree">Tôi đồng ý với điều khoản</Label>
+ * </div>
+ * ```
+ */
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>

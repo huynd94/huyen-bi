@@ -11,6 +11,33 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 
+/**
+ * Calendar — wrapper thiết kế trên `react-day-picker` v9.
+ *
+ * Mục đích: chọn ngày/khoảng ngày, dùng trong popover nhập ngày sinh,
+ * khoảng thời gian xem lịch sử, v.v. Tự bám design token (`--background`,
+ * `--accent`, `--primary`) và phối hợp với `Card`/`Popover` (transparent
+ * khi nhúng bên trong).
+ *
+ * Props bổ sung trên DayPicker:
+ * - `buttonVariant`: variant của nút điều hướng tháng (mặc định `"ghost"`).
+ * - Các props của DayPicker: `mode`, `selected`, `onSelect`, `disabled`,
+ *   `fromDate`, `toDate`, `captionLayout` (`"label" | "dropdown"`),...
+ *
+ * Lưu ý a11y: react-day-picker tự gắn `role="grid"`, hỗ trợ phím `←/→`,
+ * `↑/↓`, `PageUp/PageDown`, `Home/End` để di chuyển; ô đang focus có
+ * ring rõ qua `group-data-[focused=true]/day:ring`.
+ *
+ * @example
+ * ```tsx
+ * <Calendar
+ *   mode="single"
+ *   selected={date}
+ *   onSelect={setDate}
+ *   captionLayout="dropdown"
+ * />
+ * ```
+ */
 function Calendar({
   className,
   classNames,
@@ -172,6 +199,11 @@ function Calendar({
   )
 }
 
+/**
+ * Một ô ngày bên trong {@link Calendar}. Render `<Button variant="ghost">`
+ * có data-attributes (`data-selected-single`, `data-range-start/middle/end`)
+ * để CSS đánh dấu trạng thái chọn. Tự focus khi `modifiers.focused === true`.
+ */
 function CalendarDayButton({
   className,
   day,

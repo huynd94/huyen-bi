@@ -6,6 +6,28 @@ import { cn } from "@/lib/utils"
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
 
+/**
+ * Cấu hình chart cho `<ChartContainer>` — ánh xạ key dữ liệu (ví dụ tên
+ * dataKey của Recharts) sang nhãn tiếng Việt, icon, và màu sắc.
+ *
+ * Mỗi entry gồm `label` (React node hiển thị trong legend / tooltip),
+ * `icon` tuỳ chọn, và **một trong hai** cách khai báo màu:
+ *
+ * - `color`: một chuỗi CSS color áp dụng cho cả light và dark theme.
+ * - `theme`: `{ light, dark }` — chuỗi CSS color khác nhau cho từng theme,
+ *   được Recharts inject vào `:root` / `.dark` qua biến CSS.
+ *
+ * Lưu ý a11y: nhãn `label` nên là chuỗi tiếng Việt rõ nghĩa để screen
+ * reader đọc đúng khi tooltip/legend nhận focus (xem `ChartBase`).
+ *
+ * @example
+ * ```tsx
+ * const config: ChartConfig = {
+ *   kim: { label: "Kim", color: "hsl(var(--chart-1))" },
+ *   moc: { label: "Mộc", theme: { light: "hsl(140 60% 35%)", dark: "hsl(140 60% 60%)" } },
+ * };
+ * ```
+ */
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode

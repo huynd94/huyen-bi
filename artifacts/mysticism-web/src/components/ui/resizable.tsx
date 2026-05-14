@@ -5,6 +5,27 @@ import * as ResizablePrimitive from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * ResizablePanelGroup — container của hệ resizable, bọc nhiều `ResizablePanel`.
+ *
+ * Mục đích: tạo bố cục chia đôi/ba có thể kéo thay đổi kích thước, dùng cho
+ * các trang có sidebar tuỳ biến hoặc khu so sánh nội dung.
+ *
+ * Lưu ý a11y: hướng layout được điều khiển qua prop `direction="horizontal"`
+ * hoặc `"vertical"`. `react-resizable-panels` tự cấu hình `role="separator"`
+ * và `aria-orientation` cho handle, hỗ trợ phím mũi tên để điều chỉnh kích
+ * thước panel. Khi dùng làm phân vùng chính, gắn `aria-label` cho từng
+ * panel để screen reader phân biệt được.
+ *
+ * @example
+ * ```tsx
+ * <ResizablePanelGroup direction="horizontal">
+ *   <ResizablePanel defaultSize={30}>Sidebar</ResizablePanel>
+ *   <ResizableHandle withHandle />
+ *   <ResizablePanel>Nội dung lá số</ResizablePanel>
+ * </ResizablePanelGroup>
+ * ```
+ */
 const ResizablePanelGroup = ({
   className,
   ...props
@@ -18,8 +39,31 @@ const ResizablePanelGroup = ({
   />
 )
 
+/**
+ * ResizablePanel — một panel con bên trong `ResizablePanelGroup`.
+ *
+ * Mục đích: bọc nội dung có thể thay đổi kích thước, có thể chỉ định
+ * `defaultSize`, `minSize`, `maxSize` (đơn vị %) và `collapsible`.
+ *
+ * Lưu ý a11y: panel là vùng nội dung, không có vai trò ARIA mặc định.
+ * Khi panel có thể thu gọn, cân nhắc gắn `aria-label` mô tả nội dung
+ * cho người dùng trợ năng biết phần nào đang bị thu/giãn.
+ */
 const ResizablePanel = ResizablePrimitive.Panel
 
+/**
+ * ResizableHandle — thanh kéo giữa hai panel để chỉnh kích thước.
+ *
+ * Mục đích: cung cấp điểm tương tác kéo/keyboard để người dùng phân chia
+ * lại không gian giữa các panel. Khi `withHandle = true`, hiển thị icon
+ * grip giúp người dùng nhận biết vị trí kéo.
+ *
+ * Lưu ý a11y: handle render với `role="separator"` (do thư viện gốc
+ * cung cấp) và hỗ trợ phím `Arrow` để di chuyển. Đảm bảo focus ring
+ * được giữ rõ ràng (đã có `focus-visible:ring-1 focus-visible:ring-ring`)
+ * để người dùng bàn phím nhìn thấy. Icon grip set `aria-hidden` ngầm
+ * vì thuần trang trí.
+ */
 const ResizableHandle = ({
   withHandle,
   className,

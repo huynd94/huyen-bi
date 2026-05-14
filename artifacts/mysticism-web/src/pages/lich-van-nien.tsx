@@ -90,7 +90,7 @@ export default function LichVanNienPage() {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 pt-20 pb-16 px-4">
+      <main id="main" tabIndex={-1} className="flex-1 pt-20 pb-16 px-4 outline-none">
         <div className="max-w-6xl mx-auto space-y-8">
 
           {/* Header */}

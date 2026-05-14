@@ -5,8 +5,28 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * ToastProvider — root của hệ toast (re-export `ToastPrimitives.Provider`).
+ *
+ * Mục đích: đặt một lần ở mức cao trong cây React để cung cấp context
+ * điều phối hiển thị/ẩn toast. Mọi `Toast` con cần nằm trong provider này.
+ *
+ * Lưu ý a11y: Radix tự gắn `aria-live` cho viewport bên dưới (mặc định
+ * `polite`), giúp screen reader thông báo nội dung toast khi xuất hiện.
+ * Có thể tinh chỉnh `duration`, `swipeDirection` qua props của Radix.
+ */
 const ToastProvider = ToastPrimitives.Provider
 
+/**
+ * ToastViewport — vùng cố định trên màn hình hiển thị toast.
+ *
+ * Mục đích: chỉ định vị trí render danh sách toast (mặc định góc trên
+ * mobile, góc phải-dưới desktop). Đặt một lần cùng `ToastProvider`.
+ *
+ * Lưu ý a11y: phần tử nhận `role="region"` và `aria-label` từ Radix; toast
+ * con sẽ được thông báo với chế độ live region. Tránh đặt nhiều viewport
+ * trùng vị trí gây overlap khó dùng cho người dùng bàn phím.
+ */
 const ToastViewport = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Viewport>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
@@ -38,6 +58,32 @@ const toastVariants = cva(
   }
 )
 
+/**
+ * Toast — một thông báo toast đơn lẻ (Radix `Toast.Root`).
+ *
+ * Mục đích: hiển thị thông báo ngắn (thành công/lỗi) tự ẩn sau khoảng
+ * thời gian. Hỗ trợ `variant` `default` và `destructive` cho cảnh báo.
+ *
+ * Lưu ý a11y: Radix tự gán `role="status"`/`role="alert"` (tuỳ `type`),
+ * người dùng có thể swipe ngang để dismiss; với bàn phím, `Escape` đóng
+ * toast hoặc dùng `ToastClose`. Khi dùng `destructive`, dữ liệu nội dung
+ * cần đủ ngữ cảnh — tránh chỉ dựa vào màu đỏ.
+ *
+ * @example
+ * ```tsx
+ * <ToastProvider>
+ *   <Toast>
+ *     <div className="grid gap-1">
+ *       <ToastTitle>Đã lưu lá số</ToastTitle>
+ *       <ToastDescription>Bạn có thể xem lại trong "Lịch sử".</ToastDescription>
+ *     </div>
+ *     <ToastAction altText="Mở lịch sử">Mở</ToastAction>
+ *     <ToastClose />
+ *   </Toast>
+ *   <ToastViewport />
+ * </ToastProvider>
+ * ```
+ */
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
@@ -53,6 +99,16 @@ const Toast = React.forwardRef<
 })
 Toast.displayName = ToastPrimitives.Root.displayName
 
+/**
+ * ToastAction — nút hành động chính trong toast (ví dụ "Hoàn tác").
+ *
+ * Mục đích: cho phép người dùng phản ứng nhanh với toast mà không cần
+ * mở dialog hay điều hướng trang.
+ *
+ * Lưu ý a11y: Radix yêu cầu `altText` để cung cấp nhãn dự phòng cho
+ * trợ năng (đọc khi trình bày dạng text-only). Đảm bảo nội dung nút và
+ * `altText` mô tả chính xác hành động (ví dụ "Mở lịch sử lá số").
+ */
 const ToastAction = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Action>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
@@ -68,6 +124,17 @@ const ToastAction = React.forwardRef<
 ))
 ToastAction.displayName = ToastPrimitives.Action.displayName
 
+/**
+ * ToastClose — nút đóng toast (icon X góc trên phải).
+ *
+ * Mục đích: cho phép người dùng chủ động đóng toast trước khi tự ẩn.
+ *
+ * Lưu ý a11y: nút chỉ chứa icon, nên Radix gán `aria-label` mặc định
+ * (có thể override). Focus ring được thiết kế để hiển thị qua
+ * `focus:ring-2`. Nút chỉ hiện rõ khi hover/focus trên toast cha
+ * (`opacity-0` → `group-hover/focus:opacity-100`) — vẫn tab-focus được
+ * cho người dùng bàn phím.
+ */
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
@@ -86,6 +153,14 @@ const ToastClose = React.forwardRef<
 ))
 ToastClose.displayName = ToastPrimitives.Close.displayName
 
+/**
+ * ToastTitle — tiêu đề ngắn của toast.
+ *
+ * Mục đích: dòng text chính tóm tắt nội dung thông báo.
+ *
+ * Lưu ý a11y: Radix render với `<div>` mang ngữ nghĩa "title" của toast;
+ * khi toast được announce qua live region, title được đọc trước description.
+ */
 const ToastTitle = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Title>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
@@ -98,6 +173,14 @@ const ToastTitle = React.forwardRef<
 ))
 ToastTitle.displayName = ToastPrimitives.Title.displayName
 
+/**
+ * ToastDescription — mô tả phụ của toast.
+ *
+ * Mục đích: cung cấp chi tiết thêm hoặc ngữ cảnh hành động dưới `ToastTitle`.
+ *
+ * Lưu ý a11y: được liên kết với toast root như description; screen reader
+ * đọc sau title. Giữ nội dung ngắn để toast tự ẩn vẫn đủ thời gian đọc.
+ */
 const ToastDescription = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Description>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
@@ -110,8 +193,16 @@ const ToastDescription = React.forwardRef<
 ))
 ToastDescription.displayName = ToastPrimitives.Description.displayName
 
+/**
+ * ToastProps — kiểu props của `Toast`, để dùng khi viết hook `useToast`
+ * hoặc utility tạo toast theo style chuẩn của dự án.
+ */
 type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
+/**
+ * ToastActionElement — kiểu của một React element `ToastAction`, dùng
+ * khi truyền action như tham số trong API tạo toast.
+ */
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
 export {

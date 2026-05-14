@@ -1,58 +1,65 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useUser, useClerk, Show } from "@clerk/react";
+import { UserButton, Show } from "@clerk/react";
+import { Sparkles } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { useAISettings } from "@/contexts/ai-settings";
 import { useTheme } from "@/contexts/theme";
 import { AISettingsModal } from "@/components/ai-settings-modal";
 import { isClerkEnabled } from "@/lib/auth-config";
+import { MobileDrawer } from "@/components/layout/mobile-drawer";
+import { GROUPS, ROUTE_MAP } from "@/components/layout/breadcrumb";
+import { useMysticCursorEnabled } from "@/lib/use-mystic-cursor";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 
-type NavChild = { href: string; label: string; desc?: string };
-type NavGroup = { label: string; children: NavChild[] };
-type NavItem = { href: string; label: string } | NavGroup;
-
-function isGroup(item: NavItem): item is NavGroup {
-  return "children" in item;
+/**
+ * Liên kết con trong dropdown của một nhóm điều hướng.
+ */
+interface NavLink {
+  href: string;
+  label: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Trang chủ" },
-  {
-    label: "Số Học",
-    children: [
-      { href: "/than-so-hoc", label: "Thần Số Học", desc: "Số vận mệnh & năm cá nhân" },
-      { href: "/xem-ten", label: "Xem Tên", desc: "Phân tích Ngũ Cách tên người" },
-      { href: "/lich-ca-nhan", label: "Lịch Cá Nhân", desc: "Năm, tháng, ngày cá nhân" },
-      { href: "/cat-hung", label: "Cát Hung", desc: "Điện thoại & biển số xe" },
-    ],
-  },
-  {
-    label: "Mệnh Lý",
-    children: [
-      { href: "/bat-tu", label: "Bát Tự Tứ Trụ", desc: "Tứ trụ, Ngũ Hành & Đại Vận" },
-      { href: "/tu-vi", label: "Tử Vi Đẩu Số", desc: "12 cung & 14 chính tinh" },
-      { href: "/phong-thuy", label: "Phong Thuỷ Bát Trạch", desc: "Hướng nhà & Mệnh Quái" },
-      { href: "/sao-han", label: "Sao Hạn Hàng Năm", desc: "Sao chiếu mệnh 7 năm" },
-    ],
-  },
-  {
-    label: "Tiên Tri",
-    children: [
-      { href: "/xem-que", label: "Xem Quẻ I Ching", desc: "64 quẻ Kinh Dịch cổ đại" },
-      { href: "/hop-tuoi", label: "Hợp Tuổi & Duyên Số", desc: "Tương hợp đôi bạn" },
-      { href: "/xem-ngay-tot", label: "Xem Ngày Tốt", desc: "Ngày Hoàng Đạo theo mục đích" },
-    ],
-  },
-  {
-    label: "Tra Cứu",
-    children: [
-      { href: "/lich-van-nien", label: "Lịch Vạn Niên", desc: "Âm lịch & Can Chi" },
-      { href: "/tu-dien", label: "Từ Điển Huyền Học", desc: "Can, Chi, Ngũ Hành, Bát Quái" },
-      { href: "/lich-su", label: "Lịch Sử Tra Cứu", desc: "Xem lại kết quả đã tra" },
-    ],
-  },
-  { href: "/ai-chat", label: "Trợ lý AI" },
-];
+/**
+ * Một nhóm điều hướng cấp 1 hiển thị ở navbar desktop.
+ *
+ * Nguồn dữ liệu duy nhất là `GROUPS` + `ROUTE_MAP` của
+ * `breadcrumb.tsx` để mọi cấu trúc thông tin (breadcrumb, drawer mobile,
+ * navbar desktop) cùng một bộ route — thêm/sửa route ở `ROUTE_MAP` tự
+ * động phản ánh ở navbar.
+ */
+interface NavGroup {
+  label: string;
+  links: NavLink[];
+}
+
+/**
+ * Dựng cấu trúc 5 nhóm điều hướng (Số Học, Mệnh Lý, Tiên Tri, Tra Cứu,
+ * Trợ Lý AI) từ {@link GROUPS} và {@link ROUTE_MAP}. Thứ tự nhóm bám
+ * thứ tự khai báo `GROUPS`; thứ tự link bám thứ tự duyệt `Object.entries`
+ * của `ROUTE_MAP` (phản ánh thứ tự khai báo nguồn).
+ */
+function buildGroups(): NavGroup[] {
+  return Object.values(GROUPS).map((group) => {
+    const links: NavLink[] = [];
+    for (const [path, meta] of Object.entries(ROUTE_MAP)) {
+      if (meta.group?.label === group.label) {
+        links.push({ href: path, label: meta.label });
+      }
+    }
+    return { label: group.label, links };
+  });
+}
+
+const NAV_GROUPS: NavGroup[] = buildGroups();
 
 const PROVIDER_BADGE: Record<string, { label: string; color: string }> = {
   server: { label: "AI", color: "bg-primary/20 text-primary border-primary/40" },
@@ -62,7 +69,7 @@ const PROVIDER_BADGE: Record<string, { label: string; color: string }> = {
 
 function SunIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
       <line x1="4.22" y1="4.22" x2="7.05" y2="7.05"/><line x1="16.95" y1="16.95" x2="19.78" y2="19.78"/>
       <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
@@ -73,313 +80,302 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
     </svg>
   );
 }
 
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      className={cn("w-3 h-3 transition-transform duration-200", open && "rotate-180")}
-      fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
-function DropdownMenu({ group, location }: { group: NavGroup; location: string }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const isActive = group.children.some((c) => c.href === location);
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "flex items-center gap-1 text-xs tracking-wide transition-colors hover:text-primary py-1",
-          isActive ? "text-primary font-semibold" : "text-muted-foreground"
-        )}
-      >
-        {group.label}
-        <ChevronIcon open={open} />
-      </button>
-
-      {open && (
-        <div
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
-          className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-50"
-        >
-          <div className="min-w-[220px] rounded-xl border border-border/60 bg-background/95 backdrop-blur-md shadow-xl shadow-black/30 py-1.5 overflow-hidden">
-            <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 border-b border-border/30 mb-1">
-              {group.label}
-            </div>
-            {group.children.map((child) => (
-              <Link
-                key={child.href}
-                href={child.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex flex-col px-3 py-2 mx-1 rounded-lg transition-colors group",
-                  location === child.href
-                    ? "bg-primary/15 text-primary"
-                    : "hover:bg-primary/8 text-foreground"
-                )}
-              >
-                <span className={cn("text-sm font-medium", location === child.href ? "text-primary" : "group-hover:text-primary transition-colors")}>
-                  {child.label}
-                </span>
-                {child.desc && (
-                  <span className="text-[11px] text-muted-foreground mt-0.5">{child.desc}</span>
-                )}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MobileGroupSection({
-  group,
-  location,
-  onClose,
+/**
+ * Một mục trong dropdown của một nhóm điều hướng. Render bằng
+ * `NavigationMenuLink asChild` để wouter `<Link>` vẫn xử lý điều hướng
+ * client-side, đồng thời được Radix gắn các thuộc tính ARIA + role hợp
+ * lệ cho menu (Requirement 7.1).
+ *
+ * `aria-current="page"` được đặt khi `location` khớp `href`
+ * (Requirement 7.3) và link active được tô bằng `text-primary`.
+ */
+function GroupMenuItem({
+  href,
+  label,
+  active,
 }: {
-  group: NavGroup;
-  location: string;
-  onClose: () => void;
+  href: string;
+  label: string;
+  active: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const isActive = group.children.some((c) => c.href === location);
-
   return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-          isActive ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-primary/5"
-        )}
-      >
-        <span>{group.label}</span>
-        <ChevronIcon open={open} />
-      </button>
-      {open && (
-        <div className="ml-3 mt-0.5 space-y-0.5 border-l border-primary/20 pl-3">
-          {group.children.map((child) => (
-            <Link
-              key={child.href}
-              href={child.href}
-              onClick={onClose}
-              className={cn(
-                "block px-2 py-2 rounded-lg text-sm transition-colors",
-                location === child.href
-                  ? "text-primary font-semibold bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-primary/5"
-              )}
-            >
-              {child.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function UserButton() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  if (!isLoaded) return null;
-
-  return (
-    <Show
-      when="signed-in"
-      fallback={
-        <div className="flex items-center gap-1">
-          <Link href="/sign-in">
-            <button className="text-xs px-3 py-1.5 rounded-lg text-muted-foreground hover:text-primary transition-colors">
-              Đăng nhập
-            </button>
-          </Link>
-          <Link href="/sign-up">
-            <button className="text-xs px-3 py-1.5 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 transition-all">
-              Đăng ký
-            </button>
-          </Link>
-        </div>
-      }
-    >
-      <div ref={ref} className="relative">
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="w-8 h-8 rounded-full border border-primary/40 bg-primary/15 flex items-center justify-center text-sm font-bold text-primary hover:border-primary hover:bg-primary/25 transition-all"
-          title={user?.fullName ?? "Tài khoản"}
+    <li>
+      <NavigationMenuLink asChild>
+        <Link
+          href={href}
+          aria-current={active ? "page" : undefined}
+          className={cn(
+            "block select-none rounded-lg px-3 py-2 text-sm leading-snug no-underline outline-none transition-colors",
+            "hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:ring-1 focus-visible:ring-primary/40",
+            active
+              ? "bg-primary/15 text-primary font-semibold"
+              : "text-foreground hover:text-primary",
+          )}
         >
-          {user?.firstName?.[0]?.toUpperCase() ?? user?.emailAddresses?.[0]?.emailAddress?.[0]?.toUpperCase() ?? "U"}
-        </button>
-        {open && (
-          <div className="absolute right-0 top-full mt-2 w-52 rounded-xl border border-border/60 bg-background/97 backdrop-blur-md shadow-xl py-1.5 z-50">
-            <div className="px-3 py-2 border-b border-border/30">
-              <p className="text-sm font-medium text-foreground truncate">{user?.fullName ?? "Người dùng"}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.emailAddresses?.[0]?.emailAddress}</p>
-            </div>
-            <Link href="/profile" onClick={() => setOpen(false)}>
-              <button className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/8 hover:text-primary transition-colors">
-                Hồ Sơ & Lá Số
-              </button>
-            </Link>
-            <button
-              onClick={() => { setOpen(false); signOut(() => setLocation("/")); }}
-              className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-red-500/8 hover:text-red-400 transition-colors"
-            >
-              Đăng xuất
-            </button>
-          </div>
-        )}
-      </div>
-    </Show>
+          {label}
+        </Link>
+      </NavigationMenuLink>
+    </li>
   );
 }
 
+/**
+ * `Navbar` — thanh điều hướng chính của Huyền Bí.
+ *
+ * Triển khai theo Requirement 7:
+ *
+ * - **7.1**: Trên Breakpoint_Tablet (`md`) trở lên, hiển thị 5 dropdown
+ *   nhóm (Số Học, Mệnh Lý, Tiên Tri, Tra Cứu, Trợ Lý AI) qua Radix
+ *   `NavigationMenu`. Trợ Lý AI là nhóm chỉ có 1 link `/ai-chat` nên
+ *   render dưới dạng link trực tiếp thay vì dropdown để giảm tải tương tác.
+ * - **7.3**: Khi đang ở một Module_Page, link tương ứng được tô màu
+ *   `text-primary` và gắn `aria-current="page"`. Trigger nhóm cha của
+ *   route hiện tại cũng được tô `text-primary` để định vị trực quan.
+ * - **7.5**: Logo "HUYỀN BÍ" là `<Link href="/">` dẫn về trang chủ.
+ * - **7.7**: Khi user đăng nhập, hiển thị Clerk `<UserButton/>` (avatar
+ *   menu chứa Hồ sơ / Lịch sử / Đăng xuất). Khi chưa đăng nhập, hiển
+ *   thị link "Đăng nhập" → `/sign-in`.
+ * - **7.8**: Navbar dùng `position: sticky` + `backdrop-filter: blur(12px)`
+ *   với nền `--background/0.7` để vẫn truy cập được dropdown khi cuộn.
+ *
+ * Trên `<md`, nội dung dropdown được thay bằng `<MobileDrawer>` đã có
+ * sẵn (xem Requirement 7.2 / Task 8.2).
+ *
+ * Validates: Requirements 7.1, 7.3, 7.5, 7.7, 7.8.
+ */
 export function Navbar() {
   const [location] = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { settings, isConfigured } = useAISettings();
   const { theme, toggleTheme } = useTheme();
+  const { enabled: cursorEnabled, toggle: toggleCursor } =
+    useMysticCursorEnabled();
 
   const badge = PROVIDER_BADGE[settings.provider] ?? PROVIDER_BADGE["server"];
 
+  const cursorMenuLabel = cursorEnabled
+    ? "Tắt hiệu ứng con trỏ"
+    : "Bật hiệu ứng con trỏ";
+
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/85 backdrop-blur-md no-print">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold tracking-widest text-primary shrink-0">
+      <header
+        className={cn(
+          // Sticky + backdrop blur (Requirement 7.8). Dùng `sticky` thay vì
+          // `fixed` để thẻ không che nội dung và ngắt flow tài liệu — phù
+          // hợp design.md "position: sticky; top: 0; …".
+          "sticky top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-md no-print",
+        )}
+      >
+        <nav
+          aria-label="Điều hướng chính"
+          className="container mx-auto px-4 h-16 flex items-center justify-between gap-3"
+        >
+          {/* Logo → / (Requirement 7.5) */}
+          <Link
+            href="/"
+            aria-label="Huyền Bí — Về trang chủ"
+            className="text-xl font-bold tracking-widest text-primary shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 rounded-md px-1"
+          >
             HUYỀN BÍ
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-5 flex-1 justify-center px-6">
-            {NAV_ITEMS.map((item) =>
-              isGroup(item) ? (
-                <DropdownMenu key={item.label} group={item} location={location} />
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "text-xs tracking-wide transition-colors hover:text-primary whitespace-nowrap py-1",
-                    location === item.href ? "text-primary font-semibold" : "text-muted-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
+          {/* Desktop nav — md+ (Requirement 7.1) */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <NavigationMenu className="max-w-none">
+              <NavigationMenuList className="gap-0.5">
+                {NAV_GROUPS.map((group) => {
+                  const isAiGroup = group.label === GROUPS.troLyAi.label;
+                  const groupActive = group.links.some(
+                    (l) => l.href === location,
+                  );
+
+                  // Trợ Lý AI chỉ có duy nhất 1 link → render link trực
+                  // tiếp để tránh dropdown thừa thãi (UX phẳng hơn).
+                  if (isAiGroup && group.links.length === 1) {
+                    const link = group.links[0];
+                    const active = link.href === location;
+                    return (
+                      <NavigationMenuItem key={group.label}>
+                        <NavigationMenuLink asChild>
+                          <Link
+                            href={link.href}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "inline-flex h-9 items-center justify-center rounded-md bg-transparent px-4 py-2 text-sm font-medium transition-colors",
+                              "hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none",
+                              active
+                                ? "text-primary font-semibold"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {group.label}
+                          </Link>
+                        </NavigationMenuLink>
+                      </NavigationMenuItem>
+                    );
+                  }
+
+                  return (
+                    <NavigationMenuItem key={group.label}>
+                      <NavigationMenuTrigger
+                        className={cn(
+                          "bg-transparent text-sm font-medium",
+                          groupActive
+                            ? "text-primary"
+                            : "text-muted-foreground hover:text-primary",
+                        )}
+                      >
+                        {group.label}
+                      </NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul
+                          className={cn(
+                            "grid gap-1 p-2 min-w-[240px]",
+                            group.links.length > 4 && "md:w-[420px] md:grid-cols-2",
+                          )}
+                        >
+                          {group.links.map((link) => (
+                            <GroupMenuItem
+                              key={link.href}
+                              href={link.href}
+                              label={link.label}
+                              active={link.href === location}
+                            />
+                          ))}
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  );
+                })}
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
 
+          {/* Right cluster: theme toggle, AI badge, auth, mobile trigger */}
           <div className="flex items-center gap-2 shrink-0">
             <button
+              type="button"
+              role="switch"
+              aria-checked={cursorEnabled}
+              onClick={toggleCursor}
+              title={cursorMenuLabel}
+              aria-label={cursorMenuLabel}
+              className={cn(
+                "hidden md:inline-flex w-9 h-9 rounded-full border items-center justify-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                cursorEnabled
+                  ? "border-primary/40 text-primary hover:border-primary/60"
+                  : "border-border/50 text-muted-foreground hover:text-primary hover:border-primary/50",
+              )}
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
               onClick={toggleTheme}
               title={theme === "dark" ? "Chế độ sáng" : "Chế độ tối"}
-              className="w-8 h-8 rounded-full border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
+              aria-label={theme === "dark" ? "Chuyển sang chế độ sáng" : "Chuyển sang chế độ tối"}
+              className="w-9 h-9 rounded-full border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               {theme === "dark" ? <SunIcon /> : <MoonIcon />}
             </button>
 
             <button
+              type="button"
               onClick={() => setSettingsOpen(true)}
               title="Cài đặt AI"
+              aria-label="Mở cài đặt AI"
               className={cn(
-                "hidden sm:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all hover:opacity-80",
+                "hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-all hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                 badge.color,
-                !isConfigured && "opacity-60 ring-1 ring-red-500/50"
+                !isConfigured && "opacity-60 ring-1 ring-red-500/50",
               )}
             >
               <span>{badge.label}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
               </svg>
             </button>
 
+            {/* Auth slot (Requirement 7.7) — md+ only; mobile auth nằm
+                trong drawer.  Khi Clerk bị tắt (local demo), không hiển
+                thị nút auth nào để tránh dẫn user vào trang Sign-in
+                không khả dụng. */}
             {isClerkEnabled && (
-              <div className="hidden lg:flex">
-                <UserButton />
+              <div className="hidden md:flex items-center">
+                <Show
+                  when="signed-in"
+                  fallback={
+                    <Link
+                      href="/sign-in"
+                      className="text-xs px-3 py-1.5 rounded-lg text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      Đăng nhập
+                    </Link>
+                  }
+                >
+                  {/* `afterSignOutUrl` không tồn tại trên type của
+                      `<UserButton>` ở version Clerk hiện tại — redirect sau
+                      sign-out được điều phối bởi Clerk provider/global config
+                      thay vì prop. Việc bỏ prop ở đây không thay đổi UX vì
+                      `MobileDrawer.signOut()` đã gọi `setLocation("/")` thủ
+                      công, còn flow desktop dựa trên cấu hình Clerk mặc định. */}
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox:
+                          "w-8 h-8 ring-1 ring-primary/40 hover:ring-primary transition-all",
+                      },
+                    }}
+                  >
+                    {/*
+                     * Preferences entry — Mystic_Cursor toggle.
+                     * `UserButton.MenuItems` lets us inject custom
+                     * actions next to the default Hồ sơ / Đăng xuất
+                     * items provided by Clerk. The `<Sparkles>` icon
+                     * is decorative so it's fine here without a
+                     * separate aria-label (UserButton.Action renders
+                     * the `label` text for screen readers).
+                     */}
+                    <UserButton.MenuItems>
+                      <UserButton.Action
+                        label={cursorMenuLabel}
+                        labelIcon={
+                          <Sparkles
+                            className="w-4 h-4"
+                            aria-hidden="true"
+                          />
+                        }
+                        onClick={toggleCursor}
+                      />
+                    </UserButton.MenuItems>
+                  </UserButton>
+                </Show>
               </div>
             )}
 
-            <button
-              onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden w-8 h-8 rounded-lg border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
-            >
-              {mobileOpen ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-              )}
-            </button>
+            {/* Mobile drawer trigger (drawer tự ẩn ở md+ qua className `md:hidden`). */}
+            <MobileDrawer />
           </div>
-        </div>
-
-        {/* Mobile menu */}
-        {mobileOpen && (
-          <div className="lg:hidden border-t border-border/40 bg-background/97 backdrop-blur-md px-4 py-3 space-y-1 max-h-[75vh] overflow-y-auto">
-            {NAV_ITEMS.map((item) =>
-              isGroup(item) ? (
-                <MobileGroupSection
-                  key={item.label}
-                  group={item}
-                  location={location}
-                  onClose={() => setMobileOpen(false)}
-                />
-              ) : (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "block px-3 py-2.5 rounded-lg text-sm transition-colors font-medium",
-                    location === item.href
-                      ? "bg-primary/15 text-primary font-semibold"
-                      : "text-muted-foreground hover:bg-primary/8 hover:text-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              )
-            )}
-          </div>
-        )}
-      </nav>
+        </nav>
+      </header>
 
       <AISettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>

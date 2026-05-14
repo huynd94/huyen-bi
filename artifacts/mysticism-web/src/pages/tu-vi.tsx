@@ -233,7 +233,7 @@ export default function TuViPage() {
         )}
       </div>
       <Navbar />
-      <main className="flex-1 pt-20 pb-16 px-4">
+      <main id="main" tabIndex={-1} className="flex-1 pt-20 pb-16 px-4 outline-none">
         <div className="max-w-6xl mx-auto space-y-8">
 
           {/* Header */}

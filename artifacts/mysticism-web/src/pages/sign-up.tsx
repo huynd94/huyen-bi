@@ -1,7 +1,6 @@
 import { SignUp } from "@clerk/react";
 import { Redirect } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
-import { AmbientBg } from "@/components/ambient-bg";
 import { isClerkEnabled } from "@/lib/auth-config";
 
 const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
@@ -11,7 +10,6 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <AmbientBg />
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4 pt-20 relative z-10">
         <div className="w-full max-w-md">

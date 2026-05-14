@@ -3,6 +3,42 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Drawer — wrapper trên thư viện `vaul` cho drawer kéo từ dưới lên.
+ *
+ * Mục đích: bottom sheet di động dùng cho chọn lựa nhanh, form ngắn,
+ * hoặc menu phụ trên mobile. Hỗ trợ kéo (drag) để đóng và scale
+ * background để tạo cảm giác chiều sâu.
+ *
+ * Props:
+ * - `shouldScaleBackground` (mặc định `true`): co nhỏ trang chính khi
+ *   drawer mở để có hiệu ứng chiều sâu (chỉ hoạt động khi
+ *   `<body data-vaul-drawer-wrapper>` được set).
+ * - Kế thừa toàn bộ props của `vaul` Root — `open`, `onOpenChange`,
+ *   `defaultOpen`, `dismissible`, `snapPoints`, `modal`,...
+ *
+ * Lưu ý a11y: vaul tự gắn `role="dialog"`, focus trap, và đóng bằng
+ * Esc. Cần lồng {@link DrawerTitle} cho screen reader (dùng `sr-only`
+ * nếu muốn ẩn thị giác). Drag-to-dismiss tôn trọng
+ * `prefers-reduced-motion`.
+ *
+ * @example
+ * ```tsx
+ * <Drawer>
+ *   <DrawerTrigger asChild><Button>Mở menu</Button></DrawerTrigger>
+ *   <DrawerContent>
+ *     <DrawerHeader>
+ *       <DrawerTitle>Chọn loại bói</DrawerTitle>
+ *       <DrawerDescription>Chọn một loại bói để tiếp tục.</DrawerDescription>
+ *     </DrawerHeader>
+ *     <div className="p-4">...</div>
+ *     <DrawerFooter>
+ *       <DrawerClose asChild><Button variant="outline">Huỷ</Button></DrawerClose>
+ *     </DrawerFooter>
+ *   </DrawerContent>
+ * </Drawer>
+ * ```
+ */
 const Drawer = ({
   shouldScaleBackground = true,
   ...props
@@ -14,12 +50,16 @@ const Drawer = ({
 )
 Drawer.displayName = "Drawer"
 
+/** Trigger mở {@link Drawer}. Dùng `asChild` để render component tuỳ ý. */
 const DrawerTrigger = DrawerPrimitive.Trigger
 
+/** Portal render drawer vào cuối `<body>` để tránh stacking context. */
 const DrawerPortal = DrawerPrimitive.Portal
 
+/** Nút đóng drawer có thể đặt ở bất kỳ đâu trong nội dung. */
 const DrawerClose = DrawerPrimitive.Close
 
+/** Lớp phủ (overlay) tối nền khi drawer mở. */
 const DrawerOverlay = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
@@ -32,6 +72,13 @@ const DrawerOverlay = React.forwardRef<
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
+/**
+ * Container chính của drawer. Tự kèm Portal + Overlay và một thanh
+ * "grab handle" nhỏ ở trên cùng để gợi ý có thể kéo để đóng.
+ *
+ * Lưu ý a11y: bắt buộc lồng {@link DrawerTitle}. Mặc định pin xuống
+ * cạnh dưới (`bottom-0`), bo góc trên `rounded-t-[10px]`.
+ */
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -53,6 +100,7 @@ const DrawerContent = React.forwardRef<
 ))
 DrawerContent.displayName = "DrawerContent"
 
+/** Phần header của drawer — chứa Title và Description, padding `p-4`. */
 const DrawerHeader = ({
   className,
   ...props
@@ -64,6 +112,11 @@ const DrawerHeader = ({
 )
 DrawerHeader.displayName = "DrawerHeader"
 
+/**
+ * Footer chứa action buttons. Mặc định xếp dọc (`flex-col`) hợp với
+ * tay đặt ngón cái trên mobile; `mt-auto` đẩy footer xuống đáy khi
+ * content ngắn.
+ */
 const DrawerFooter = ({
   className,
   ...props
@@ -75,6 +128,7 @@ const DrawerFooter = ({
 )
 DrawerFooter.displayName = "DrawerFooter"
 
+/** Tiêu đề drawer. Liên kết với content qua `aria-labelledby` (vaul tự gắn). */
 const DrawerTitle = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
@@ -90,6 +144,7 @@ const DrawerTitle = React.forwardRef<
 ))
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
 
+/** Mô tả ngắn — liên kết với content qua `aria-describedby` (vaul tự gắn). */
 const DrawerDescription = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>

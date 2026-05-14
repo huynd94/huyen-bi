@@ -4,18 +4,62 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * ContextMenu — wrapper trực tiếp `@radix-ui/react-context-menu` Root.
+ *
+ * Mục đích: menu hiện ra khi user right-click (hoặc long-press trên
+ * mobile) lên vùng {@link ContextMenuTrigger}. Khác {@link DropdownMenu}
+ * ở cách kích hoạt (right-click/long-press thay vì click).
+ *
+ * Props: kế thừa props của Radix Root — `dir`, `modal`, `onOpenChange`.
+ *
+ * Lưu ý a11y: Radix gắn `role="menu"`, `role="menuitem"`,
+ * `role="menuitemcheckbox"`, `role="menuitemradio"` tự động; bàn phím
+ * hỗ trợ `↑/↓` di chuyển, `Enter`/`Space` chọn, `→` mở sub-menu, `←`
+ * đóng sub-menu, `Esc` đóng menu. Mở qua phím `Shift+F10` hoặc phím
+ * Context (Menu key) trên Windows.
+ *
+ * @example
+ * ```tsx
+ * <ContextMenu>
+ *   <ContextMenuTrigger className="block p-4 border">
+ *     Nhấp chuột phải lên vùng này
+ *   </ContextMenuTrigger>
+ *   <ContextMenuContent>
+ *     <ContextMenuItem>Sao chép</ContextMenuItem>
+ *     <ContextMenuItem>Dán</ContextMenuItem>
+ *     <ContextMenuSeparator />
+ *     <ContextMenuItem className="text-destructive">Xoá</ContextMenuItem>
+ *   </ContextMenuContent>
+ * </ContextMenu>
+ * ```
+ */
 const ContextMenu = ContextMenuPrimitive.Root
 
+/** Vùng kích hoạt context menu — right-click/long-press để mở menu. */
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
 
+/** Gom nhóm các item liên quan trong cùng menu (không thêm style mặc định). */
 const ContextMenuGroup = ContextMenuPrimitive.Group
 
+/** Portal render nội dung menu vào cuối `<body>` để tránh stacking context. */
 const ContextMenuPortal = ContextMenuPrimitive.Portal
 
+/** Wrapper cho sub-menu lồng nhau — dùng cùng {@link ContextMenuSubTrigger} và {@link ContextMenuSubContent}. */
 const ContextMenuSub = ContextMenuPrimitive.Sub
 
+/** Group cho các {@link ContextMenuRadioItem} — chỉ một item được chọn tại một thời điểm. */
 const ContextMenuRadioGroup = ContextMenuPrimitive.RadioGroup
 
+/**
+ * Trigger để mở sub-menu lồng nhau bên trong {@link ContextMenuSub}.
+ * Tự render icon `ChevronRight` ở cuối để hint hướng mở.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ *
+ * Lưu ý a11y: nhấn `→` (hoặc hover) để mở sub-menu, `←` để đóng.
+ */
 const ContextMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
@@ -37,6 +81,7 @@ const ContextMenuSubTrigger = React.forwardRef<
 ))
 ContextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName
 
+/** Container cho các item của sub-menu lồng nhau, áp animation slide-in theo `data-side`. */
 const ContextMenuSubContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubContent>
@@ -52,6 +97,14 @@ const ContextMenuSubContent = React.forwardRef<
 ))
 ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName
 
+/**
+ * Container chính của context menu — render qua Portal, áp animation
+ * slide-in theo `data-side`, giới hạn chiều cao tối đa bằng
+ * `--radix-context-menu-content-available-height` để tránh tràn viewport.
+ *
+ * Vị trí được Radix tính dựa trên toạ độ con trỏ chuột tại thời điểm
+ * right-click; tự động flip nếu sát mép viewport.
+ */
 const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content>
@@ -69,6 +122,13 @@ const ContextMenuContent = React.forwardRef<
 ))
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName
 
+/**
+ * Item thường trong menu — `role="menuitem"`. Click hoặc `Enter`
+ * kích hoạt và đóng menu (trừ khi `event.preventDefault()` trong `onSelect`).
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const ContextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
@@ -87,6 +147,11 @@ const ContextMenuItem = React.forwardRef<
 ))
 ContextMenuItem.displayName = ContextMenuPrimitive.Item.displayName
 
+/**
+ * Item dạng checkbox — `role="menuitemcheckbox"` với `aria-checked`.
+ * Hiển thị icon `Check` khi `checked`. Dùng `checked` + `onCheckedChange`
+ * để controlled.
+ */
 const ContextMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.CheckboxItem>
@@ -111,6 +176,11 @@ const ContextMenuCheckboxItem = React.forwardRef<
 ContextMenuCheckboxItem.displayName =
   ContextMenuPrimitive.CheckboxItem.displayName
 
+/**
+ * Item dạng radio — `role="menuitemradio"`. Phải đặt trong
+ * {@link ContextMenuRadioGroup} để chia sẻ trạng thái. Hiển thị
+ * `Circle` solid khi item được chọn.
+ */
 const ContextMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.RadioItem>
@@ -133,6 +203,13 @@ const ContextMenuRadioItem = React.forwardRef<
 ))
 ContextMenuRadioItem.displayName = ContextMenuPrimitive.RadioItem.displayName
 
+/**
+ * Label cho nhóm item (tiêu đề section) — không nhận focus, không
+ * kích hoạt được.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const ContextMenuLabel = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Label> & {
@@ -151,6 +228,7 @@ const ContextMenuLabel = React.forwardRef<
 ))
 ContextMenuLabel.displayName = ContextMenuPrimitive.Label.displayName
 
+/** Đường kẻ ngang phân cách các nhóm item (`role="separator"`). */
 const ContextMenuSeparator = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Separator>
@@ -163,6 +241,10 @@ const ContextMenuSeparator = React.forwardRef<
 ))
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName
 
+/**
+ * Hiển thị phím tắt bên cạnh item (ví dụ `⌘C`) — chỉ thuần thị giác,
+ * không tự bind shortcut. App phải tự xử lý keyboard handler tương ứng.
+ */
 const ContextMenuShortcut = ({
   className,
   ...props
