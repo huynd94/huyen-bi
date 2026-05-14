@@ -144,6 +144,7 @@ function AmbientBgGate() {
   return <AmbientBg />;
 }
 import { SkipLink } from "@/components/ui/skip-link";
+import { RootErrorBoundary } from "@/components/root-error-boundary";
 
 const queryClient = new QueryClient();
 
@@ -284,10 +285,12 @@ function App() {
     <LazyMotion features={domAnimation}>
       <MotionConfig reducedMotion="user">
         <ThemeProvider>
-          <SkipLink />
-          <WouterRouter base={basePath}>
-            {isClerkEnabled ? <ClerkProviderWithRoutes /> : <AppContent />}
-          </WouterRouter>
+          <RootErrorBoundary>
+            <SkipLink />
+            <WouterRouter base={basePath}>
+              {isClerkEnabled ? <ClerkProviderWithRoutes /> : <AppContent />}
+            </WouterRouter>
+          </RootErrorBoundary>
         </ThemeProvider>
       </MotionConfig>
     </LazyMotion>

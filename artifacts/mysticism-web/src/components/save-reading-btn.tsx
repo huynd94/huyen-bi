@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
+import { Bookmark, Check } from "lucide-react";
 
 import { readingsApi } from "@/lib/readings-api";
 import { cn } from "@/lib/utils";
 import { isClerkEnabled } from "@/lib/auth-config";
 import { showToast } from "@/lib/toast";
+import { ERROR_MESSAGES } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,17 +23,10 @@ import {
  *
  * - `module`, `title`, `inputData`, `resultData`: payload gửi tới
  *   `POST /api/readings` (xem `readingsApi.save`).
- * - `variant`: `"full"` (default) hiển thị nút đầy đủ với label tiếng
- *   Việt; `"icon"` hiển thị icon nhỏ vuông cho action group ở header.
- *
- * Behaviour (Requirements 8.7, 11.3):
- * - Khi user **chưa đăng nhập** (Clerk `useUser().isSignedIn === false`),
- *   click sẽ mở `Dialog` tiếng Việt với 2 nút "Đăng nhập" / "Để sau"
- *   (Requirement 8.7).
- * - Khi đã đăng nhập, áp dụng **optimistic update** (Requirement 11.3):
- *   button chuyển sang trạng thái "Đã lưu vào hồ sơ" ngay lập tức,
- *   không chờ network. Nếu API thất bại, UI rollback và toast lỗi
- *   tiếng Việt hiện lên kèm CTA "Thử lại" (gọi lại cùng request).
+ * - `variant`: `"full"` (mặc định) hiển thị nút đầy đủ với label tiếng
+ *   Việt; `"icon"` hiển thị nút icon vuông gọn cho action group ở
+ *   header Result_Card.
+ * - `className`: tuỳ biến container ngoài cùng.
  */
 interface SaveReadingBtnProps {
   module: string;
@@ -42,6 +37,32 @@ interface SaveReadingBtnProps {
   variant?: "icon" | "full";
 }
 
+/**
+ * Nút "Lưu lá số" áp dụng quy tắc UX/UI Upgrade:
+ *
+ * - **Requirement 8.7** — Khi user **chưa đăng nhập** (Clerk
+ *   `useUser().isSignedIn === false`), click sẽ mở `Dialog` tiếng
+ *   Việt giải thích cần đăng nhập, kèm 2 nút "Đăng nhập" và "Để
+ *   sau". Nút "Đăng nhập" dẫn tới `/sign-in?redirect_url=...` với
+ *   path hiện tại được encode để Clerk trả người dùng về đúng trang
+ *   ngay sau khi xác thực.
+ * - **Requirement 11.3** — Khi đã đăng nhập, áp dụng **optimistic
+ *   update**: button chuyển sang trạng thái "Đã lưu vào hồ sơ" ngay
+ *   lập tức (không chờ network) cho phép user cảm nhận phản hồi
+ *   tức thì. Nếu API thất bại, UI rollback và một toast lỗi tiếng
+ *   Việt hiện lên kèm CTA "Thử lại" để user gọi lại cùng request
+ *   (xem `showToast({ retry })` trong `src/lib/toast.ts`).
+ * - **Requirement 1.1 / 2.1** — Mọi màu sắc dùng semantic
+ *   `--primary` token, không hard-code hex / rgb / palette ngoài
+ *   token registry.
+ * - **Requirement 10.3** — Button bo `rounded-md` (`--radius-md`),
+ *   không dùng `rounded-2xl` đồng nhất.
+ *
+ * Khi Clerk publishable key chưa được cấu hình
+ * (`isClerkEnabled === false`), component **không render** — phù
+ * hợp với phương án "tài khoản tạm thời chưa khả dụng" của
+ * Requirement 15.4 và tránh dẫn user vào flow lưu không hoạt động.
+ */
 export function SaveReadingBtn(props: SaveReadingBtnProps) {
   if (!isClerkEnabled) return null;
   return <SaveReadingBtnInner {...props} />;
@@ -61,11 +82,16 @@ function SaveReadingBtnInner({
   // Trạng thái UI đã lưu — optimistic. Set ngay khi click (auth) và
   // rollback nếu request POST /api/readings thất bại (Req 11.3).
   const [saved, setSaved] = useState(false);
-  // Trạng thái dialog "Đăng nhập để lưu lá số" cho user chưa đăng nhập (Req 8.7).
+  // Trạng thái dialog "Đăng nhập để lưu lá số" cho user chưa đăng
+  // nhập (Req 8.7).
   const [signInDialogOpen, setSignInDialogOpen] = useState(false);
-  // Timer reset trạng thái "Đã lưu" sau 3s — giữ ref để có thể clear khi
-  // user save lại nhanh hoặc khi rollback.
+  // Timer reset trạng thái "Đã lưu" sau 3s — giữ ref để có thể clear
+  // khi user save lại nhanh hoặc khi rollback toast.
   const successResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // In-flight guard: tránh user click nhiều lần liên tục tạo nhiều
+  // request POST /api/readings cùng payload. Dùng ref thay vì state
+  // để không bị bắt trong closure cũ của onClick handler.
+  const inFlight = useRef(false);
 
   const clearSuccessTimer = useCallback(() => {
     if (successResetTimer.current !== null) {
@@ -75,10 +101,14 @@ function SaveReadingBtnInner({
   }, []);
 
   const performSave = useCallback(async () => {
-    // Snapshot trạng thái trước để rollback nếu cần.
+    if (inFlight.current) return;
+    inFlight.current = true;
+
+    // Snapshot trạng thái trước để rollback nếu cần (Req 11.3).
     const previousSaved = saved;
     clearSuccessTimer();
-    // Optimistic: hiển thị "Đã lưu" ngay, không chờ network (Req 11.3 / 5.2).
+    // Optimistic: hiển thị "Đã lưu" ngay, không chờ network
+    // (Req 11.3 / 5.2).
     setSaved(true);
 
     try {
@@ -88,23 +118,29 @@ function SaveReadingBtnInner({
         input_data: inputData,
         result_data: resultData,
       });
-      // Giữ saved=true và tự reset sau 3s để user thấy phản hồi rõ.
+      // Giữ saved=true và tự reset sau 3s để user thấy phản hồi rõ
+      // mà nút vẫn quay lại trạng thái "có thể lưu lại" cho lần sau.
       successResetTimer.current = setTimeout(() => {
         setSaved(false);
         successResetTimer.current = null;
       }, 3000);
     } catch (_error) {
-      // Rollback UI và surface toast lỗi tiếng Việt + CTA "Thử lại" (Req 11.3, 19.3).
+      // Rollback UI và surface toast lỗi tiếng Việt + CTA "Thử lại"
+      // (Req 11.3 — surface toast khi optimistic update fail; Req 19.3
+      // — microcopy sentence case "Thử lại").
       setSaved(previousSaved);
       showToast({
         variant: "error",
-        title: "Lưu thất bại — vui lòng thử lại",
+        title: "Không thể lưu lá số",
+        description: "Vui lòng kiểm tra kết nối và thử lại.",
         retry: {
           onClick: () => {
             void performSave();
           },
         },
       });
+    } finally {
+      inFlight.current = false;
     }
   }, [clearSuccessTimer, inputData, module, resultData, saved, title]);
 
@@ -117,16 +153,34 @@ function SaveReadingBtnInner({
     void performSave();
   }, [isSignedIn, performSave]);
 
+  const goToSignIn = useCallback(() => {
+    setSignInDialogOpen(false);
+    // Bảo toàn route hiện tại để Clerk trả user về đúng trang sau khi
+    // xác thực — đồng nhất với `<SignIn fallbackRedirectUrl>` ở
+    // `src/pages/sign-in.tsx`. Trên môi trường happy-dom dùng cho test
+    // `window.location` luôn tồn tại; defensive guard cho SSR/edge.
+    const here =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : "/";
+    const target = `/sign-in?redirect_url=${encodeURIComponent(here)}`;
+    setLocation(target);
+  }, [setLocation]);
+
   if (!isLoaded) return null;
 
+  // Dialog "Đăng nhập để lưu lá số" — Req 8.7. Radix tự bẫy focus,
+  // gắn `role="dialog"` + `aria-modal="true"` và trả focus về trigger
+  // sau khi đóng (xem `Dialog` primitive). Title + Description liên
+  // kết tự động qua `aria-labelledby` / `aria-describedby`.
   const signInDialog = (
     <Dialog open={signInDialogOpen} onOpenChange={setSignInDialogOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Đăng nhập để lưu lá số</DialogTitle>
+          <DialogTitle>Cần đăng nhập để lưu lá số</DialogTitle>
           <DialogDescription>
-            Bạn cần đăng nhập để lưu lá số vào hồ sơ. Bạn có thể tạo tài khoản
-            miễn phí trong vài giây.
+            {ERROR_MESSAGES.unauth_save} Bạn có thể tạo tài khoản miễn phí
+            trong vài giây.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -136,18 +190,14 @@ function SaveReadingBtnInner({
           >
             Để sau
           </Button>
-          <Button
-            onClick={() => {
-              setSignInDialogOpen(false);
-              setLocation("/sign-in");
-            }}
-          >
-            Đăng nhập
-          </Button>
+          <Button onClick={goToSignIn}>Đăng nhập</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+
+  const savedLabel = isSignedIn ? "Lưu lá số" : "Đăng nhập để lưu";
+  const ariaPressed = isSignedIn ? saved : undefined;
 
   if (variant === "icon") {
     return (
@@ -155,24 +205,22 @@ function SaveReadingBtnInner({
         <button
           type="button"
           onClick={handleClick}
-          title={isSignedIn ? "Lưu lá số" : "Đăng nhập để lưu"}
-          aria-label={isSignedIn ? "Lưu lá số" : "Đăng nhập để lưu"}
+          title={saved ? "Đã lưu vào hồ sơ" : savedLabel}
+          aria-label={saved ? "Đã lưu vào hồ sơ" : savedLabel}
+          aria-pressed={ariaPressed}
           className={cn(
-            "w-8 h-8 rounded-lg border flex items-center justify-center transition-all",
+            "w-8 h-8 rounded-md border flex items-center justify-center transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             saved
-              ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-400"
-              : "border-primary/30 text-primary/60 hover:border-primary hover:text-primary hover:bg-primary/10",
+              ? "border-primary bg-primary/15 text-primary"
+              : "border-primary/30 text-primary/70 hover:border-primary hover:text-primary hover:bg-primary/10",
             className,
           )}
         >
           {saved ? (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
+            <Check aria-hidden="true" className="h-4 w-4" />
           ) : (
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
+            <Bookmark aria-hidden="true" className="h-4 w-4" />
           )}
         </button>
         {signInDialog}
@@ -186,26 +234,24 @@ function SaveReadingBtnInner({
         <button
           type="button"
           onClick={handleClick}
+          aria-pressed={ariaPressed}
           className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all",
+            "inline-flex items-center gap-2 px-4 py-2 min-h-11 rounded-md border text-sm font-medium transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             saved
-              ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-400"
+              ? "border-primary bg-primary/15 text-primary"
               : "border-primary/30 text-primary hover:border-primary hover:bg-primary/10",
           )}
         >
           {saved ? (
             <>
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+              <Check aria-hidden="true" className="h-4 w-4" />
               Đã lưu vào hồ sơ
             </>
           ) : (
             <>
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              {isSignedIn ? "Lưu lá số" : "Đăng nhập để lưu"}
+              <Bookmark aria-hidden="true" className="h-4 w-4" />
+              {savedLabel}
             </>
           )}
         </button>
