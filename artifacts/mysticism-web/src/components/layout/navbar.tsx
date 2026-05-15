@@ -188,7 +188,7 @@ export function Navbar() {
 
           {/* Desktop nav — md+ (Requirement 7.1) */}
           <div className="hidden md:flex flex-1 justify-center">
-            <NavigationMenu className="max-w-none">
+            <NavigationMenu>
               <NavigationMenuList className="gap-0.5">
                 {NAV_GROUPS.map((group) => {
                   const isAiGroup = group.label === GROUPS.troLyAi.label;

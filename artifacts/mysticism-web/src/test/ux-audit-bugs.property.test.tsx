@@ -88,14 +88,19 @@ describe("Bug Condition: Nav Dropdown Position", () => {
    * **Validates: Requirements 1.1**
    *
    * Property: On desktop viewport (≥768px), when a NavigationMenuTrigger is
-   * activated, the NavigationMenuViewport wrapper should NOT be pinned at
-   * left-0 relative to the NavigationMenu root. Instead it should span the
-   * full width (left-0 right-0) to allow centering.
+   * activated, the NavigationMenuViewport wrapper should be positioned relative
+   * to a max-w-max root (shrunk to trigger cluster width) with justify-center
+   * to center the dropdown under the triggers.
    *
    * Bug condition: viewport.width >= 768 AND navTriggerHovered = true
-   *   AND submenuPositionedAtRootLeft (viewport wrapper has `left-0` without `right-0`)
+   *   AND NavigationMenu root has max-w-none (full-width, causing dropdown
+   *   to center in entire navbar instead of under triggers)
+   *
+   * Fix: NavigationMenu root uses default max-w-max (shrinks to content),
+   * viewport wrapper uses left-0 top-full flex justify-center to center
+   * dropdown within the trigger cluster width.
    */
-  it("NavigationMenuViewport should span full width (left-0 right-0), not be pinned at left-0 only", () => {
+  it("NavigationMenu root should use max-w-max (not max-w-none) so viewport centers under triggers", () => {
     fc.assert(
       fc.property(
         // Generate trigger indices (0-based) for a 3-trigger nav
@@ -118,26 +123,40 @@ describe("Bug Condition: Nav Dropdown Position", () => {
             </NavigationMenu>
           );
 
-          // Find the viewport wrapper div (the one with `absolute` and `top-full`)
+          // The NavigationMenu root should have max-w-max (shrinks to content)
+          // This ensures the viewport positions relative to the trigger cluster
+          const navRoot = container.firstElementChild as HTMLElement;
+          expect(navRoot).not.toBeNull();
+          expect(navRoot!.className).toContain("max-w-max");
+          // Must NOT have max-w-none (which would make it full-width)
+          expect(navRoot!.className).not.toContain("max-w-none");
+
+          // Find the viewport wrapper div
           const viewportWrapper = container.querySelector(
             "div.absolute.top-full"
           );
-
           expect(viewportWrapper).not.toBeNull();
 
-          // The bug: viewport wrapper has `left-0` but NOT `right-0`
-          // Expected (fixed): viewport wrapper has BOTH `left-0` AND `right-0`
-          // to span full width and allow centering
+          // Viewport wrapper should have justify-center for centering
           const classList = viewportWrapper!.className;
-          const hasLeft0 = classList.includes("left-0");
-          const hasRight0 = classList.includes("right-0");
-
-          // Assert the fix: must have right-0 to span full width
-          expect(hasLeft0 && hasRight0).toBe(true);
+          expect(classList).toContain("justify-center");
+          // Should NOT have right-0 (which would stretch across full parent)
+          expect(classList).not.toContain("right-0");
         }
       ),
       { numRuns: 3 }
     );
+  });
+
+  it("navbar should not override NavigationMenu with max-w-none", () => {
+    // Structural check: the navbar source should not pass max-w-none to NavigationMenu
+    const navbarSource = readFileSync(
+      resolve(__dirname, "../components/layout/navbar.tsx"),
+      "utf-8",
+    );
+    // The navbar should use <NavigationMenu> without max-w-none override
+    expect(navbarSource).not.toContain('NavigationMenu className="max-w-none"');
+    expect(navbarSource).toContain("<NavigationMenu>");
   });
 });
 
