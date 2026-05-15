@@ -1,11 +1,14 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData } from "@/lib/reopen-reading";
 import { XemNgayTotKnowledge } from "@/components/knowledge-base";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { CalendarSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { findGoodDays, PURPOSE_LIST, type Purpose, type GoodDay } from "@/lib/xem-ngay-tot";
 import { formatLunar } from "@/lib/lunar-calendar";
@@ -78,6 +81,7 @@ export default function XemNgayTotPage() {
       <Navbar />
       <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-8">
+          <Breadcrumb />
           <div className="text-center space-y-3">
             <p className="text-xs tracking-[0.3em] uppercase text-primary/60">Hoàng Đạo</p>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Xem Ngày Tốt</h1>
@@ -243,9 +247,11 @@ export default function XemNgayTotPage() {
               )}
 
               {results.length === 0 && (
-                <Card className="bg-card/40 border-primary/20 text-center py-10">
-                  <p className="text-muted-foreground">Không tìm thấy ngày đặc biệt tốt trong tháng này. Thử chọn tháng khác.</p>
-                </Card>
+                <EmptyState
+                  icon={<CalendarSearch aria-hidden="true" />}
+                  title="Không tìm thấy ngày tốt"
+                  description="Không có ngày đặc biệt tốt nào trong tháng này. Thử chọn tháng khác."
+                />
               )}
             </div>
           )}

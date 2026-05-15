@@ -44,14 +44,22 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 /**
  * Ảnh thật của Avatar. Bắt buộc truyền `alt` để screen reader đọc;
  * nếu avatar chỉ trang trí, dùng `alt=""`.
+ *
+ * Mặc định bật `loading="lazy"` và `decoding="async"` (Requirement 11.5):
+ * avatar gần như luôn nằm ngoài viewport đầu tiên (navbar dropdown, danh
+ * sách hồ sơ, sidebar) nên trì hoãn tải giúp tiết kiệm băng thông và
+ * tránh chặn LCP. Nếu hiếm hoi cần render avatar above-the-fold (hero
+ * profile…), consumer ghi đè rõ ràng `loading="eager"`.
  */
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
+>(({ className, loading, decoding, ...props }, ref) => (
   <AvatarPrimitive.Image
     ref={ref}
     className={cn("aspect-square h-full w-full", className)}
+    loading={loading ?? "lazy"}
+    decoding={decoding ?? "async"}
     {...props}
   />
 ))

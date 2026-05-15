@@ -44,6 +44,17 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null)
 
+/**
+ * Hook nội bộ — đọc {@link ChartConfig} từ context của
+ * {@link ChartContainer}. Throw khi gọi ngoài cây con của
+ * `<ChartContainer />` để báo lỗi sớm cho lập trình viên.
+ *
+ * Không export ra ngoài; chỉ phục vụ các sub-component (tooltip, legend)
+ * trong file này.
+ *
+ * @throws {Error} Khi không tìm thấy `ChartContext` (gọi ngoài
+ *   `<ChartContainer />`).
+ */
 function useChart() {
   const context = React.useContext(ChartContext)
 
@@ -54,6 +65,43 @@ function useChart() {
   return context
 }
 
+/**
+ * ChartContainer — root wrapper cho mọi biểu đồ Recharts trong app.
+ *
+ * Mục đích: bọc một biểu đồ Recharts (`<BarChart>`, `<LineChart>`,...)
+ * trong `<ResponsiveContainer>`, inject design tokens (`--color-<key>`)
+ * cho từng `dataKey` được khai báo ở `config`, và override màu mặc định
+ * của Recharts bằng các CSS variable của design system (`--border`,
+ * `--muted-foreground`,...) để biểu đồ tự bám theo theme light/dark.
+ *
+ * Props:
+ * - `config` (bắt buộc): {@link ChartConfig} — bản đồ `dataKey → { label, icon, color, theme }`.
+ * - `id`: id tuỳ biến cho `data-chart`. Nếu bỏ qua, dùng `useId()`.
+ * - `children`: cấu trúc Recharts ở mức `ResponsiveContainer["children"]`
+ *   (ví dụ một `<BarChart>` duy nhất).
+ *
+ * Lưu ý a11y: Recharts SVG mặc định không bị screen reader đọc đầy đủ.
+ * Hãy bổ sung `<title>` / `aria-label` mô tả ý nghĩa biểu đồ ở component
+ * cha, hoặc cung cấp bảng dữ liệu ẩn (`<table className="sr-only">`) khi
+ * biểu đồ là điểm dữ liệu chính của trang. Tooltip ({@link ChartTooltipContent})
+ * focus-able qua bàn phím khi `role="status"` được Recharts gắn.
+ *
+ * @example
+ * ```tsx
+ * const config: ChartConfig = {
+ *   kim: { label: "Kim", color: "hsl(var(--chart-1))" },
+ *   moc: { label: "Mộc", color: "hsl(var(--chart-2))" },
+ * };
+ *
+ * <ChartContainer config={config} aria-label="Phân bố ngũ hành">
+ *   <BarChart data={data}>
+ *     <Bar dataKey="kim" fill="var(--color-kim)" />
+ *     <Bar dataKey="moc" fill="var(--color-moc)" />
+ *     <ChartTooltip content={<ChartTooltipContent />} />
+ *   </BarChart>
+ * </ChartContainer>
+ * ```
+ */
 const ChartContainer = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & {
@@ -87,6 +135,16 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+/**
+ * ChartStyle — inject `<style>` tag với các CSS variable
+ * `--color-<key>` cho từng entry trong {@link ChartConfig} có khai báo
+ * `color` hoặc `theme`. Mỗi theme (`light`, `.dark`) được phát ra
+ * riêng để cùng một biểu đồ tự đổi màu khi theme switch.
+ *
+ * Render trong `<ChartContainer>` qua `data-chart={id}` selector — không
+ * dùng độc lập. Lưu ý: dùng `dangerouslySetInnerHTML` an toàn vì giá trị
+ * màu được khai báo ở compile-time bởi developer (không phải user input).
+ */
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
     ([, config]) => config.theme || config.color
@@ -120,8 +178,40 @@ ${colorConfig
   )
 }
 
+/**
+ * ChartTooltip — re-export `Recharts.Tooltip`.
+ *
+ * Mục đích: dùng làm điểm gắn `<ChartTooltip content={<ChartTooltipContent />} />`
+ * trong các biểu đồ. Tách thành alias để consumer chỉ cần import từ một
+ * module duy nhất (`@/components/ui/chart`) thay vì pha trộn import
+ * Recharts.
+ *
+ * Lưu ý a11y: tooltip Recharts hiển thị khi hover/focus điểm dữ liệu;
+ * không tự động được screen reader đọc — nên đảm bảo dữ liệu cốt lõi
+ * vẫn truy cập được qua `<table>` ẩn hoặc `aria-label` của series.
+ */
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+/**
+ * ChartTooltipContent — body tooltip thiết kế thống nhất theo design
+ * system (border, padding, typography, indicator).
+ *
+ * Props (kế thừa Recharts `Tooltip` + props của `<div>`):
+ * - `hideLabel`: ẩn label header của tooltip (mặc định `false`).
+ * - `hideIndicator`: ẩn chấm/đường màu trước mỗi entry.
+ * - `indicator`: kiểu indicator — `"dot" | "line" | "dashed"` (mặc định `"dot"`).
+ * - `nameKey`: key dùng để lookup nhãn trong {@link ChartConfig} (override `name`/`dataKey`).
+ * - `labelKey`: tương tự `nameKey` nhưng cho label header.
+ *
+ * Lưu ý a11y: nhãn `label` lấy từ `ChartConfig` nên là chuỗi tiếng Việt
+ * rõ nghĩa; tooltip dùng `font-mono tabular-nums` cho con số để dễ đọc
+ * và so sánh thẳng cột giữa các entry.
+ *
+ * @example
+ * ```tsx
+ * <ChartTooltip content={<ChartTooltipContent indicator="line" hideLabel />} />
+ * ```
+ */
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
@@ -278,8 +368,32 @@ const ChartTooltipContent = React.forwardRef<
 )
 ChartTooltipContent.displayName = "ChartTooltip"
 
+/**
+ * ChartLegend — re-export `Recharts.Legend`.
+ *
+ * Mục đích: làm điểm gắn `<ChartLegend content={<ChartLegendContent />} />`
+ * cho các biểu đồ; tương tự {@link ChartTooltip}, alias để giảm số module
+ * import.
+ *
+ * Lưu ý a11y: Recharts render legend dưới dạng list items với
+ * `role="list"` ngầm; nội dung label phải là text rõ nghĩa (đã được
+ * lookup từ {@link ChartConfig}).
+ */
 const ChartLegend = RechartsPrimitive.Legend
 
+/**
+ * ChartLegendContent — chú thích biểu đồ thống nhất theo design system.
+ *
+ * Props (kế thừa Recharts `Legend` + props của `<div>`):
+ * - `hideIcon`: ẩn icon mặc định, chỉ render chấm màu.
+ * - `payload`: được Recharts inject ở runtime — danh sách series.
+ * - `verticalAlign`: `"top" | "bottom"` — quyết định padding trên/dưới.
+ * - `nameKey`: key lookup nhãn trong {@link ChartConfig}.
+ *
+ * Lưu ý a11y: label tiếng Việt rõ nghĩa giúp screen reader đọc đúng tên
+ * series. Khi nhiều series, sắp xếp theo thứ tự visual (trái sang phải)
+ * để khớp thứ tự đọc.
+ */
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &

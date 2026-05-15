@@ -66,6 +66,8 @@ const ROUTE_MAP: Record<string, RouteMeta> = {
   // Trang đặc biệt — không có cấp nhóm
   "/profile": { label: "Hồ sơ", group: null },
   "/lich-su": { label: "Lịch sử", group: null },
+  "/sign-in": { label: "Đăng nhập", group: null },
+  "/sign-up": { label: "Đăng ký", group: null },
 };
 
 /**

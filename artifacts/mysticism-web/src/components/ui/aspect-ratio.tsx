@@ -14,10 +14,20 @@ import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio"
  * Nếu wrap `<img>`, nhớ truyền `alt`. Nếu chứa nội dung quan trọng,
  * cân nhắc gắn `aria-label` cho container ngoài.
  *
+ * Khi nhúng `<img>` ở vị trí ngoài viewport đầu tiên (Requirement 11.5),
+ * luôn kèm `loading="lazy"` và `decoding="async"` để tránh chặn LCP.
+ * Hình hero hoặc above-the-fold dùng `loading="eager"` (hoặc bỏ qua).
+ *
  * @example
  * ```tsx
  * <AspectRatio ratio={16 / 9}>
- *   <img src="/cover.jpg" alt="Bìa lá số" className="object-cover" />
+ *   <img
+ *     src="/cover.jpg"
+ *     alt="Bìa lá số"
+ *     loading="lazy"
+ *     decoding="async"
+ *     className="object-cover"
+ *   />
  * </AspectRatio>
  * ```
  */

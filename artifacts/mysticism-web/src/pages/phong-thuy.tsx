@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData } from "@/lib/reopen-reading";
@@ -7,6 +8,8 @@ import { PhongThuyKnowledge } from "@/components/knowledge-base";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getGuaInfo, COMPASS_POSITIONS, type GuaInfo, type DirectionInfo } from "@/lib/phong-thuy";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
@@ -136,6 +139,7 @@ export default function PhongThuyPage() {
 
       <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-12">
+          <Breadcrumb />
           <div className="text-center space-y-4">
             <p className="text-xs tracking-[0.3em] uppercase text-primary/60">Huyền học phương Đông</p>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Phong Thuỷ Hướng Nhà</h1>
@@ -275,7 +279,11 @@ export default function PhongThuyPage() {
                     </div>
                   ))}
                   {!messages.some(m => m.role === "assistant") && !isStreaming && (
-                    <p className="text-sm text-muted-foreground text-center italic py-8">Nhấn nút bên trên để AI tư vấn cách bố trí nhà cửa theo hướng mệnh quái của bạn.</p>
+                    <EmptyState
+                      icon={<Sparkles aria-hidden="true" />}
+                      title="Chưa có luận giải AI"
+                      description="Nhấn nút bên trên để AI tư vấn cách bố trí nhà cửa theo hướng mệnh quái của bạn."
+                    />
                   )}
                 </CardContent>
               </Card>

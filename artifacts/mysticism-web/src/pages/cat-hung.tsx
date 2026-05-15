@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData } from "@/lib/reopen-reading";
@@ -7,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPhoneDisplay, dateInputToDisplay } from "@/lib/form-utils";
 import {
@@ -214,9 +217,11 @@ function AIPanel({ onAsk, isStreaming, messages }: {
           </div>
         ))}
         {!messages.some((m) => m.role === "assistant") && !isStreaming && (
-          <p className="text-sm text-muted-foreground text-center italic py-6">
-            Nhấn nút bên trên để AI luận giải chi tiết về ý nghĩa huyền số.
-          </p>
+          <EmptyState
+            icon={<Sparkles aria-hidden="true" />}
+            title="Chưa có luận giải AI"
+            description="Nhấn nút bên trên để AI luận giải chi tiết về ý nghĩa huyền số."
+          />
         )}
       </CardContent>
     </Card>
@@ -604,6 +609,7 @@ export default function CatHungPage() {
 
       <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-3xl mx-auto space-y-10">
+          <Breadcrumb />
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Xem Cát Hung</h1>
             <p className="text-muted-foreground text-lg">

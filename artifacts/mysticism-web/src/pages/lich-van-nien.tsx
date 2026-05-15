@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { LichVanNienKnowledge } from "@/components/knowledge-base";
 import { buildMonthCalendar, formatLunar, getGioHoangDao, type DayInfo } from "@/lib/lunar-calendar";
 
@@ -92,6 +93,7 @@ export default function LichVanNienPage() {
       <Navbar />
       <main id="main" tabIndex={-1} className="flex-1 pt-20 pb-16 px-4 outline-none">
         <div className="max-w-6xl mx-auto space-y-8">
+          <Breadcrumb />
 
           {/* Header */}
           <div className="text-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700">

@@ -238,19 +238,19 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - Dẫn tới `#main` trên mọi trang; main element có `id="main"` và `tabIndex={-1}`
     - _Requirements: 3.10_
 
-- [ ] 9. Markdown renderer và result actions
+- [x] 9. Markdown renderer và result actions
   - [x] 9.1 Cập nhật `src/components/ui/markdown-renderer.tsx`
     - Style heading, list, blockquote, code, pre, table, link theo Color_Token và Type_Scale
     - Link ngoài tự động `target="_blank" rel="noopener noreferrer"` (so sánh `URL.host`)
     - Render incremental: chia block-level `\n\n`, memo bằng key index
     - _Requirements: 2.7, 8.5, 11.6_
 
-  - [~] 9.2 Refactor `src/components/result-actions.tsx`
+  - [x] 9.2 Refactor `src/components/result-actions.tsx`
     - 3 nút chính: Lưu, Chia sẻ, Xuất; trên mobile gộp Xuất thành dropdown PNG/PDF/TXT
     - Lazy import `export-card-*`, `html2canvas`, `jsPDF` qua `React.lazy` + `Suspense`
     - _Requirements: 8.6, 11.1_
 
-  - [~] 9.3 Cập nhật `src/components/save-reading-btn.tsx`
+  - [x] 9.3 Cập nhật `src/components/save-reading-btn.tsx`
     - Khi unauth, mở dialog tiếng Việt với 2 nút "Đăng nhập" / "Để sau"
     - Optimistic update khi auth, rollback toast nếu API fail
     - _Requirements: 8.7, 11.3_
@@ -271,7 +271,7 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - File `src/components/data-table.tsx`
     - _Requirements: 4.1, 8.4_
 
-  - [~] 10.4 Refactor 15 trang module áp dụng `ResultCard`, `ChartBase`, `DataTable`, `ResultActions`, `Skeleton`, `EmptyState`, `ErrorState`
+  - [x] 10.4 Refactor 15 trang module áp dụng `ResultCard`, `ChartBase`, `DataTable`, `ResultActions`, `Skeleton`, `EmptyState`, `ErrorState`
     - Các file dưới `src/pages/`: `than-so-hoc.tsx`, `bat-tu.tsx`, `xem-que.tsx`, `cat-hung.tsx`, `lich-van-nien.tsx`, `tu-vi.tsx`, `phong-thuy.tsx`, `xem-ten.tsx`, `lich-ca-nhan.tsx`, `tu-dien.tsx`, `hop-tuoi.tsx`, `xem-ngay-tot.tsx`, `sao-han.tsx`
     - Thêm Breadcrumb đầu trang, `<h1>` duy nhất, không bỏ cấp tiêu đề
     - Form dùng `react-hook-form` + zod, `Input` mới, `DateInput`
@@ -285,15 +285,15 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - **Validates: Requirements 3.1, 4.1, 4.3, 4.7**
     - File `src/test/cross-page.property.test.tsx` chạy trên 19 routes × 4 breakpoints
 
-  - [~] 10.6 Đảm bảo form giữ giá trị sau submit thành công
+  - [x] 10.6 Đảm bảo form giữ giá trị sau submit thành công
     - Không reset form, cho phép tinh chỉnh và tra cứu lại
     - _Requirements: 6.9_
 
-- [~] 11. Checkpoint - Verify 15 modules render đúng theo Result_Card chuẩn
+- [ ] 11. Checkpoint - Verify 15 modules render đúng theo Result_Card chuẩn
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 12. Trang chủ Home
-  - [~] 12.1 Refactor `src/pages/home.tsx`
+  - [x] 12.1 Refactor `src/pages/home.tsx`
     - Hero ≤ 70vh: `<h1>` thương hiệu, mô tả ≤ 120 ký tự, 2 CTA
     - Grid 15 modules nhóm theo 5 nhóm, mỗi nhóm có `<h2>`
     - Card module: icon `lucide`, `<h3>` tên, mô tả ≤ 90 ký tự, vùng click toàn card
@@ -301,8 +301,8 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - Scroll reveal nhẹ ≤ 28px / ≤ 700ms một lần per section
     - _Requirements: 4.4, 9.5, 10.1, 10.4, 10.7, 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [ ] 13. AI Chat (`/ai-chat`)
-  - [~] 13.1 Refactor `src/pages/ai-chat.tsx`
+- [x] 13. AI Chat (`/ai-chat`)
+  - [x] 13.1 Refactor `src/pages/ai-chat.tsx`
     - `<ul role="log" aria-live="polite">` chứa bubble `<li role="listitem">`
     - Bubble user phải nền `--secondary`, AI trái nền `--card`
     - Timestamp tương đối + tooltip ngày-giờ đầy đủ
@@ -323,15 +323,15 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - **Validates: Requirements 13.8**
     - File `src/lib/ai-chat-store.property.test.ts`
 
-  - [~] 13.4 Hook AI streaming xử lý mất kết nối
+  - [x] 13.4 Hook AI streaming xử lý mất kết nối
     - Giữ text đã stream, banner "Mất kết nối — đang thử lại…", retry tối đa 2 lần (1s, 2s)
     - _Requirements: 5.6_
 
-  - [~] 13.5 Hiển thị ErrorState 429 trên `/ai-chat` dùng `parseRetryAfter`
+  - [x] 13.5 Hiển thị ErrorState 429 trên `/ai-chat` dùng `parseRetryAfter`
     - _Requirements: 5.5_
 
-- [ ] 14. Profile và Lịch sử
-  - [~] 14.1 Refactor `src/pages/profile.tsx`
+- [x] 14. Profile và Lịch sử
+  - [x] 14.1 Refactor `src/pages/profile.tsx`
     - Grid card 1/2/3/4 cột; mỗi card: tên, mô-đun, ngày lưu, ghi chú
     - Filter theo mô-đun (15) + ô tìm kiếm debounce 300ms
     - Checkbox 2 lá số → enable nút "So sánh" → Dialog 2 cột (md+) hoặc xếp chồng (mobile)
@@ -341,24 +341,24 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - "Chia sẻ" tạo link, copy clipboard, toast "Đã sao chép link" + thông tin hết hạn 30 ngày
     - _Requirements: 11.3, 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
 
-  - [~] 14.2 Refactor `src/pages/lich-su.tsx`
+  - [x] 14.2 Refactor `src/pages/lich-su.tsx`
     - Bảng có sắp xếp theo cột (ngày, mô-đun, tiêu đề), bộ lọc mô-đun
     - Xoá hàng / xoá toàn bộ với dialog xác nhận
     - _Requirements: 14.7_
 
-- [ ] 15. Sign-in / Sign-up và Clerk integration
-  - [~] 15.1 Cập nhật `src/pages/sign-in.tsx` và `src/pages/sign-up.tsx`
+- [x] 15. Sign-in / Sign-up và Clerk integration
+  - [x] 15.1 Cập nhật `src/pages/sign-in.tsx` và `src/pages/sign-up.tsx`
     - Dùng widget Clerk với `localizations` tiếng Việt
     - Tuỳ biến theme khớp Color_Token
     - Redirect query param `redirect_url`, fallback `/profile`
     - Liên kết "Quên mật khẩu", "Đã có tài khoản?" / "Chưa có tài khoản?"
     - _Requirements: 15.1, 15.2, 15.3, 15.5_
 
-  - [~] 15.2 Tạo `src/components/clerk-config-banner.tsx`
+  - [x] 15.2 Tạo `src/components/clerk-config-banner.tsx`
     - Hiển thị khi thiếu `VITE_CLERK_PUBLISHABLE_KEY`: "Tài khoản tạm thời chưa khả dụng…"
     - _Requirements: 15.4_
 
-- [ ] 16. PWA install prompt và Mystic Cursor
+- [x] 16. PWA install prompt và Mystic Cursor
   - [x] 16.1 Tạo `src/pwa/pwa-prompt-state.ts`
     - State machine `shouldShowPrompt(state)` thoả: ≥1 reading, dismissed cooldown 14 ngày, đã install ⇒ false vĩnh viễn
     - Persist `localStorage["pwa-prompt-state"]`
@@ -369,7 +369,7 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - **Validates: Requirements 16.1, 16.2**
     - File `src/pwa/pwa-prompt-state.property.test.ts`
 
-  - [~] 16.3 Cập nhật `src/components/pwa-install-prompt.tsx`
+  - [x] 16.3 Cập nhật `src/components/pwa-install-prompt.tsx`
     - Banner mảnh đáy (mobile) / card góc dưới phải (desktop), không dialog modal
     - Detect `beforeinstallprompt`; iOS Safari fallback hướng dẫn 3 bước tiếng Việt
     - _Requirements: 16.3, 16.4_
@@ -393,7 +393,7 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - Build assertion: production bundle không chứa `design-tokens`
     - _Requirements: 1.1, 1.2, 1.5, 10.2, 10.3, 10.6, 10.7, 19.x, 20.4_
 
-- [ ] 18. Tài liệu và trang dev
+- [x] 18. Tài liệu và trang dev
   - [x] 18.1 Tạo `src/components/ui/README.md`
     - Mô tả spacing scale, type scale, color tokens, border radius, animation durations, breakpoints, primitive usage
     - _Requirements: 1.7, 20.1_
@@ -407,24 +407,24 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - Route đăng ký trong `App.tsx` với `import.meta.env.DEV` guard
     - _Requirements: 20.3_
 
-  - [ ] 18.4 Bổ sung TSDoc cho mọi component primitive
+  - [x] 18.4 Bổ sung TSDoc cho mọi component primitive
     - File `src/components/ui/*.tsx` mỗi `export` có JSDoc: mục đích, props, ví dụ, lưu ý a11y
     - _Requirements: 20.4_
 
-- [ ] 19. Tích hợp cuối cùng và root error boundary
-  - [~] 19.1 Tạo `src/components/root-error-boundary.tsx`
+- [x] 19. Tích hợp cuối cùng và root error boundary
+  - [x] 19.1 Tạo `src/components/root-error-boundary.tsx`
     - Wrap toàn cây React, fallback `ErrorState` toàn trang với nút "Tải lại trang"; dev mode hiển thị stack
     - Wrap `<Suspense>` quanh lazy chunks (export-card, recharts) bằng error boundary local
     - _Requirements: 5.4_
 
-  - [~] 19.2 Lazy ảnh tĩnh
+  - [x] 19.2 Lazy ảnh tĩnh
     - Thêm `loading="lazy"` `decoding="async"` cho mọi `<img>` ngoài viewport đầu tiên
     - _Requirements: 11.5_
 
-  - [~] 19.3 Đảm bảo `<Toaster />` đặt sau PWA prompt và Mystic Cursor trong cây React
+  - [x] 19.3 Đảm bảo `<Toaster />` đặt sau PWA prompt và Mystic Cursor trong cây React
     - _Requirements: 5.9_
 
-  - [~] 19.4 Cập nhật `App.tsx` lazy-load 15 trang + Suspense fallback Skeleton
+  - [x] 19.4 Cập nhật `App.tsx` lazy-load 15 trang + Suspense fallback Skeleton
     - _Requirements: 11.1_
 
   - [ ]* 19.5 Integration tests cho navigation và state preservation
@@ -433,7 +433,7 @@ Ngôn ngữ: TypeScript + React (đã có trong dự án).
     - Test breadcrumb cho mỗi route
     - _Requirements: 7.3, 7.4, 7.6_
 
-- [~] 20. Final checkpoint - Đảm bảo toàn bộ tests pass và build production sạch
+- [x] 20. Final checkpoint - Đảm bảo toàn bộ tests pass và build production sạch
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

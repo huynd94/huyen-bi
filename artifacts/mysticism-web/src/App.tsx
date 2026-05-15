@@ -7,12 +7,20 @@ import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { isClerkEnabled } from "@/lib/auth-config";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AISettingsProvider } from "@/contexts/ai-settings";
 import { ThemeProvider } from "@/contexts/theme";
-import Home from "@/pages/home";
-import SignInPage from "@/pages/sign-in";
-import SignUpPage from "@/pages/sign-up";
 
+/**
+ * Mọi route page đều được nạp qua `React.lazy()` để Vite tách thành các
+ * chunk riêng (Requirement 11.1 — Hiệu_năng_cảm_nhận). Trang chủ, đăng
+ * nhập, đăng ký, hồ sơ, share view, 404 cùng 15 Module_Page đều ở dạng
+ * dynamic import — không có page nào còn trong main bundle ngoài shell
+ * (router, providers, layout chrome).
+ */
+const Home = lazy(() => import("@/pages/home"));
+const SignInPage = lazy(() => import("@/pages/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/sign-up"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const NumerologyPage = lazy(() => import("@/pages/than-so-hoc"));
 const BatuPage = lazy(() => import("@/pages/bat-tu"));
@@ -77,12 +85,30 @@ function PageTitleUpdater() {
   return null;
 }
 
+/**
+ * Fallback hiển thị trong khi route page (lazy chunk) đang được tải
+ * (Requirement 11.1 — Hiệu_năng_cảm_nhận). Dùng {@link Skeleton} với
+ * biến thể `card` thay cho spinner toàn màn hình để:
+ *
+ * - Giữ chỗ (placeholder) cho silhouette nội dung sắp xuất hiện, giảm
+ *   cảm giác "flash" giữa các route.
+ * - Trùng cấu trúc loading state đã được dùng trong các Module_Page
+ *   (xem `<SkeletonCard />` / `<SkeletonChart />` trong từng trang).
+ * - Tự thông báo `role="status"` + `aria-busy="true"` ra screen reader
+ *   thông qua wrapper {@link Skeleton} (Requirement 5.8).
+ *
+ * Nhãn `sr-only` "Đang tải trang…" giúp người dùng dùng AT hiểu rằng
+ * thay đổi route đang trong quá trình tải, không chỉ là thay đổi visual.
+ *
+ * Animation `animate-pulse` của Skeleton tự tắt khi
+ * `prefers-reduced-motion: reduce` (Requirement 9.x — Reduced_Motion_User).
+ */
 function PageFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        <p className="text-xs text-muted-foreground tracking-widest uppercase">Đang tải...</p>
+    <div className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-3xl space-y-4">
+        <Skeleton variant="card" aria-label="Đang tải trang…" />
+        <span className="sr-only">Đang tải trang…</span>
       </div>
     </div>
   );
@@ -145,6 +171,7 @@ function AmbientBgGate() {
 }
 import { SkipLink } from "@/components/ui/skip-link";
 import { RootErrorBoundary } from "@/components/root-error-boundary";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 
 const queryClient = new QueryClient();
 
@@ -287,6 +314,7 @@ function App() {
         <ThemeProvider>
           <RootErrorBoundary>
             <SkipLink />
+            <OfflineBanner />
             <WouterRouter base={basePath}>
               {isClerkEnabled ? <ClerkProviderWithRoutes /> : <AppContent />}
             </WouterRouter>
