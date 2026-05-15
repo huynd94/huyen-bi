@@ -4,36 +4,74 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Một menu (cột) bên trong {@link Menubar} — wrapper trực tiếp Radix
+ * `Menu`. Bọc một cặp {@link MenubarTrigger} + {@link MenubarContent}.
+ */
 function MenubarMenu({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Menu>) {
   return <MenubarPrimitive.Menu {...props} />
 }
 
+/** Gom nhóm các item liên quan trong cùng menu (không thêm style mặc định). */
 function MenubarGroup({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Group>) {
   return <MenubarPrimitive.Group {...props} />
 }
 
+/** Portal render nội dung menu vào cuối `<body>` để tránh stacking context. */
 function MenubarPortal({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Portal>) {
   return <MenubarPrimitive.Portal {...props} />
 }
 
+/** Group cho các {@link MenubarRadioItem} — chỉ một item được chọn tại một thời điểm. */
 function MenubarRadioGroup({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.RadioGroup>) {
   return <MenubarPrimitive.RadioGroup {...props} />
 }
 
+/** Wrapper cho sub-menu lồng nhau — dùng cùng {@link MenubarSubTrigger} và {@link MenubarSubContent}. */
 function MenubarSub({
   ...props
 }: React.ComponentProps<typeof MenubarPrimitive.Sub>) {
   return <MenubarPrimitive.Sub data-slot="menubar-sub" {...props} />
 }
 
+/**
+ * Menubar — wrapper trực tiếp `@radix-ui/react-menubar` Root.
+ *
+ * Mục đích: thanh menu ngang dạng desktop app (File / Edit / View /
+ * Help) chứa nhiều {@link MenubarMenu} song song. Khi mở một menu rồi
+ * di chuột sang trigger khác, menu tương ứng sẽ tự mở.
+ *
+ * Props: kế thừa props của Radix Root — `value`, `onValueChange`,
+ * `defaultValue`, `dir`, `loop`.
+ *
+ * Lưu ý a11y: Radix gắn `role="menubar"` cho thanh và `role="menuitem"`,
+ * `role="menuitemcheckbox"`, `role="menuitemradio"` cho các item; bàn
+ * phím hỗ trợ `←/→` di chuyển giữa các menu, `↑/↓` di chuyển trong
+ * menu mở, `Enter`/`Space` chọn, `→`/`←` mở/đóng sub-menu, `Esc` đóng,
+ * `Home`/`End` về đầu/cuối, type-ahead theo ký tự đầu.
+ *
+ * @example
+ * ```tsx
+ * <Menubar>
+ *   <MenubarMenu>
+ *     <MenubarTrigger>File</MenubarTrigger>
+ *     <MenubarContent>
+ *       <MenubarItem>Mới<MenubarShortcut>⌘N</MenubarShortcut></MenubarItem>
+ *       <MenubarSeparator />
+ *       <MenubarItem>Lưu<MenubarShortcut>⌘S</MenubarShortcut></MenubarItem>
+ *     </MenubarContent>
+ *   </MenubarMenu>
+ * </Menubar>
+ * ```
+ */
 const Menubar = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Root>
@@ -49,6 +87,10 @@ const Menubar = React.forwardRef<
 ))
 Menubar.displayName = MenubarPrimitive.Root.displayName
 
+/**
+ * Trigger top-level mở một {@link MenubarMenu} (ví dụ "File", "Edit").
+ * Chỉ cần focus và bấm `↓` để mở menu tương ứng.
+ */
 const MenubarTrigger = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Trigger>
@@ -64,6 +106,13 @@ const MenubarTrigger = React.forwardRef<
 ))
 MenubarTrigger.displayName = MenubarPrimitive.Trigger.displayName
 
+/**
+ * Trigger để mở sub-menu lồng nhau bên trong {@link MenubarSub}.
+ * Tự render icon `ChevronRight` ở cuối để hint hướng mở.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const MenubarSubTrigger = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.SubTrigger> & {
@@ -85,6 +134,7 @@ const MenubarSubTrigger = React.forwardRef<
 ))
 MenubarSubTrigger.displayName = MenubarPrimitive.SubTrigger.displayName
 
+/** Container cho các item của sub-menu lồng nhau, áp animation slide-in theo `data-side`. */
 const MenubarSubContent = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.SubContent>
@@ -100,6 +150,15 @@ const MenubarSubContent = React.forwardRef<
 ))
 MenubarSubContent.displayName = MenubarPrimitive.SubContent.displayName
 
+/**
+ * Container chính cho nội dung của một {@link MenubarMenu} — render
+ * qua Portal, áp animation slide-in theo `data-side`.
+ *
+ * Props chính:
+ * - `align` (mặc định `"start"`): căn theo cạnh trái/phải/giữa của trigger.
+ * - `alignOffset` (mặc định `-4`), `sideOffset` (mặc định `8`): tinh
+ *   chỉnh khoảng cách từ trigger.
+ */
 const MenubarContent = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Content>
@@ -125,6 +184,13 @@ const MenubarContent = React.forwardRef<
 )
 MenubarContent.displayName = MenubarPrimitive.Content.displayName
 
+/**
+ * Item thường trong menu — `role="menuitem"`. Click hoặc `Enter`
+ * kích hoạt và đóng menu (trừ khi `event.preventDefault()` trong `onSelect`).
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const MenubarItem = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Item> & {
@@ -143,6 +209,11 @@ const MenubarItem = React.forwardRef<
 ))
 MenubarItem.displayName = MenubarPrimitive.Item.displayName
 
+/**
+ * Item dạng checkbox — `role="menuitemcheckbox"` với `aria-checked`.
+ * Hiển thị icon `Check` khi `checked`. Dùng `checked` + `onCheckedChange`
+ * để controlled.
+ */
 const MenubarCheckboxItem = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.CheckboxItem>
@@ -166,6 +237,11 @@ const MenubarCheckboxItem = React.forwardRef<
 ))
 MenubarCheckboxItem.displayName = MenubarPrimitive.CheckboxItem.displayName
 
+/**
+ * Item dạng radio — `role="menuitemradio"`. Phải đặt trong
+ * {@link MenubarRadioGroup} để chia sẻ trạng thái. Hiển thị `Circle`
+ * solid khi item được chọn.
+ */
 const MenubarRadioItem = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.RadioItem>
@@ -188,6 +264,13 @@ const MenubarRadioItem = React.forwardRef<
 ))
 MenubarRadioItem.displayName = MenubarPrimitive.RadioItem.displayName
 
+/**
+ * Label cho nhóm item (tiêu đề section) — không nhận focus, không
+ * kích hoạt được.
+ *
+ * Props bổ sung:
+ * - `inset`: `boolean` — thêm `pl-8` để align với các item có icon/indicator.
+ */
 const MenubarLabel = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Label> & {
@@ -206,6 +289,7 @@ const MenubarLabel = React.forwardRef<
 ))
 MenubarLabel.displayName = MenubarPrimitive.Label.displayName
 
+/** Đường kẻ ngang phân cách các nhóm item (`role="separator"`). */
 const MenubarSeparator = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Separator>
@@ -218,6 +302,10 @@ const MenubarSeparator = React.forwardRef<
 ))
 MenubarSeparator.displayName = MenubarPrimitive.Separator.displayName
 
+/**
+ * Hiển thị phím tắt bên cạnh item (ví dụ `⌘N`) — chỉ thuần thị giác,
+ * không tự bind shortcut. App phải tự xử lý keyboard handler tương ứng.
+ */
 const MenubarShortcut = ({
   className,
   ...props

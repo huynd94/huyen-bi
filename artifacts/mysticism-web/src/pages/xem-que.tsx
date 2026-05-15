@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Sparkles } from "lucide-react";
 import { Hexagram, randomHexagram } from "@/lib/iching";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
 import { useExportImage } from "@/hooks/use-export-image";
@@ -111,8 +114,9 @@ export default function IChingPage() {
         )}
       </div>
 
-      <main className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative">
+      <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-12">
+          <Breadcrumb />
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Kinh Dịch</h1>
             <p className="text-muted-foreground text-lg">Tập trung ý niệm, thành tâm xin quẻ chỉ đường.</p>
@@ -267,7 +271,11 @@ export default function IChingPage() {
                       </div>
                     ))}
                     {!messages.some((m) => m.role === "assistant") && !isStreaming && (
-                      <p className="text-sm text-muted-foreground text-center italic py-8">Nhấn nút bên trên để AI luận giải thông điệp ẩn giấu trong quẻ Dịch.</p>
+                      <EmptyState
+                        icon={<Sparkles aria-hidden="true" />}
+                        title="Chưa có luận giải AI"
+                        description="Nhấn nút bên trên để AI luận giải thông điệp ẩn giấu trong quẻ Dịch."
+                      />
                     )}
                   </CardContent>
                 </Card>

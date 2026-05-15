@@ -231,14 +231,14 @@ async function p2a_signedInStreaming() {
 }
 
 // ---- P2b: Non-401 error preservation (PBT) -------------------------------
-// For any status in {400, 429, 500, 502, 503} with any error body, the hook
+// For any status in {400, 500, 502, 503} with any error body, the hook
 // preserves the unfixed formatting: `Lỗi: ${errorMsg || 'Không thể kết nối AI'}`
-// (req 3.2, 3.3, 3.5).
+// (req 3.2, 3.3, 3.5). Status 429 is handled separately (rate-limit path).
 async function p2b_non401Errors() {
   await fc.assert(
     fc.asyncProperty(
       fc.record({
-        status: fc.constantFrom(400, 429, 500, 502, 503),
+        status: fc.constantFrom(400, 500, 502, 503),
         errorMsg: fc.oneof(
           fc.string({ minLength: 1, maxLength: 60 }),
           fc.constant(undefined),
@@ -275,6 +275,64 @@ async function p2b_non401Errors() {
       },
     ),
     { numRuns: 30 },
+  );
+}
+
+// ---- P2b-429: Rate-limit (429) sets rateLimitError state ------------------
+// When the endpoint returns 429, the hook sets `rateLimitError` with the
+// parsed Retry-After seconds and removes the empty assistant placeholder.
+async function p2b_rateLimitError() {
+  await fc.assert(
+    fc.asyncProperty(
+      fc.oneof(
+        fc.constant(undefined as string | undefined),
+        fc.constant("60"),
+        fc.constant("120"),
+        fc.constant("3600"),
+      ),
+      async (retryAfterValue) => {
+        const harness = createHarness();
+        const mock = installFetchMock(() => {
+          const headers: Record<string, string> = { "Content-Type": "application/json" };
+          if (retryAfterValue !== undefined) {
+            headers["Retry-After"] = retryAfterValue;
+          }
+          return new Response(JSON.stringify({ error: "rate limited" }), {
+            status: 429,
+            headers,
+          });
+        });
+        try {
+          const first = harness.run(() => useSSEChat());
+          await first.streamResponse("/api/mysticism/ai-interpret", {
+            type: "than-so-hoc",
+            context: "ctx",
+          });
+          const after = harness.run(() => useSSEChat());
+          // rateLimitError should be set
+          assert.ok(
+            after.rateLimitError !== null,
+            `P2b-429: rateLimitError should be set after 429 response`,
+          );
+          // isStreaming should be false
+          assert.equal(
+            after.isStreaming,
+            false,
+            `P2b-429: isStreaming should settle to false after 429 response`,
+          );
+          // The empty assistant placeholder should have been removed
+          const msgs = after.messages as Msg[];
+          const lastMsg = msgs[msgs.length - 1];
+          assert.ok(
+            lastMsg === undefined || lastMsg.role !== "assistant" || lastMsg.content !== "",
+            `P2b-429: empty assistant placeholder should be removed after 429`,
+          );
+        } finally {
+          mock.restore();
+        }
+      },
+    ),
+    { numRuns: 10 },
   );
 }
 
@@ -458,7 +516,14 @@ type AssertEqual<A, B> = (<T>() => T extends A ? 1 : 2) extends <
 >() => T extends B ? 1 : 2
   ? true
   : false;
-type ExpectedUseSSEChatKeys = "messages" | "streamResponse" | "isStreaming" | "setMessages";
+type ExpectedUseSSEChatKeys =
+  | "messages"
+  | "streamResponse"
+  | "isStreaming"
+  | "setMessages"
+  | "connectionStatus"
+  | "rateLimitError"
+  | "clearRateLimitError";
 type ExpectedSetMessagesType = Dispatch<SetStateAction<{ role: string; content: string }[]>>;
 
 // Fail at typecheck if the keys drift.
@@ -479,13 +544,19 @@ function p2f_hookSignature() {
   const keys = Object.keys(ret).sort();
   assert.deepEqual(
     keys,
-    ["isStreaming", "messages", "setMessages", "streamResponse"],
-    `P2f: hook return keys must be exactly {messages, streamResponse, isStreaming, setMessages}; got ${JSON.stringify(keys)}`,
+    ["clearRateLimitError", "connectionStatus", "isStreaming", "messages", "rateLimitError", "setMessages", "streamResponse"],
+    `P2f: hook return keys must be exactly {messages, streamResponse, isStreaming, setMessages, connectionStatus, rateLimitError, clearRateLimitError}; got ${JSON.stringify(keys)}`,
   );
   assert.equal(typeof ret.streamResponse, "function", "P2f: streamResponse must be a function");
   assert.equal(typeof ret.setMessages, "function", "P2f: setMessages must be a function");
   assert.equal(typeof ret.isStreaming, "boolean", "P2f: isStreaming must be a boolean");
   assert.ok(Array.isArray(ret.messages), "P2f: messages must be an array");
+  assert.ok(
+    ret.connectionStatus === "online" || ret.connectionStatus === "reconnecting",
+    `P2f: connectionStatus must be "online" or "reconnecting"; got ${JSON.stringify(ret.connectionStatus)}`,
+  );
+  assert.equal(ret.rateLimitError, null, "P2f: rateLimitError must be null initially");
+  assert.equal(typeof ret.clearRateLimitError, "function", "P2f: clearRateLimitError must be a function");
 }
 
 // ---- P2g: Clerk non-bug branches for useAISSEChat (PBT) ------------------
@@ -528,7 +599,7 @@ async function p2g_clerkNonBugBranches() {
         // Sanity: the wrapper must return the same public shape as useSSEChat.
         assert.deepEqual(
           Object.keys(first).sort(),
-          ["isStreaming", "messages", "setMessages", "streamResponse"],
+          ["clearRateLimitError", "connectionStatus", "isStreaming", "messages", "rateLimitError", "setMessages", "streamResponse"],
           `P2g[${branch.label}]: useAISSEChat must expose the canonical keys`,
         );
         await first.streamResponse("/api/mysticism/ai-interpret", {
@@ -562,6 +633,7 @@ async function main() {
   p2f_hookSignature();
   await p2a_signedInStreaming();
   await p2b_non401Errors();
+  await p2b_rateLimitError();
   await p2c_fetchException();
   await p2d_missingApiKeyMessage();
   await p2e_headers();

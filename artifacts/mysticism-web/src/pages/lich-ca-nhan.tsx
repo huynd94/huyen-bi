@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData, displayToInputDate } from "@/lib/reopen-reading";
@@ -115,8 +116,9 @@ export default function LichCaNhanPage() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none" />
       <Navbar />
 
-      <main className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative">
+      <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-12">
+          <Breadcrumb />
           <div className="text-center space-y-4">
             <p className="text-xs tracking-[0.3em] uppercase text-primary/60">Huyền học</p>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Lịch Cá Nhân</h1>

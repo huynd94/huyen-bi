@@ -44,6 +44,20 @@ type SidebarContextProps = {
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
 
+/**
+ * useSidebar — hook truy cập trạng thái và actions của sidebar context.
+ *
+ * Mục đích: lấy `state` (`"expanded"|"collapsed"`), `open`/`setOpen`,
+ * `openMobile`/`setOpenMobile`, `isMobile` và `toggleSidebar` để các
+ * component con (trigger tuỳ biến, layout, hotkey...) đồng bộ với
+ * `SidebarProvider`.
+ *
+ * Lưu ý a11y: hook chỉ trả về dữ liệu — phía gọi cần đảm bảo nút
+ * tương tác có nhãn rõ ràng (ví dụ `aria-label="Toggle Sidebar"`)
+ * và không phá vỡ shortcut `Ctrl/Cmd + B` mà provider đã đăng ký.
+ *
+ * @throws Error khi gọi ngoài cây con của {@link SidebarProvider}.
+ */
 function useSidebar() {
   const context = React.useContext(SidebarContext)
   if (!context) {
@@ -53,6 +67,35 @@ function useSidebar() {
   return context
 }
 
+/**
+ * SidebarProvider — root cung cấp context và bố cục cho hệ Sidebar.
+ *
+ * Mục đích: gói toàn bộ trang/khu vực có sidebar, quản lý state mở/đóng
+ * (controlled qua `open`/`onOpenChange` hoặc uncontrolled với `defaultOpen`),
+ * lưu trạng thái vào cookie `sidebar_state`, và đăng ký phím tắt
+ * `Ctrl/Cmd + B` để toggle nhanh. Cung cấp `TooltipProvider` để các tooltip
+ * trong sidebar hiển thị tức thời (delay 0).
+ *
+ * Lưu ý a11y: shortcut `Ctrl/Cmd + B` là phím chuẩn của shadcn sidebar,
+ * cần ghi chú rõ trong tài liệu sử dụng để tránh xung đột với app cha.
+ * Trên mobile (`useIsMobile` true), sidebar render dưới dạng `Sheet`
+ * có focus trap và `aria-modal` từ Radix.
+ *
+ * @example
+ * ```tsx
+ * <SidebarProvider defaultOpen>
+ *   <Sidebar>
+ *     <SidebarHeader>Logo</SidebarHeader>
+ *     <SidebarContent>...</SidebarContent>
+ *     <SidebarFooter>Tài khoản</SidebarFooter>
+ *   </Sidebar>
+ *   <SidebarInset>
+ *     <SidebarTrigger />
+ *     <main>Nội dung trang</main>
+ *   </SidebarInset>
+ * </SidebarProvider>
+ * ```
+ */
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -151,6 +194,21 @@ function SidebarProvider({
   )
 }
 
+/**
+ * Sidebar — khung chứa thanh điều hướng bên trái/phải của trang.
+ *
+ * Mục đích: hiển thị nội dung sidebar với 3 chế độ thu gọn:
+ * `offcanvas` (trượt ra khỏi màn hình), `icon` (rút lại còn icon), hoặc
+ * `none` (luôn mở). 3 variant trình bày: `sidebar` (mặc định, sát mép),
+ * `floating` (bo góc, có shadow), `inset` (nằm trong khung nội dung).
+ * Trên mobile tự động render qua {@link Sheet} (drawer modal).
+ *
+ * Lưu ý a11y: trên desktop, sidebar là vùng nội dung tĩnh — gắn
+ * `aria-label` mô tả khi cần (ví dụ "Điều hướng chính"). Trên mobile,
+ * Radix Sheet đảm nhiệm focus trap và `Escape` đóng dialog. Hiệu ứng
+ * trượt dùng `transition-[width]` 200ms; có thể bị giảm thiểu nhờ tiện
+ * ích Tailwind `motion-reduce` ở ngoài.
+ */
 function Sidebar({
   side = "left",
   variant = "sidebar",
@@ -253,6 +311,18 @@ function Sidebar({
   )
 }
 
+/**
+ * SidebarTrigger — nút bấm để mở/đóng sidebar (icon panel-left).
+ *
+ * Mục đích: cung cấp một button kích thước nhỏ (28×28) đặt trong header
+ * trang/sidebar để toggle. Tự gọi `toggleSidebar()` từ context, nên không
+ * cần truyền prop bổ sung.
+ *
+ * Lưu ý a11y: kèm `<span className="sr-only">Toggle Sidebar</span>` làm
+ * nhãn cho screen reader. Nếu cần dịch sang tiếng Việt, override
+ * children hoặc gắn `aria-label` thay thế. Tôn trọng `onClick` truyền
+ * vào (chạy trước hành động toggle).
+ */
 function SidebarTrigger({
   className,
   onClick,
@@ -279,6 +349,17 @@ function SidebarTrigger({
   )
 }
 
+/**
+ * SidebarRail — thanh kéo mỏng dọc theo cạnh sidebar để toggle nhanh.
+ *
+ * Mục đích: cung cấp vùng click rộng theo chiều dọc (chỉ hiển thị từ
+ * `sm:` trở lên) để người dùng đóng/mở sidebar mà không cần tìm trigger.
+ *
+ * Lưu ý a11y: gắn `aria-label="Toggle Sidebar"` và `tabIndex={-1}` để
+ * không tham gia tab order (dành cho người dùng chuột). Người dùng bàn
+ * phím nên dùng {@link SidebarTrigger} hoặc `Ctrl/Cmd + B`. Cursor đổi
+ * theo `data-side` và `data-state` để gợi ý hướng kéo.
+ */
 function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   const { toggleSidebar } = useSidebar()
 
@@ -305,6 +386,16 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
   )
 }
 
+/**
+ * SidebarInset — khung `<main>` nội dung chính kế bên sidebar.
+ *
+ * Mục đích: vùng landmark `main` chứa nội dung trang; tự áp margin/rounded
+ * khi sidebar dùng `variant="inset"` để tạo cảm giác "thẻ" tách biệt.
+ *
+ * Lưu ý a11y: tag là `<main>` nên đã đóng vai trò landmark chính của
+ * trang — chỉ nên có một `SidebarInset` cho mỗi trang để tránh nhiều
+ * landmark `main` trùng nhau.
+ */
 function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   return (
     <main
@@ -319,6 +410,15 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
   )
 }
 
+/**
+ * SidebarInput — ô input style sidebar (ví dụ ô tìm kiếm trong sidebar).
+ *
+ * Mục đích: tái sử dụng {@link Input} chuẩn nhưng với chiều cao 32px,
+ * nền `bg-background` và bỏ shadow để hợp tông với sidebar.
+ *
+ * Lưu ý a11y: kế thừa toàn bộ a11y của {@link Input} — luôn gắn `<Label>`
+ * hoặc `aria-label` để screen reader biết mục đích trường nhập.
+ */
 function SidebarInput({
   className,
   ...props
@@ -333,6 +433,15 @@ function SidebarInput({
   )
 }
 
+/**
+ * SidebarHeader — vùng header trên cùng của Sidebar.
+ *
+ * Mục đích: chứa logo, tên app hoặc selector tài khoản. Bố cục cột với
+ * khoảng cách 8px và padding 8px, đồng nhất với footer.
+ *
+ * Lưu ý a11y: là wrapper trình bày, không thêm role. Nếu nội dung là
+ * heading chính của khu vực điều hướng, dùng tag `<h2>`/`<h3>` bên trong.
+ */
 function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -344,6 +453,15 @@ function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * SidebarFooter — vùng footer dưới cùng của Sidebar.
+ *
+ * Mục đích: nơi đặt link phụ (đăng xuất, cài đặt) hoặc thông tin user
+ * gọn. Cùng padding/khoảng cách với {@link SidebarHeader}.
+ *
+ * Lưu ý a11y: tương tự header, là wrapper trình bày; cấu trúc landmark
+ * vẫn do `<main>`/`<nav>` bên trong quyết định.
+ */
 function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -355,6 +473,15 @@ function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * SidebarSeparator — đường kẻ phân tách các nhóm trong Sidebar.
+ *
+ * Mục đích: tái sử dụng {@link Separator} của Radix với màu
+ * `bg-sidebar-border`, margin ngang 8px để hợp với padding sidebar.
+ *
+ * Lưu ý a11y: separator của Radix mặc định mang `role="separator"`;
+ * thêm `decorative` ở phía gọi nếu chỉ trang trí, tránh ồn cho screen reader.
+ */
 function SidebarSeparator({
   className,
   ...props
@@ -369,6 +496,17 @@ function SidebarSeparator({
   )
 }
 
+/**
+ * SidebarContent — vùng nội dung chính của Sidebar (cuộn được).
+ *
+ * Mục đích: chứa các {@link SidebarGroup} và menu, cho phép cuộn dọc khi
+ * dài; tự ẩn overflow khi sidebar ở chế độ `collapsible=icon` để tránh
+ * thanh cuộn nhấp nháy.
+ *
+ * Lưu ý a11y: là vùng trình bày; nếu cần cấu trúc landmark, gắn tag
+ * `<nav aria-label="Điều hướng phụ">` bao bọc bên ngoài hoặc đổi root
+ * tuỳ ý qua composition.
+ */
 function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -383,6 +521,17 @@ function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * SidebarGroup — nhóm các mục liên quan trong Sidebar.
+ *
+ * Mục đích: gộp menu cùng chủ đề (ví dụ "Lá số gần đây", "Cài đặt")
+ * cùng một section có padding và spacing riêng. Thường dùng cùng
+ * {@link SidebarGroupLabel} ở đầu group.
+ *
+ * Lưu ý a11y: là wrapper trình bày, không tạo landmark; cặp `Group` +
+ * `GroupLabel` đủ để screen reader hiểu cấu trúc nếu label dùng heading
+ * (qua `asChild`).
+ */
 function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -394,6 +543,16 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * SidebarGroupLabel — nhãn tiêu đề cho một {@link SidebarGroup}.
+ *
+ * Mục đích: hiển thị tên nhóm dưới dạng text mờ, tự ẩn khi sidebar thu
+ * gọn về chế độ icon (`group-data-[collapsible=icon]:opacity-0`).
+ *
+ * Lưu ý a11y: dùng `asChild` để render dưới dạng `<h3>`/`<h4>` khi cần
+ * giữ cấu trúc heading. Nếu để mặc định `<div>`, screen reader vẫn đọc
+ * theo thứ tự DOM nhưng không có cấp bậc heading rõ ràng.
+ */
 function SidebarGroupLabel({
   className,
   asChild = false,
@@ -415,6 +574,16 @@ function SidebarGroupLabel({
   )
 }
 
+/**
+ * SidebarGroupAction — nút thao tác phụ ở góc của một {@link SidebarGroup}.
+ *
+ * Mục đích: chứa hành động cấp group (ví dụ "Thêm mới"), tự ẩn khi
+ * sidebar thu gọn về icon. Hỗ trợ `asChild` để wrap link/component khác.
+ *
+ * Lưu ý a11y: chỉ chứa icon là phổ biến — luôn truyền `aria-label`
+ * mô tả hành động (ví dụ `aria-label="Thêm lá số mới"`). Hit area
+ * được mở rộng trên mobile bằng pseudo-element `after:`.
+ */
 function SidebarGroupAction({
   className,
   asChild = false,
@@ -438,6 +607,14 @@ function SidebarGroupAction({
   )
 }
 
+/**
+ * SidebarGroupContent — vùng nội dung bên dưới label của một group.
+ *
+ * Mục đích: bọc {@link SidebarMenu} và các phần tử khác trong group;
+ * chuẩn hoá size text (`text-sm`) và full-width.
+ *
+ * Lưu ý a11y: thuần wrapper trình bày, không thêm role.
+ */
 function SidebarGroupContent({
   className,
   ...props
@@ -452,6 +629,16 @@ function SidebarGroupContent({
   )
 }
 
+/**
+ * SidebarMenu — danh sách `<ul>` chứa các {@link SidebarMenuItem}.
+ *
+ * Mục đích: container cho menu điều hướng dọc trong sidebar; xếp các
+ * item thành cột với khoảng cách 4px.
+ *
+ * Lưu ý a11y: vì tag là `<ul>` nên đã có ngữ nghĩa list cho screen
+ * reader. Khi đặt menu trong landmark `<nav>`, gắn `aria-label` ở `nav`
+ * cha để phân biệt với các nav khác trên trang.
+ */
 function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
@@ -463,6 +650,17 @@ function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
   )
 }
 
+/**
+ * SidebarMenuItem — một mục `<li>` trong {@link SidebarMenu}.
+ *
+ * Mục đích: bọc {@link SidebarMenuButton} và (tuỳ chọn)
+ * {@link SidebarMenuAction}/{@link SidebarMenuBadge} cho mỗi entry điều
+ * hướng. Sử dụng `group/menu-item` để các action con ẩn/hiện theo hover.
+ *
+ * Lưu ý a11y: tag `<li>` giữ ngữ nghĩa list-item; tránh nhồi nhiều
+ * tương tác cùng cấp ngoài button chính + một action phụ để không gây
+ * khó cho người dùng bàn phím.
+ */
 function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
   return (
     <li
@@ -496,6 +694,19 @@ const sidebarMenuButtonVariants = cva(
   }
 )
 
+/**
+ * SidebarMenuButton — nút điều hướng chính trong {@link SidebarMenuItem}.
+ *
+ * Mục đích: dòng button (hoặc link qua `asChild`) cho mỗi entry sidebar,
+ * hỗ trợ `isActive` để highlight, `variant` (`default|outline`) và `size`
+ * (`default|sm|lg`). Khi sidebar thu gọn về icon mà có `tooltip`, button
+ * tự bọc bằng {@link Tooltip} hiển thị nhãn ở phải.
+ *
+ * Lưu ý a11y: trạng thái active phản ánh qua `data-active="true"`; cân
+ * nhắc thêm `aria-current="page"` ở phía gọi cho route hiện tại để screen
+ * reader thông báo. Khi chỉ có icon (sidebar thu gọn), tooltip đảm nhận
+ * việc cung cấp nhãn — vẫn nên giữ text con để giàu ngữ nghĩa.
+ */
 function SidebarMenuButton({
   asChild = false,
   isActive = false,
@@ -546,6 +757,19 @@ function SidebarMenuButton({
   )
 }
 
+/**
+ * SidebarMenuAction — nút thao tác phụ ở góc phải của một menu item.
+ *
+ * Mục đích: thực hiện hành động cấp item (ví dụ "Xoá", menu kebab).
+ * Khi `showOnHover=true`, nút mặc định ẩn (`opacity-0`) và chỉ hiện khi
+ * hover/focus item cha hoặc khi item đang active.
+ *
+ * Lưu ý a11y: gắn `aria-label` rõ ràng cho action vì thường chỉ chứa
+ * icon. Khi `showOnHover`, người dùng bàn phím vẫn focus được nhờ
+ * `group-focus-within/menu-item:opacity-100`. Nếu nhúng một
+ * {@link DropdownMenu} bên trong, tránh để click action lan ra link
+ * cha (dùng `e.stopPropagation()`).
+ */
 function SidebarMenuAction({
   className,
   asChild = false,
@@ -578,6 +802,16 @@ function SidebarMenuAction({
   )
 }
 
+/**
+ * SidebarMenuBadge — badge số/text nhỏ ở góc của menu item.
+ *
+ * Mục đích: hiển thị thông tin phụ (số thông báo, trạng thái) cạnh
+ * {@link SidebarMenuButton}; tự ẩn khi sidebar thu gọn về icon.
+ *
+ * Lưu ý a11y: đặt `pointer-events-none` để không cản click button. Nội
+ * dung số/text nên đi kèm ngữ cảnh (ví dụ thêm `<span className="sr-only">
+ * thông báo chưa đọc</span>` để screen reader không chỉ đọc số trống).
+ */
 function SidebarMenuBadge({
   className,
   ...props
@@ -600,6 +834,17 @@ function SidebarMenuBadge({
   )
 }
 
+/**
+ * SidebarMenuSkeleton — placeholder loading cho một dòng menu item.
+ *
+ * Mục đích: hiển thị `Skeleton` thay cho item khi đang fetch dữ liệu
+ * điều hướng (ví dụ danh sách lá số chưa load). Tự sinh chiều rộng
+ * ngẫu nhiên 50–90% để mô phỏng cảm giác list đa dạng.
+ *
+ * Lưu ý a11y: skeleton thuần trang trí; cân nhắc gắn `aria-busy="true"`
+ * cho khu vực cha và `aria-hidden="true"` cho skeleton để screen reader
+ * không đọc placeholder.
+ */
 function SidebarMenuSkeleton({
   className,
   showIcon = false,
@@ -638,6 +883,16 @@ function SidebarMenuSkeleton({
   )
 }
 
+/**
+ * SidebarMenuSub — danh sách `<ul>` chứa các sub-item lồng dưới một item.
+ *
+ * Mục đích: hiển thị menu cấp 2 (ví dụ các "Mục" con của "Cài đặt"),
+ * thụt vào và có viền trái mỏng làm chỉ báo phân cấp. Tự ẩn khi sidebar
+ * ở chế độ icon.
+ *
+ * Lưu ý a11y: là `<ul>` — giữ ngữ nghĩa list. Nếu submenu có thể đóng/mở,
+ * dùng cùng {@link Collapsible} ở phía gọi để có hành vi `aria-expanded`.
+ */
 function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   return (
     <ul
@@ -653,6 +908,14 @@ function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
   )
 }
 
+/**
+ * SidebarMenuSubItem — một mục `<li>` trong {@link SidebarMenuSub}.
+ *
+ * Mục đích: bọc {@link SidebarMenuSubButton} của một sub-entry; tương
+ * tự {@link SidebarMenuItem} nhưng cho cấp 2.
+ *
+ * Lưu ý a11y: tag `<li>` giữ ngữ nghĩa list-item.
+ */
 function SidebarMenuSubItem({
   className,
   ...props
@@ -667,6 +930,17 @@ function SidebarMenuSubItem({
   )
 }
 
+/**
+ * SidebarMenuSubButton — link/button cho một sub-entry điều hướng.
+ *
+ * Mục đích: render `<a>` (mặc định) hoặc element tuỳ ý qua `asChild`.
+ * Hỗ trợ `size` (`sm|md`) và `isActive` để highlight; tự ẩn khi sidebar
+ * thu gọn về icon vì sub-menu không hiển thị ở chế độ này.
+ *
+ * Lưu ý a11y: như {@link SidebarMenuButton}, cân nhắc gắn `aria-current`
+ * cho route hiện tại. Nội dung text cuối cùng tự `truncate` qua
+ * `[&>span:last-child]:truncate`.
+ */
 function SidebarMenuSubButton({
   asChild = false,
   size = "md",

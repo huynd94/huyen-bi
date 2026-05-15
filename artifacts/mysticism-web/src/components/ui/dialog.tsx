@@ -4,14 +4,54 @@ import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Dialog — wrapper trực tiếp của `@radix-ui/react-dialog` Root.
+ *
+ * Mục đích: hộp thoại modal cho các flow ngắn (form chỉnh sửa,
+ * xác nhận, chi tiết item). Khác {@link AlertDialog} ở chỗ Dialog
+ * thường có thể đóng bằng click outside / phím Esc và không yêu cầu
+ * người dùng phải xác nhận.
+ *
+ * Props: kế thừa props của Radix Root — `open`, `onOpenChange`,
+ * `defaultOpen`, `modal` (mặc định `true`).
+ *
+ * Lưu ý a11y: Radix tự bẫy focus, gắn `role="dialog"` /
+ * `aria-modal="true"`, và trả focus về trigger sau khi đóng. Phải
+ * lồng {@link DialogTitle} bên trong {@link DialogContent} —
+ * nếu muốn ẩn tiêu đề về mặt thị giác, dùng class `sr-only`.
+ *
+ * @example
+ * ```tsx
+ * <Dialog>
+ *   <DialogTrigger asChild>
+ *     <Button>Chỉnh sửa lá số</Button>
+ *   </DialogTrigger>
+ *   <DialogContent>
+ *     <DialogHeader>
+ *       <DialogTitle>Chỉnh sửa lá số</DialogTitle>
+ *       <DialogDescription>Cập nhật thông tin ngày sinh.</DialogDescription>
+ *     </DialogHeader>
+ *     <form>...</form>
+ *     <DialogFooter>
+ *       <DialogClose asChild><Button variant="outline">Huỷ</Button></DialogClose>
+ *       <Button type="submit">Lưu</Button>
+ *     </DialogFooter>
+ *   </DialogContent>
+ * </Dialog>
+ * ```
+ */
 const Dialog = DialogPrimitive.Root
 
+/** Trigger mở {@link Dialog}. Dùng `asChild` để render component tuỳ ý. */
 const DialogTrigger = DialogPrimitive.Trigger
 
+/** Portal render dialog vào cuối `<body>` để tránh stacking context. */
 const DialogPortal = DialogPrimitive.Portal
 
+/** Nút đóng dialog có thể đặt ở bất kỳ đâu trong nội dung. */
 const DialogClose = DialogPrimitive.Close
 
+/** Lớp phủ (overlay) tối nền khi dialog mở, fade in/out theo `data-state`. */
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -27,6 +67,14 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+/**
+ * Container chính của dialog. Tự động kèm Portal + Overlay, focus
+ * trap, animation slide-in/zoom từ giữa, và nút "X" đóng ở góc trên
+ * phải (có `<span class="sr-only">Close</span>` cho screen reader).
+ *
+ * Lưu ý a11y: bắt buộc lồng {@link DialogTitle}; cân nhắc thêm
+ * {@link DialogDescription} để Radix có target cho `aria-describedby`.
+ */
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -51,6 +99,7 @@ const DialogContent = React.forwardRef<
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
+/** Phần header của dialog — chứa Title và Description. */
 const DialogHeader = ({
   className,
   ...props
@@ -65,6 +114,11 @@ const DialogHeader = ({
 )
 DialogHeader.displayName = "DialogHeader"
 
+/**
+ * Footer chứa action buttons (Lưu/Huỷ). Trên mobile xếp dọc
+ * (button đầu tiên ở dưới do `flex-col-reverse`), từ `sm:` trở lên
+ * xếp ngang về phải.
+ */
 const DialogFooter = ({
   className,
   ...props
@@ -79,6 +133,7 @@ const DialogFooter = ({
 )
 DialogFooter.displayName = "DialogFooter"
 
+/** Tiêu đề dialog. Liên kết với content qua `aria-labelledby` (Radix tự gắn). */
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -94,6 +149,7 @@ const DialogTitle = React.forwardRef<
 ))
 DialogTitle.displayName = DialogPrimitive.Title.displayName
 
+/** Mô tả ngắn — liên kết với content qua `aria-describedby` (Radix tự gắn). */
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>

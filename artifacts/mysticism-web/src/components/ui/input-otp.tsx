@@ -4,6 +4,39 @@ import { Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * InputOTP — wrapper trực tiếp `OTPInput` của thư viện `input-otp`.
+ *
+ * Mục đích: nhập mã OTP (one-time password) gồm nhiều ký tự, hiển
+ * thị từng ô riêng biệt nhưng phía sau là một `<input>` ẩn duy nhất
+ * — paste/auto-fill từ SMS đều hoạt động giống native input.
+ *
+ * Props chính: `maxLength` (số ô), `value`, `onChange`, `pattern`
+ * (regex giới hạn ký tự, ví dụ `REGEXP_ONLY_DIGITS`),
+ * `containerClassName`, `disabled`.
+ *
+ * Lưu ý a11y: input thật là `<input>` ẩn nên hỗ trợ đầy đủ keyboard
+ * (gõ ký tự, Backspace xoá lùi, ←/→ di chuyển caret), screen reader
+ * đọc placeholder/label như input thường. Khi disabled, container tự
+ * giảm opacity 50% qua `has-[:disabled]`.
+ *
+ * @example
+ * ```tsx
+ * <InputOTP maxLength={6} value={code} onChange={setCode}>
+ *   <InputOTPGroup>
+ *     <InputOTPSlot index={0} />
+ *     <InputOTPSlot index={1} />
+ *     <InputOTPSlot index={2} />
+ *   </InputOTPGroup>
+ *   <InputOTPSeparator />
+ *   <InputOTPGroup>
+ *     <InputOTPSlot index={3} />
+ *     <InputOTPSlot index={4} />
+ *     <InputOTPSlot index={5} />
+ *   </InputOTPGroup>
+ * </InputOTP>
+ * ```
+ */
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
@@ -20,6 +53,11 @@ const InputOTP = React.forwardRef<
 ))
 InputOTP.displayName = "InputOTP"
 
+/**
+ * InputOTPGroup — gom nhóm các {@link InputOTPSlot} liền nhau (không
+ * có separator giữa). Áp `flex items-center` để các slot dính sát
+ * nhau và bo góc đầu/cuối qua selector `first:`/`last:` của slot.
+ */
 const InputOTPGroup = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
@@ -28,6 +66,21 @@ const InputOTPGroup = React.forwardRef<
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 
+/**
+ * InputOTPSlot — một ô hiển thị ký tự tại vị trí `index`.
+ *
+ * Đọc state từ `OTPInputContext` (qua context của thư viện
+ * `input-otp`) để biết:
+ * - `char`: ký tự hiện tại trong ô (hiển thị).
+ * - `hasFakeCaret`: có vẽ caret giả (animation nhấp nháy) khi ô đang
+ *   active mà ô chưa có ký tự.
+ * - `isActive`: ô có đang được focus — áp `ring-1 ring-ring` để
+ *   highlight.
+ *
+ * Lưu ý a11y: slot chỉ là phần hiển thị; tương tác bàn phím được xử
+ * lý bởi `<input>` ẩn của {@link InputOTP}, nên không cần gắn focus
+ * handler hay tabindex thủ công.
+ */
 const InputOTPSlot = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div"> & { index: number }
@@ -56,6 +109,11 @@ const InputOTPSlot = React.forwardRef<
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
+/**
+ * InputOTPSeparator — dấu ngăn cách giữa hai {@link InputOTPGroup}
+ * (ví dụ: `123-456` chia thành 3+3 ký tự). Render `role="separator"`
+ * và icon `Minus`.
+ */
 const InputOTPSeparator = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">

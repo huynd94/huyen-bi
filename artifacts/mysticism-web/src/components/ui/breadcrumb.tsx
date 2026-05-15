@@ -4,6 +4,30 @@ import { ChevronRight, MoreHorizontal } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Breadcrumb — container điều hướng phân cấp.
+ *
+ * Mục đích: hiển thị đường dẫn từ trang gốc đến trang hiện tại
+ * (ví dụ: Trang chủ › Tử vi › Lá số của tôi).
+ *
+ * Props:
+ * - Tất cả thuộc tính `<nav>` chuẩn.
+ * - `separator`: dấu ngăn cách tuỳ biến (mặc định `<ChevronRight>`).
+ *
+ * Lưu ý a11y: render `<nav aria-label="breadcrumb">`; trang hiện tại
+ * dùng {@link BreadcrumbPage} có `aria-current="page"`.
+ *
+ * @example
+ * ```tsx
+ * <Breadcrumb>
+ *   <BreadcrumbList>
+ *     <BreadcrumbItem><BreadcrumbLink href="/">Trang chủ</BreadcrumbLink></BreadcrumbItem>
+ *     <BreadcrumbSeparator />
+ *     <BreadcrumbItem><BreadcrumbPage>Tử vi</BreadcrumbPage></BreadcrumbItem>
+ *   </BreadcrumbList>
+ * </Breadcrumb>
+ * ```
+ */
 const Breadcrumb = React.forwardRef<
   HTMLElement,
   React.ComponentPropsWithoutRef<"nav"> & {
@@ -12,6 +36,7 @@ const Breadcrumb = React.forwardRef<
 >(({ ...props }, ref) => <nav ref={ref} aria-label="breadcrumb" {...props} />)
 Breadcrumb.displayName = "Breadcrumb"
 
+/** Danh sách `<ol>` chứa các {@link BreadcrumbItem} và {@link BreadcrumbSeparator}. */
 const BreadcrumbList = React.forwardRef<
   HTMLOListElement,
   React.ComponentPropsWithoutRef<"ol">
@@ -27,6 +52,7 @@ const BreadcrumbList = React.forwardRef<
 ))
 BreadcrumbList.displayName = "BreadcrumbList"
 
+/** Một mục `<li>` trong breadcrumb. */
 const BreadcrumbItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentPropsWithoutRef<"li">
@@ -39,6 +65,14 @@ const BreadcrumbItem = React.forwardRef<
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
+/**
+ * Liên kết tới một trang cha. Mặc định render `<a>`, có thể đổi sang
+ * router link bằng `asChild` (Radix `Slot`).
+ *
+ * Lưu ý a11y: tự động có `transition-colors` và `:hover:text-foreground`
+ * để feedback hover. Tránh nhồi text quá dài; cân nhắc `truncate` cho
+ * mobile.
+ */
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
   React.ComponentPropsWithoutRef<"a"> & {
@@ -57,6 +91,11 @@ const BreadcrumbLink = React.forwardRef<
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
 
+/**
+ * Trang hiện tại. Render `<span role="link" aria-current="page">`
+ * — không clickable nhưng vẫn được screen reader báo là vị trí
+ * hiện tại.
+ */
 const BreadcrumbPage = React.forwardRef<
   HTMLSpanElement,
   React.ComponentPropsWithoutRef<"span">
@@ -72,6 +111,13 @@ const BreadcrumbPage = React.forwardRef<
 ))
 BreadcrumbPage.displayName = "BreadcrumbPage"
 
+/**
+ * Dấu ngăn cách giữa các item. Mặc định icon `ChevronRight`,
+ * có thể truyền `children` để override (ví dụ "/" hay "›").
+ *
+ * Render `<li role="presentation" aria-hidden="true">` để screen reader
+ * bỏ qua.
+ */
 const BreadcrumbSeparator = ({
   children,
   className,
@@ -88,6 +134,10 @@ const BreadcrumbSeparator = ({
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
 
+/**
+ * Ellipsis (…) thay thế nhiều mục giữa khi đường dẫn quá dài.
+ * Có nhãn `sr-only` "More" cho screen reader.
+ */
 const BreadcrumbEllipsis = ({
   className,
   ...props

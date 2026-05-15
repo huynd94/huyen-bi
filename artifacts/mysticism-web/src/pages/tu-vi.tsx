@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData } from "@/lib/reopen-reading";
@@ -233,10 +234,11 @@ export default function TuViPage() {
         )}
       </div>
       <Navbar />
-      <main className="flex-1 pt-20 pb-16 px-4">
+      <main id="main" tabIndex={-1} className="flex-1 pt-20 pb-16 px-4 outline-none">
         <div className="max-w-6xl mx-auto space-y-8">
 
           {/* Header */}
+          <Breadcrumb />
           <div className="text-center space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <p className="text-xs uppercase tracking-[0.3em] text-primary/60">Tử Bình Mệnh Lý</p>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">Tử Vi Đẩu Số</h1>

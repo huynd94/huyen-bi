@@ -3,15 +3,24 @@ import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wo
 import { ClerkProvider, Show, useClerk, useUser } from "@clerk/react";
 import { viVN } from "@clerk/localizations";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import { isClerkEnabled } from "@/lib/auth-config";
-import { Toaster } from "@/components/ui/toaster";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AISettingsProvider } from "@/contexts/ai-settings";
 import { ThemeProvider } from "@/contexts/theme";
-import Home from "@/pages/home";
-import SignInPage from "@/pages/sign-in";
-import SignUpPage from "@/pages/sign-up";
 
+/**
+ * Mọi route page đều được nạp qua `React.lazy()` để Vite tách thành các
+ * chunk riêng (Requirement 11.1 — Hiệu_năng_cảm_nhận). Trang chủ, đăng
+ * nhập, đăng ký, hồ sơ, share view, 404 cùng 15 Module_Page đều ở dạng
+ * dynamic import — không có page nào còn trong main bundle ngoài shell
+ * (router, providers, layout chrome).
+ */
+const Home = lazy(() => import("@/pages/home"));
+const SignInPage = lazy(() => import("@/pages/sign-in"));
+const SignUpPage = lazy(() => import("@/pages/sign-up"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 const NumerologyPage = lazy(() => import("@/pages/than-so-hoc"));
 const BatuPage = lazy(() => import("@/pages/bat-tu"));
@@ -30,6 +39,19 @@ const SaoHanPage = lazy(() => import("@/pages/sao-han"));
 const LichSuPage = lazy(() => import("@/pages/lich-su"));
 const ProfilePage = lazy(() => import("@/pages/profile"));
 const ShareViewPage = lazy(() => import("@/pages/share-view"));
+
+/**
+ * Trang nội bộ `/dev/design-tokens` chỉ tồn tại trong build môi trường dev
+ * (Requirement 20.3). `import.meta.env.DEV` được Vite thay thế bằng literal
+ * `true` / `false` lúc build, nên ở production cả ternary lẫn dynamic import
+ * bên dưới đều được dead-code-eliminate và Vite không phát chunk tương ứng.
+ *
+ * Hệ quả: production bundle không chứa chuỗi `design-tokens` — thoả mãn
+ * lint rule `build-assertion` trong `scripts/lint-design-system.ts`.
+ */
+const DesignTokensDevPage = import.meta.env.DEV
+  ? lazy(() => import("@/pages/dev/design-tokens"))
+  : null;
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Huyền Bí — Khám Phá Vận Mệnh",
@@ -63,18 +85,93 @@ function PageTitleUpdater() {
   return null;
 }
 
+/**
+ * Fallback hiển thị trong khi route page (lazy chunk) đang được tải
+ * (Requirement 11.1 — Hiệu_năng_cảm_nhận). Dùng {@link Skeleton} với
+ * biến thể `card` thay cho spinner toàn màn hình để:
+ *
+ * - Giữ chỗ (placeholder) cho silhouette nội dung sắp xuất hiện, giảm
+ *   cảm giác "flash" giữa các route.
+ * - Trùng cấu trúc loading state đã được dùng trong các Module_Page
+ *   (xem `<SkeletonCard />` / `<SkeletonChart />` trong từng trang).
+ * - Tự thông báo `role="status"` + `aria-busy="true"` ra screen reader
+ *   thông qua wrapper {@link Skeleton} (Requirement 5.8).
+ *
+ * Nhãn `sr-only` "Đang tải trang…" giúp người dùng dùng AT hiểu rằng
+ * thay đổi route đang trong quá trình tải, không chỉ là thay đổi visual.
+ *
+ * Animation `animate-pulse` của Skeleton tự tắt khi
+ * `prefers-reduced-motion: reduce` (Requirement 9.x — Reduced_Motion_User).
+ */
 function PageFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-        <p className="text-xs text-muted-foreground tracking-widest uppercase">Đang tải...</p>
+    <div className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto w-full max-w-3xl space-y-4">
+        <Skeleton variant="card" aria-label="Đang tải trang…" />
+        <span className="sr-only">Đang tải trang…</span>
       </div>
     </div>
   );
 }
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { MysticCursor } from "@/components/mystic-cursor";
+import { AmbientBg } from "@/components/ambient-bg";
+
+/**
+ * Các route được phép mount {@link AmbientBg}: trang chủ và 15
+ * Module_Page (Requirement 10.8).
+ *
+ * Lift mount lên router để cùng một instance tồn tại liên tục giữa các
+ * điều hướng trong nhóm này — giảm flicker và đảm bảo các route khác
+ * (sign-in, sign-up, profile, share, lịch sử thuần dữ liệu, 404) hoàn
+ * toàn không có ambient layer như Property 4 yêu cầu.
+ */
+const AMBIENT_ROUTES: ReadonlySet<string> = new Set([
+  "/",
+  "/than-so-hoc",
+  "/bat-tu",
+  "/xem-que",
+  "/cat-hung",
+  "/lich-van-nien",
+  "/tu-vi",
+  "/phong-thuy",
+  "/xem-ten",
+  "/lich-ca-nhan",
+  "/tu-dien",
+  "/hop-tuoi",
+  "/xem-ngay-tot",
+  "/sao-han",
+  "/lich-su",
+  "/ai-chat",
+]);
+
+/**
+ * Chuẩn hoá pathname — bỏ query string và trailing slash — trước khi
+ * match vào {@link AMBIENT_ROUTES}.
+ */
+function normalizeRoute(location: string): string {
+  const base = location.split("?")[0];
+  if (base.length > 1 && base.endsWith("/")) {
+    return base.slice(0, -1);
+  }
+  return base || "/";
+}
+
+/**
+ * Render {@link AmbientBg} chỉ khi route hiện tại nằm trong danh sách
+ * cho phép. Đặt cạnh router (trong cùng `<WouterRouter>`) để `useLocation`
+ * trả về pathname đã trừ `basePath`, khớp đúng các literal trong
+ * {@link AMBIENT_ROUTES}.
+ */
+function AmbientBgGate() {
+  const [location] = useLocation();
+  const route = normalizeRoute(location);
+  if (!AMBIENT_ROUTES.has(route)) return null;
+  return <AmbientBg />;
+}
+import { SkipLink } from "@/components/ui/skip-link";
+import { RootErrorBoundary } from "@/components/root-error-boundary";
+import { OfflineBanner } from "@/components/layout/offline-banner";
 
 const queryClient = new QueryClient();
 
@@ -112,31 +209,43 @@ function Router() {
   return (
     <>
       <PageTitleUpdater />
-      <Suspense fallback={<PageFallback />}>
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/sign-in/*?" component={SignInPage} />
-          <Route path="/sign-up/*?" component={SignUpPage} />
-          <Route path="/profile" component={ProfilePage} />
-          <Route path="/than-so-hoc" component={NumerologyPage} />
-          <Route path="/bat-tu" component={BatuPage} />
-          <Route path="/xem-que" component={IChingPage} />
-          <Route path="/cat-hung" component={CatHungPage} />
-          <Route path="/lich-van-nien" component={LichVanNienPage} />
-          <Route path="/tu-vi" component={TuViPage} />
-          <Route path="/ai-chat" component={AIChatPage} />
-          <Route path="/phong-thuy" component={PhongThuyPage} />
-          <Route path="/xem-ten" component={XemTenPage} />
-          <Route path="/lich-ca-nhan" component={LichCaNhanPage} />
-          <Route path="/tu-dien" component={TuDienPage} />
-          <Route path="/hop-tuoi" component={HopTuoiPage} />
-          <Route path="/xem-ngay-tot" component={XemNgayTotPage} />
-          <Route path="/sao-han" component={SaoHanPage} />
-          <Route path="/lich-su" component={LichSuPage} />
-          <Route path="/share/:token" component={ShareViewPage} />
-          <Route component={NotFound} />
-        </Switch>
-      </Suspense>
+      {/*
+        Phần tử `<main id="main">` ở cấp router đảm bảo skip link
+        (`<SkipLink />` mount trong {@link App}) có target hợp lệ trên
+        MỌI route — kể cả các trang không tự render `<main>` của riêng
+        mình. `tabIndex={-1}` cho phép phần tử nhận focus theo lập trình
+        khi hash thay đổi, hỗ trợ WCAG 2.4.1 (Bỏ qua khối). Requirement 3.10.
+      */}
+      <main id="main" tabIndex={-1} className="outline-none">
+        <Suspense fallback={<PageFallback />}>
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/sign-in/*?" component={SignInPage} />
+            <Route path="/sign-up/*?" component={SignUpPage} />
+            <Route path="/profile" component={ProfilePage} />
+            <Route path="/than-so-hoc" component={NumerologyPage} />
+            <Route path="/bat-tu" component={BatuPage} />
+            <Route path="/xem-que" component={IChingPage} />
+            <Route path="/cat-hung" component={CatHungPage} />
+            <Route path="/lich-van-nien" component={LichVanNienPage} />
+            <Route path="/tu-vi" component={TuViPage} />
+            <Route path="/ai-chat" component={AIChatPage} />
+            <Route path="/phong-thuy" component={PhongThuyPage} />
+            <Route path="/xem-ten" component={XemTenPage} />
+            <Route path="/lich-ca-nhan" component={LichCaNhanPage} />
+            <Route path="/tu-dien" component={TuDienPage} />
+            <Route path="/hop-tuoi" component={HopTuoiPage} />
+            <Route path="/xem-ngay-tot" component={XemNgayTotPage} />
+            <Route path="/sao-han" component={SaoHanPage} />
+            <Route path="/lich-su" component={LichSuPage} />
+            <Route path="/share/:token" component={ShareViewPage} />
+            {import.meta.env.DEV && DesignTokensDevPage ? (
+              <Route path="/dev/design-tokens" component={DesignTokensDevPage} />
+            ) : null}
+            <Route component={NotFound} />
+          </Switch>
+        </Suspense>
+      </main>
     </>
   );
 }
@@ -146,10 +255,18 @@ function AppContent() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AISettingsProvider>
+          <AmbientBgGate />
           <Router />
-          <Toaster />
+          {/*
+            Thứ tự mount cuối router (Requirement 5.9): `<PwaInstallPrompt />`
+            và `<MysticCursor />` render trước `<Toaster />` để toast sonner
+            (region `aria-live`) chiếm layer cuối cùng trong cây React.
+            Nhờ đó toast luôn xuất hiện đè lên banner cài PWA và canvas cursor,
+            không bị che hoặc chặn pointer event từ các overlay phía trên.
+          */}
           <PwaInstallPrompt />
           <MysticCursor />
+          <Toaster />
         </AISettingsProvider>
       </TooltipProvider>
     </QueryClientProvider>
@@ -171,10 +288,18 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <TooltipProvider>
           <AISettingsProvider>
+            <AmbientBgGate />
             <Router />
-            <Toaster />
+            {/*
+              Thứ tự mount cuối router (Requirement 5.9): `<PwaInstallPrompt />`
+              và `<MysticCursor />` render trước `<Toaster />` để toast sonner
+              (region `aria-live`) chiếm layer cuối cùng trong cây React.
+              Nhờ đó toast luôn xuất hiện đè lên banner cài PWA và canvas cursor,
+              không bị che hoặc chặn pointer event từ các overlay phía trên.
+            */}
             <PwaInstallPrompt />
             <MysticCursor />
+            <Toaster />
           </AISettingsProvider>
         </TooltipProvider>
       </QueryClientProvider>
@@ -184,11 +309,19 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <WouterRouter base={basePath}>
-        {isClerkEnabled ? <ClerkProviderWithRoutes /> : <AppContent />}
-      </WouterRouter>
-    </ThemeProvider>
+    <LazyMotion features={domAnimation}>
+      <MotionConfig reducedMotion="user">
+        <ThemeProvider>
+          <RootErrorBoundary>
+            <SkipLink />
+            <OfflineBanner />
+            <WouterRouter base={basePath}>
+              {isClerkEnabled ? <ClerkProviderWithRoutes /> : <AppContent />}
+            </WouterRouter>
+          </RootErrorBoundary>
+        </ThemeProvider>
+      </MotionConfig>
+    </LazyMotion>
   );
 }
 

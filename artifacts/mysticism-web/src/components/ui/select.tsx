@@ -6,12 +6,56 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Select — wrapper trực tiếp của `@radix-ui/react-select` Root.
+ *
+ * Mục đích: dropdown chọn-một dùng cho form controls có sẵn danh sách
+ * lựa chọn cố định (ví dụ: chọn loại bói, múi giờ, ngôn ngữ). Khác
+ * `<select>` HTML thuần ở chỗ Radix render menu tuỳ biến hoàn toàn,
+ * vẫn giữ đầy đủ semantics và keyboard support.
+ *
+ * Props: kế thừa props của Radix Root — `value`, `onValueChange`,
+ * `defaultValue`, `open`, `onOpenChange`, `disabled`, `required`,
+ * `name`, `dir`.
+ *
+ * Lưu ý a11y: Radix gắn `role="combobox"` cho trigger và
+ * `role="listbox"` cho content; bàn phím hỗ trợ `↑/↓` di chuyển giữa
+ * item, `Enter`/`Space` chọn, `Esc` đóng menu, type-ahead theo ký tự
+ * đầu để nhảy nhanh tới item.
+ *
+ * @example
+ * ```tsx
+ * <Select value={value} onValueChange={setValue}>
+ *   <SelectTrigger className="w-[200px]">
+ *     <SelectValue placeholder="Chọn loại bói" />
+ *   </SelectTrigger>
+ *   <SelectContent>
+ *     <SelectItem value="tarot">Tarot</SelectItem>
+ *     <SelectItem value="bazi">Bát tự</SelectItem>
+ *     <SelectItem value="iching">Kinh Dịch</SelectItem>
+ *   </SelectContent>
+ * </Select>
+ * ```
+ */
 const Select = SelectPrimitive.Root
 
+/** Gom nhóm các {@link SelectItem} có liên quan, dùng cùng {@link SelectLabel} cho tiêu đề nhóm. */
 const SelectGroup = SelectPrimitive.Group
 
+/**
+ * Hiển thị giá trị đã chọn bên trong {@link SelectTrigger}. Khi chưa
+ * chọn, render `placeholder` (style `data-[placeholder]:text-muted-foreground`).
+ */
 const SelectValue = SelectPrimitive.Value
 
+/**
+ * Nút mở dropdown — render `<button role="combobox">` chứa
+ * {@link SelectValue} và icon `ChevronDown`. Tự áp `aria-expanded`,
+ * `aria-haspopup="listbox"` qua Radix.
+ *
+ * Lưu ý a11y: hỗ trợ keyboard tự động — `Space`/`Enter`/`↓` mở menu,
+ * `disabled` dùng style `disabled:cursor-not-allowed disabled:opacity-50`.
+ */
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
@@ -32,6 +76,10 @@ const SelectTrigger = React.forwardRef<
 ))
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
+/**
+ * Nút cuộn lên đầu danh sách khi nội dung menu cao hơn viewport — chỉ
+ * hiển thị khi danh sách còn item phía trên. Hover/focus để cuộn tự động.
+ */
 const SelectScrollUpButton = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
@@ -49,6 +97,10 @@ const SelectScrollUpButton = React.forwardRef<
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
 
+/**
+ * Nút cuộn xuống cuối danh sách khi nội dung menu cao hơn viewport — chỉ
+ * hiển thị khi danh sách còn item phía dưới. Hover/focus để cuộn tự động.
+ */
 const SelectScrollDownButton = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
@@ -67,6 +119,17 @@ const SelectScrollDownButton = React.forwardRef<
 SelectScrollDownButton.displayName =
   SelectPrimitive.ScrollDownButton.displayName
 
+/**
+ * Container chính của menu dropdown — render qua Portal, áp animation
+ * slide-in theo `data-side`, giới hạn chiều cao tối đa bằng
+ * `--radix-select-content-available-height` để tránh tràn viewport.
+ *
+ * Props chính:
+ * - `position` (mặc định `"popper"`): `"popper"` (positioning theo
+ *   trigger, có flip) hoặc `"item-aligned"` (align item đang chọn với
+ *   trigger, kiểu native). Khi `popper`, content có chiều rộng tối
+ *   thiểu bằng trigger qua `--radix-select-trigger-width`.
+ */
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
@@ -99,6 +162,10 @@ const SelectContent = React.forwardRef<
 ))
 SelectContent.displayName = SelectPrimitive.Content.displayName
 
+/**
+ * Tiêu đề cho một {@link SelectGroup} — không nhận focus, không kích
+ * hoạt được, dùng để gắn label cho nhóm item liên quan.
+ */
 const SelectLabel = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
@@ -111,6 +178,15 @@ const SelectLabel = React.forwardRef<
 ))
 SelectLabel.displayName = SelectPrimitive.Label.displayName
 
+/**
+ * Một lựa chọn trong menu — `role="option"` với `value` duy nhất.
+ * Hiển thị icon `Check` ở phía phải khi item đang được chọn.
+ *
+ * Lưu ý a11y: nội dung text dùng cho type-ahead phải nằm trong
+ * `<SelectPrimitive.ItemText>` (component này tự bọc qua `children`).
+ * Item disabled qua prop `disabled` sẽ áp `data-[disabled]:opacity-50`
+ * và không nhận focus.
+ */
 const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
@@ -133,6 +209,7 @@ const SelectItem = React.forwardRef<
 ))
 SelectItem.displayName = SelectPrimitive.Item.displayName
 
+/** Đường kẻ ngang phân cách các nhóm item (`role="separator"`). */
 const SelectSeparator = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Separator>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>

@@ -7,6 +7,30 @@ import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 
+/**
+ * FieldSet — wrapper `<fieldset>` cho một nhóm field liên quan.
+ *
+ * Mục đích: gom nhóm các input có cùng chủ đề (ví dụ: thông tin sinh,
+ * tuỳ chọn lá số) để screen reader hiểu cấu trúc form. Tự áp layout
+ * dọc với `gap-6`, riêng nhóm checkbox/radio thu hẹp xuống `gap-3`.
+ *
+ * Lưu ý a11y: nên kèm {@link FieldLegend} ngay đầu `<fieldset>` để
+ * gắn caption cho nhóm — screen reader đọc legend trước khi vào từng
+ * field con.
+ *
+ * @example
+ * ```tsx
+ * <FieldSet>
+ *   <FieldLegend>Thông tin sinh</FieldLegend>
+ *   <FieldGroup>
+ *     <Field>
+ *       <FieldLabel>Ngày sinh</FieldLabel>
+ *       <Input type="date" />
+ *     </Field>
+ *   </FieldGroup>
+ * </FieldSet>
+ * ```
+ */
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
     <fieldset
@@ -21,6 +45,14 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   )
 }
 
+/**
+ * FieldLegend — `<legend>` mô tả nhóm bên trong {@link FieldSet}.
+ *
+ * Prop `variant`: `"legend"` (mặc định, `text-base`) cho tiêu đề nhóm
+ * lớn, `"label"` (`text-sm`) cho ngữ cảnh nhỏ hơn (ví dụ: nhóm phụ
+ * trong cùng form). Tránh ẩn legend visually-hidden vì screen reader
+ * dựa vào legend để liên kết tất cả input con với caption nhóm.
+ */
 function FieldLegend({
   className,
   variant = "legend",
@@ -41,6 +73,15 @@ function FieldLegend({
   )
 }
 
+/**
+ * FieldGroup — container layout dọc cho nhiều {@link Field}. Tạo
+ * container query (`@container/field-group`) để các field con dùng
+ * `responsive` orientation tự đổi layout khi đủ rộng (`@md:`).
+ *
+ * Dùng khi muốn xếp nhiều field có khoảng cách thống nhất, hoặc lồng
+ * `FieldGroup` bên trong `FieldGroup` để tạo nhóm con (gap thu hẹp
+ * còn `gap-4`).
+ */
 function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -78,6 +119,23 @@ const fieldVariants = cva(
   }
 )
 
+/**
+ * Field — wrapper cho một field đơn (label + control + description +
+ * error). Render `<div role="group">` với `data-orientation` để
+ * screen reader nhận biết đây là một nhóm liên quan.
+ *
+ * Prop `orientation`:
+ * - `"vertical"` (mặc định): label trên, control dưới — dùng cho
+ *   input dài, textarea.
+ * - `"horizontal"`: label trái, control phải — dùng cho checkbox,
+ *   switch, toggle có label ngắn.
+ * - `"responsive"`: vertical trên mobile, horizontal trên `@md:` —
+ *   yêu cầu lồng trong {@link FieldGroup}.
+ *
+ * Lưu ý a11y: đặt `data-invalid="true"` lên `Field` (qua state ngoài)
+ * để toàn bộ label/description con tự đổi sang `text-destructive`,
+ * đồng bộ với `aria-invalid` trên control bên trong.
+ */
 function Field({
   className,
   orientation = "vertical",
@@ -94,6 +152,11 @@ function Field({
   )
 }
 
+/**
+ * FieldContent — container phụ bên trong {@link Field} để gom
+ * label + description khi có control là checkbox/radio đặt cạnh.
+ * Dùng để giữ control căn đỉnh (`items-start`) thay vì `items-center`.
+ */
 function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -107,6 +170,15 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * FieldLabel — `<label>` cho control. Hỗ trợ "card-style label" khi
+ * lồng `<Field>` con bên trong (toàn bộ block trở thành clickable
+ * card với border + padding, highlight khi `data-state=checked`).
+ *
+ * Lưu ý a11y: dùng cùng `htmlFor` (hoặc bọc control bên trong) để
+ * click label focus đúng input. Khi `Field` cha có `data-disabled`,
+ * label tự giảm opacity.
+ */
 function FieldLabel({
   className,
   ...props
@@ -125,6 +197,12 @@ function FieldLabel({
   )
 }
 
+/**
+ * FieldTitle — tiêu đề non-label (render `<div>`) cho trường hợp
+ * không cần liên kết `htmlFor` (ví dụ: tiêu đề cho group switch hoặc
+ * khi label đã ở chỗ khác). Áp `data-slot="field-label"` để chia sẻ
+ * style với {@link FieldLabel}.
+ */
 function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -138,6 +216,14 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * FieldDescription — text mô tả/hướng dẫn cho {@link Field}. Dùng
+ * `text-muted-foreground` để giảm nhấn so với label.
+ *
+ * Lưu ý a11y: liên kết với control qua `aria-describedby` (cần gắn
+ * id thủ công hoặc dùng cặp Form từ `form.tsx` cho việc tự liên kết).
+ * Anchor `<a>` bên trong tự có gạch dưới để tăng affordance.
+ */
 function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
@@ -153,6 +239,13 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
   )
 }
 
+/**
+ * FieldSeparator — đường kẻ ngang chia tách các nhóm field, có thể
+ * kèm text ở giữa (ví dụ: "Hoặc") qua `children`.
+ *
+ * Dùng khi muốn phân tách các nhóm logic trong cùng form (ví dụ:
+ * chia thông tin cá nhân và thông tin liên hệ).
+ */
 function FieldSeparator({
   children,
   className,
@@ -183,6 +276,18 @@ function FieldSeparator({
   )
 }
 
+/**
+ * FieldError — thông báo lỗi cho {@link Field}. Có thể nhận
+ * `children` (custom node) hoặc `errors` (mảng object có `message`).
+ *
+ * - Một lỗi: hiển thị plain text.
+ * - Nhiều lỗi: render `<ul>` bullet để liệt kê.
+ * - Không có nội dung: trả `null` để tránh node trống.
+ *
+ * Lưu ý a11y: dùng `role="alert"` để screen reader ngay lập tức công
+ * bố lỗi khi component xuất hiện (ví dụ: sau submit). Kết hợp với
+ * `aria-invalid="true"` trên control để hoàn thiện trải nghiệm a11y.
+ */
 function FieldError({
   className,
   children,

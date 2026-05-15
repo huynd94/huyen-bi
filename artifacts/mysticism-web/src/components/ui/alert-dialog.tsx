@@ -4,12 +4,51 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
+/**
+ * Alert Dialog — wrapper trực tiếp `@radix-ui/react-alert-dialog` Root.
+ *
+ * Mục đích: dialog xác nhận cho hành động không thể hoàn tác (ví dụ:
+ * xoá lá số, đăng xuất). Khác `Dialog` thông thường ở chỗ
+ * Radix gắn `role="alertdialog"` và yêu cầu user phải tương tác
+ * (xác nhận/huỷ) trước khi đóng — không đóng được khi click outside.
+ *
+ * Props: kế thừa props của Radix Root — `open`, `onOpenChange`,
+ * `defaultOpen`.
+ *
+ * Lưu ý a11y: Radix tự bẫy focus và trả focus về trigger sau khi đóng.
+ * Cặp Title/Description liên kết với content qua `aria-labelledby` /
+ * `aria-describedby`.
+ *
+ * @example
+ * ```tsx
+ * <AlertDialog>
+ *   <AlertDialogTrigger asChild>
+ *     <Button variant="destructive">Xoá lá số</Button>
+ *   </AlertDialogTrigger>
+ *   <AlertDialogContent>
+ *     <AlertDialogHeader>
+ *       <AlertDialogTitle>Xoá lá số này?</AlertDialogTitle>
+ *       <AlertDialogDescription>
+ *         Hành động này không thể hoàn tác.
+ *       </AlertDialogDescription>
+ *     </AlertDialogHeader>
+ *     <AlertDialogFooter>
+ *       <AlertDialogCancel>Huỷ</AlertDialogCancel>
+ *       <AlertDialogAction onClick={onDelete}>Xoá</AlertDialogAction>
+ *     </AlertDialogFooter>
+ *   </AlertDialogContent>
+ * </AlertDialog>
+ * ```
+ */
 const AlertDialog = AlertDialogPrimitive.Root
 
+/** Trigger mở {@link AlertDialog}. Dùng `asChild` để render component tuỳ ý. */
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger
 
+/** Portal render dialog vào cuối `<body>` để tránh stacking context. */
 const AlertDialogPortal = AlertDialogPrimitive.Portal
 
+/** Lớp phủ (overlay) tối nền khi dialog mở. */
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
@@ -25,6 +64,14 @@ const AlertDialogOverlay = React.forwardRef<
 ))
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
 
+/**
+ * Container chính của Alert Dialog. Tự động kèm Portal + Overlay,
+ * focus trap, và animation slide-in từ giữa.
+ *
+ * Lưu ý a11y: bắt buộc lồng `<AlertDialogTitle>` và
+ * `<AlertDialogDescription>` để Radix có target cho `aria-labelledby` /
+ * `aria-describedby`.
+ */
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
@@ -43,6 +90,7 @@ const AlertDialogContent = React.forwardRef<
 ))
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
 
+/** Phần header của dialog — chứa Title và Description. */
 const AlertDialogHeader = ({
   className,
   ...props
@@ -57,6 +105,10 @@ const AlertDialogHeader = ({
 )
 AlertDialogHeader.displayName = "AlertDialogHeader"
 
+/**
+ * Footer chứa cặp nút Cancel/Action. Trên mobile xếp dọc
+ * (Cancel ở dưới), từ `sm:` trở lên xếp ngang về phải.
+ */
 const AlertDialogFooter = ({
   className,
   ...props
@@ -71,6 +123,7 @@ const AlertDialogFooter = ({
 )
 AlertDialogFooter.displayName = "AlertDialogFooter"
 
+/** Tiêu đề dialog. Liên kết với content qua `aria-labelledby` (Radix tự gắn). */
 const AlertDialogTitle = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
@@ -83,6 +136,7 @@ const AlertDialogTitle = React.forwardRef<
 ))
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName
 
+/** Mô tả ngắn — liên kết với content qua `aria-describedby` (Radix tự gắn). */
 const AlertDialogDescription = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
@@ -96,6 +150,10 @@ const AlertDialogDescription = React.forwardRef<
 AlertDialogDescription.displayName =
   AlertDialogPrimitive.Description.displayName
 
+/**
+ * Nút xác nhận hành động. Áp `buttonVariants()` mặc định (variant primary).
+ * Click sẽ tự đóng dialog; gắn `onClick` để chạy hành động trước khi đóng.
+ */
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
@@ -108,6 +166,11 @@ const AlertDialogAction = React.forwardRef<
 ))
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
 
+/**
+ * Nút huỷ. Mặc định dùng `variant="outline"` để tách biệt thị giác
+ * khỏi nút Action. `Esc` cũng kích hoạt nút Cancel theo a11y mặc định
+ * của Radix.
+ */
 const AlertDialogCancel = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>

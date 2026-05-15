@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
 import { popReopenData, displayToInputDate } from "@/lib/reopen-reading";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Sparkles } from "lucide-react";
 import { computeBatu, Pillar, NguyenHanhItem } from "@/lib/batu";
 import { computeDaiVan, type DaiVanResult } from "@/lib/dai-van";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
@@ -190,8 +193,9 @@ export default function BatuPage() {
         )}
       </div>
 
-      <main className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative">
+      <main id="main" tabIndex={-1} className="flex-1 container mx-auto px-4 pt-24 pb-16 z-10 relative outline-none">
         <div className="max-w-4xl mx-auto space-y-12">
+          <Breadcrumb />
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Bát tự Tứ Trụ</h1>
             <p className="text-muted-foreground text-lg">Lập lá số Tử Bình, phân tích sự cân bằng Ngũ Hành.</p>
@@ -470,7 +474,11 @@ export default function BatuPage() {
                     </div>
                   ))}
                   {!messages.some((m) => m.role === "assistant") && !isStreaming && (
-                    <p className="text-sm text-muted-foreground text-center italic py-8">Nhấn nút bên trên để AI phân tích chuyên sâu về bát tự của bạn.</p>
+                    <EmptyState
+                      icon={<Sparkles aria-hidden="true" />}
+                      title="Chưa có luận giải AI"
+                      description="Nhấn nút bên trên để AI phân tích chuyên sâu về bát tự của bạn."
+                    />
                   )}
                 </CardContent>
               </Card>

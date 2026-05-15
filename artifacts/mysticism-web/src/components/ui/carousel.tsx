@@ -7,6 +7,10 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+/**
+ * Tham chiếu API của Embla Carousel để consumer điều khiển từ ngoài
+ * (scrollTo index, on/off plugin, đọc trạng thái slide hiện tại).
+ */
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
 type CarouselOptions = UseCarouselParameters[0]
@@ -40,6 +44,37 @@ function useCarousel() {
   return context
 }
 
+/**
+ * Carousel — slider đa-slide dựa trên `embla-carousel-react`.
+ *
+ * Mục đích: hiển thị danh sách card trượt ngang/dọc (testimonials,
+ * tài liệu nổi bật, hướng dẫn nhanh), có nút điều hướng prev/next.
+ *
+ * Props:
+ * - `orientation`: `"horizontal" | "vertical"`.
+ * - `opts`: tuỳ chọn của Embla (`loop`, `align`, `slidesToScroll`,...).
+ * - `plugins`: plugin Embla (autoplay, classNames,...).
+ * - `setApi`: callback nhận tham chiếu {@link CarouselApi}.
+ *
+ * Lưu ý a11y: container ngoài có `role="region"` +
+ * `aria-roledescription="carousel"`; mỗi slide có `role="group"`
+ * + `aria-roledescription="slide"`. Bàn phím `←/→` cuộn prev/next
+ * thông qua `onKeyDownCapture`. Khi dùng autoplay, cân nhắc cung cấp
+ * nút pause vì `prefers-reduced-motion` không tự dừng autoplay.
+ *
+ * @example
+ * ```tsx
+ * <Carousel opts={{ align: "start", loop: true }}>
+ *   <CarouselContent>
+ *     {items.map((item) => (
+ *       <CarouselItem key={item.id}>{item.title}</CarouselItem>
+ *     ))}
+ *   </CarouselContent>
+ *   <CarouselPrevious />
+ *   <CarouselNext />
+ * </Carousel>
+ * ```
+ */
 const Carousel = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & CarouselProps
@@ -148,6 +183,10 @@ const Carousel = React.forwardRef<
 )
 Carousel.displayName = "Carousel"
 
+/**
+ * Wrapper cho phần track chứa các slide. Bám ref viewport của Embla
+ * và áp `overflow-hidden`. Đặt làm con trực tiếp của {@link Carousel}.
+ */
 const CarouselContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -170,6 +209,18 @@ const CarouselContent = React.forwardRef<
 })
 CarouselContent.displayName = "CarouselContent"
 
+/**
+ * Một slide trong {@link CarouselContent}.
+ *
+ * Mục đích: bọc nội dung của từng slide (card, ảnh, testimonial). Mỗi
+ * item chiếm `basis-full` mặc định; điều chỉnh `basis-*` qua className
+ * để hiển thị nhiều slide cùng lúc (`md:basis-1/2`, `lg:basis-1/3`,...).
+ *
+ * Lưu ý a11y: tự gắn `role="group"` + `aria-roledescription="slide"`
+ * theo khuyến nghị WAI-ARIA Authoring Practices cho carousel pattern.
+ * Cân nhắc đặt thêm `aria-label="Slide 2 / 5"` cho consumer khi cần
+ * announce thứ tự cho screen reader.
+ */
 const CarouselItem = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -192,6 +243,21 @@ const CarouselItem = React.forwardRef<
 })
 CarouselItem.displayName = "CarouselItem"
 
+/**
+ * Nút điều hướng về slide trước trong {@link Carousel}.
+ *
+ * Mục đích: cung cấp affordance click/tap (kèm bàn phím khi focus) để
+ * cuộn ngược lại; tự động `disabled` khi không còn slide trước theo
+ * trạng thái Embla `canScrollPrev`.
+ *
+ * Props: kế thừa props của {@link Button} — `variant` mặc định
+ * `"outline"`, `size` mặc định `"icon"`. Đè qua className/className
+ * khi cần đặt vị trí khác.
+ *
+ * Lưu ý a11y: nút render text "Previous slide" trong `<span class="sr-only">`
+ * để screen reader đọc; ngoài ra `←` trong container cha cũng cuộn nhờ
+ * `onKeyDownCapture` của {@link Carousel}.
+ */
 const CarouselPrevious = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>
@@ -221,6 +287,18 @@ const CarouselPrevious = React.forwardRef<
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
+/**
+ * Nút điều hướng về slide kế tiếp trong {@link Carousel}.
+ *
+ * Mục đích: đối xứng với {@link CarouselPrevious} — cuộn tới slide kế
+ * và tự `disabled` khi `canScrollNext === false`.
+ *
+ * Props: kế thừa props của {@link Button} — `variant` mặc định
+ * `"outline"`, `size` mặc định `"icon"`.
+ *
+ * Lưu ý a11y: dùng `<span class="sr-only">Next slide</span>` cho screen
+ * reader; bàn phím `→` trên container {@link Carousel} cũng cuộn next.
+ */
 const CarouselNext = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<typeof Button>

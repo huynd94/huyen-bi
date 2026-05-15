@@ -3,12 +3,56 @@ import * as PopoverPrimitive from "@radix-ui/react-popover"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Popover — wrapper Radix Popover Root.
+ *
+ * Mục đích: hiển thị nội dung tương tác (form mini, picker, menu nâng
+ * cao) bên cạnh trigger — khác với {@link Tooltip} ở chỗ Popover chứa
+ * được focusable element và mở bằng click thay vì hover.
+ *
+ * Props: kế thừa props của `PopoverPrimitive.Root` — `open`,
+ * `defaultOpen`, `onOpenChange`, `modal`.
+ *
+ * Lưu ý a11y: Radix bẫy focus về bên trong content khi mở (nếu
+ * `modal=true`), trả focus về trigger khi đóng; bàn phím `Esc` đóng
+ * popover, `Tab` xoay vòng trong content.
+ *
+ * @example
+ * ```tsx
+ * <Popover>
+ *   <PopoverTrigger asChild>
+ *     <Button variant="outline">Bộ lọc</Button>
+ *   </PopoverTrigger>
+ *   <PopoverContent>
+ *     <FilterForm />
+ *   </PopoverContent>
+ * </Popover>
+ * ```
+ */
 const Popover = PopoverPrimitive.Root
 
+/**
+ * Phần tử kích hoạt {@link Popover}. Mặc định render `<button>`; dùng
+ * `asChild` để gắn vào button/icon-button có sẵn.
+ */
 const PopoverTrigger = PopoverPrimitive.Trigger
 
+/**
+ * Anchor tuỳ chọn để định vị {@link PopoverContent} dựa trên một phần
+ * tử khác (không phải trigger). Hữu ích khi trigger là button nổi
+ * nhưng popover cần neo theo input phía trên.
+ */
 const PopoverAnchor = PopoverPrimitive.Anchor
 
+/**
+ * Nội dung popup của {@link Popover}, render qua `Portal` để thoát
+ * khỏi overflow của container cha. Mặc định `align="center"` và
+ * `sideOffset={4}`; áp animation fade/zoom/slide theo `data-state`
+ * và `data-side`.
+ *
+ * Lưu ý a11y: nội dung nên có heading/label đầu tiên để screen reader
+ * có ngữ cảnh khi focus tự động chuyển vào.
+ */
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>

@@ -3,10 +3,44 @@ import * as HoverCardPrimitive from "@radix-ui/react-hover-card"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * HoverCard — wrapper Radix HoverCard Root.
+ *
+ * Mục đích: hiển thị card preview khi người dùng hover vào trigger
+ * (giới thiệu lá bài, tooltip giàu nội dung, profile mini,...). Khác với
+ * {@link Tooltip} ở chỗ HoverCard cho phép nội dung phong phú (ảnh,
+ * link, button) và mở khi cả hover lẫn focus.
+ *
+ * Props: kế thừa props của `HoverCardPrimitive.Root` — `open`,
+ * `defaultOpen`, `onOpenChange`, `openDelay`, `closeDelay`.
+ *
+ * Lưu ý a11y: HoverCard chỉ kích hoạt bằng pointer/focus, không phù hợp
+ * với màn hình cảm ứng — luôn cung cấp đường truy cập thay thế (link
+ * thường, button mở dialog) cho mobile và screen reader.
+ *
+ * @example
+ * ```tsx
+ * <HoverCard>
+ *   <HoverCardTrigger asChild>
+ *     <a href="/cards/the-fool">The Fool</a>
+ *   </HoverCardTrigger>
+ *   <HoverCardContent>Lá Khờ — biểu tượng khởi đầu mới.</HoverCardContent>
+ * </HoverCard>
+ * ```
+ */
 const HoverCard = HoverCardPrimitive.Root
 
+/**
+ * Phần tử kích hoạt HoverCard. Mặc định render thẻ con; dùng `asChild`
+ * để gắn vào link/button có sẵn mà không thêm thẻ bọc.
+ */
 const HoverCardTrigger = HoverCardPrimitive.Trigger
 
+/**
+ * Nội dung popup của {@link HoverCard}. Mặc định `align="center"` và
+ * `sideOffset={4}`; có thể override qua props. Áp animation
+ * fade/zoom/slide theo `data-state` và `data-side`.
+ */
 const HoverCardContent = React.forwardRef<
   React.ElementRef<typeof HoverCardPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof HoverCardPrimitive.Content>
