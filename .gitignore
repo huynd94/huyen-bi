@@ -22,8 +22,6 @@ attached_assets
 .settings/
 *.sublime-workspace
 
-# IDE - Kiro
-.kiro/*
 
 # IDE - VSCode
 .vscode/*

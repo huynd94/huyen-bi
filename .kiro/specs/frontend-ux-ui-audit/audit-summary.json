@@ -1,0 +1,794 @@
+{
+  "meta": {
+    "auditor": "Kiro agent",
+    "auditDate": "2025-07-15",
+    "repoCommit": "866d18fe1b3835647681ee6bda8f062e6f4b8df8",
+    "appVersion": "@workspace/mysticism-web v4.1.0",
+    "browsers": ["Chrome 131+ (Chromium)"],
+    "viewports": [
+      { "name": "mobile", "width": 360, "height": 800 },
+      { "name": "tablet", "width": 768, "height": 1024 },
+      { "name": "desktop", "width": 1280, "height": 800 },
+      { "name": "large", "width": 1920, "height": 1080 }
+    ]
+  },
+  "scope": {
+    "auditedSurfaces": [
+      "than-so-hoc", "bat-tu", "xem-que", "cat-hung", "lich-van-nien",
+      "tu-vi", "phong-thuy", "xem-ten", "lich-ca-nhan", "tu-dien",
+      "hop-tuoi", "xem-ngay-tot", "sao-han", "home", "ai-chat",
+      "profile", "lich-su", "sign-in", "sign-up", "share-view", "not-found",
+      "navbar", "mobile-drawer", "footer", "breadcrumb", "offline-banner",
+      "result-card", "result-actions", "ambient-bg", "tilt-card",
+      "mystic-cursor", "pwa-install-prompt", "data-table", "knowledge-base",
+      "markdown-renderer", "export-card-numerology", "export-card-batu",
+      "export-card-tuvi", "export-card-ichinq", "mockup-sandbox"
+    ],
+    "skippedSurfaces": [
+      { "surface": "node_modules", "reason": "Third-party dependencies, not project code" },
+      { "surface": "dist", "reason": "Build output, not source" },
+      { "surface": "*.test.ts / *.property.test.tsx", "reason": "Test files, not production UI" },
+      { "surface": ".generated/", "reason": "Auto-generated code" },
+      { "surface": "__clerk-mock-*", "reason": "Dev mock files for testing" },
+      { "surface": "api-server", "reason": "Backend server, no UI surface" }
+    ],
+    "unauditedStates": [
+      { "surface": "ai-chat", "state": "AI streaming (live)", "reason": "Requires running api-server with OpenAI key; audited via source code review" },
+      { "surface": "profile", "state": "Authenticated view", "reason": "Requires Clerk dev keys configured; audited via source code review" },
+      { "surface": "lich-su", "state": "Populated history list", "reason": "Requires backend running with saved readings; audited via source code review" },
+      { "surface": "sign-in", "state": "Clerk redirect flow", "reason": "Requires Clerk dev keys; audited via source code review of sign-in.tsx" },
+      { "surface": "sign-up", "state": "Clerk redirect flow", "reason": "Requires Clerk dev keys; audited via source code review of sign-up.tsx" }
+    ]
+  },
+  "rubric": {
+    "severityDefinitions": {
+      "P0": "(a) WCAG 2.1 A/AA bắt buộc bị vi phạm; (b) hiểu nhầm dữ liệu nghiêm trọng; (c) form không submit / data loss; (d) layout vỡ ≥ 360px",
+      "P1": "(a) Nielsen heuristic vi phạm có workaround; (b) inconsistency ≥ 3 surface; (c) motion sickness chưa honor reduced-motion; (d) loading/error state thiếu; (e) Lighthouse a11y < 90",
+      "P2": "(a) polish ≤ 2 surface; (b) nice-to-have; (c) gap với target state không ảnh hưởng UX hiện tại; (d) micro-interaction tăng cảm giác cao cấp",
+      "INFO": "Trục đã kiểm tra nhưng không tìm thấy vấn đề (R3.1, R3.6)"
+    },
+    "heuristicSets": ["Nielsen 10", "WCAG 2.1 AA", "CWV", "Material Motion", "ux-ui-upgrade"]
+  },
+  "totals": {
+    "P0": 3,
+    "P1": 10,
+    "P2": 11,
+    "INFO": 9,
+    "byAxis": {
+      "ANIM": 4,
+      "LAYOUT": 7,
+      "MODULE": 11,
+      "INTERACTION": 11
+    }
+  },
+  "findings": [
+    {
+      "id": "F-ANIM-01",
+      "title": "Cloud-drift animation dùng linear easing cho translateX",
+      "axis": "ANIM",
+      "severity": "P2",
+      "surface": "ambient-bg",
+      "description": "Trong src/index.css, 5 cloud elements (.ambient-cloud-1 đến .ambient-cloud-5) sử dụng animation: cloud-drift Xs linear infinite. Keyframe cloud-drift animate translateX(-20%) → translateX(120%) — đây là chuyển động không gian (translate) nhưng dùng linear easing. Theo R7.3, easing linear không được dùng cho translate/scale trừ progress bar. Cloud drift không phải progress bar. Tuy nhiên, đây là ambient background decoration với thời lượng rất dài (35s–75s) nên impact thực tế thấp — user khó nhận ra sự khác biệt giữa linear và ease-in-out ở tốc độ này. Gán P2 vì vi phạm guideline nhưng không ảnh hưởng UX thực tế.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/index.css:382" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:390" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:398" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:406" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:414" }
+      ],
+      "recommendation": {
+        "what": "Đổi linear thành ease-in-out hoặc custom cubic-bezier cho cloud-drift animation.",
+        "why": "Tuân thủ motion guideline R7.3 và tạo chuyển động tự nhiên hơn (mây thực tế không di chuyển đều).",
+        "where": "artifacts/mysticism-web/src/index.css, 5 dòng .ambient-cloud-N declarations."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 9.3" },
+        { "text": "Motion: Easing > linear" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-ANIM-02",
+      "title": "Typing indicator animate-bounce vượt ngưỡng 800ms",
+      "axis": "ANIM",
+      "severity": "P2",
+      "surface": "ai-chat",
+      "description": "Typing indicator (3 chấm bounce) trong ai-chat.tsx và 6 Module_Page khác sử dụng Tailwind class animate-bounce có duration mặc định 1s (1000ms), vượt ngưỡng tối đa 800ms theo R7.1. Animation này là translateY bounce — chuyển động không gian lặp lại liên tục trong khi chờ AI response. Mặc dù typing dots là pattern phổ biến và user quen thuộc, duration 1s tạo cảm giác chậm hơn cần thiết. Gán P2 vì đây là vi phạm kỹ thuật nhưng UX impact thấp.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/ai-chat.tsx:606" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:404" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx:471" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-que.tsx:267" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-vi.tsx:443" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/phong-thuy.tsx:276" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/cat-hung.tsx:212" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-ten.tsx:250" }
+      ],
+      "recommendation": {
+        "what": "Override animate-bounce duration xuống 600–700ms bằng custom utility class hoặc inline animationDuration style.",
+        "why": "Tuân thủ R7.1 duration window và tạo nhịp nhanh hơn phù hợp với kỳ vọng đang xử lý.",
+        "where": "Tạo utility class .animate-bounce-fast trong index.css hoặc dùng animation-registry pattern cho typing dots."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 9.2" },
+        { "text": "Motion: Duration window [120ms, 800ms]" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-ANIM-03",
+      "title": "CSS-only animations thiếu prefers-reduced-motion honoring",
+      "axis": "ANIM",
+      "severity": "P1",
+      "surface": "home",
+      "description": "Ba CSS animation classes — .shimmer-text (4s linear infinite, animate background-position), .glow-pulse (3s ease-in-out infinite, animate text-shadow), .float-badge (3.5s ease-in-out infinite, animate translateY) — không có @media (prefers-reduced-motion: reduce) rule trong index.css. Khi user bật reduced-motion ở OS level, các animation này vẫn chạy bình thường. .float-badge animate translateY > 4px (5px) nên theo R7.2 phải được giảm xuống fade ≤ 150ms hoặc tắt. Gán P1 vì vi phạm reduced-motion honoring trên flow quan trọng (home page hero heading dùng shimmer-text).",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/index.css:461" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:472" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:499" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/home.tsx:345" }
+      ],
+      "recommendation": {
+        "what": "Thêm @media (prefers-reduced-motion: reduce) rule tắt animation cho .shimmer-text, .glow-pulse, .float-badge (set animation: none).",
+        "why": "Đảm bảo motion-sensitive users không bị xao nhãng bởi continuous animation, tuân thủ R7.2 và WCAG 2.3.3.",
+        "where": "artifacts/mysticism-web/src/index.css, thêm media query block sau mỗi animation definition hoặc gom chung 1 block cuối file."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 9.4" },
+        { "text": "WCAG 2.1 SC 2.3.3 (Level AAA)" },
+        { "text": "Motion: Reduced-motion" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-ANIM-04",
+      "title": "shimmer-text dùng linear easing cho background-position animation",
+      "axis": "ANIM",
+      "severity": "INFO",
+      "surface": "home",
+      "description": ".shimmer-text sử dụng animation: shimmer-sweep 4s linear infinite — easing linear. Tuy nhiên, property được animate là background-position (gradient sweep), không phải translate/scale. Theo R7.3, exemption áp dụng cho progress bar và các animation không phải chuyển động không gian. background-position sweep tạo hiệu ứng shimmer đều — linear là lựa chọn hợp lý ở đây vì gradient cần di chuyển đều để tạo hiệu ứng lấp lánh liên tục. Ghi nhận đã kiểm tra, không phát hiện vấn đề thực sự.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/index.css:461" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — linear easing hợp lý cho background-position sweep.",
+        "why": "Exemption R7.3 áp dụng cho non-spatial animations.",
+        "where": "artifacts/mysticism-web/src/index.css"
+      },
+      "references": [
+        { "text": "Motion: Easing > linear" }
+      ]
+    },
+    {
+      "id": "F-LAYOUT-01",
+      "title": "Heading hierarchy skip — h1 → h3 trên nhiều Module_Page",
+      "axis": "LAYOUT",
+      "severity": "P0",
+      "surface": "than-so-hoc, bat-tu, phong-thuy, xem-que, xem-ten, xem-ngay-tot, sao-han",
+      "description": "Ít nhất 7 Module_Page có heading hierarchy bị skip: trang có <h1> (tiêu đề chính) rồi nhảy thẳng xuống <h3> cho các section con, bỏ qua <h2>. Ví dụ: than-so-hoc.tsx có <h1>Thần số học</h1> rồi <h3>Bức tranh huyền số</h3>; bat-tu.tsx có <h1>Bát tự Tứ Trụ</h1> rồi <h3> cho mỗi trụ; phong-thuy.tsx có <h1> rồi <h3>Hướng Tốt</h3> / <h3>Hướng Xấu</h3>. Đây là vi phạm WCAG 2.1 SC 1.3.1 Level A — screen reader users dựa vào heading hierarchy để navigate document structure. Gán P0 vì vi phạm WCAG Level A bắt buộc.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/than-so-hoc-1280x800.png" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:144,249" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx:200,308" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/phong-thuy.tsx:145,236,248" }
+      ],
+      "recommendation": {
+        "what": "Đổi <h3> thành <h2> cho các section heading trực tiếp dưới <h1> trên mỗi Module_Page bị ảnh hưởng. Nếu cần sub-section bên trong, dùng <h3> dưới <h2> đó.",
+        "why": "Tuân thủ WCAG 2.1 SC 1.3.1 (Level A) và đảm bảo screen reader users có thể navigate heading tree chính xác.",
+        "where": "7 files trong artifacts/mysticism-web/src/pages/: than-so-hoc.tsx, bat-tu.tsx, phong-thuy.tsx, xem-que.tsx, xem-ten.tsx, xem-ngay-tot.tsx, sao-han.tsx."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.3.1 (Level A)" },
+        { "text": "ux-ui-upgrade Req 1.4" },
+        { "text": "Nielsen #4: Consistency and standards" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-LAYOUT-02",
+      "title": "Prose content thiếu max-width constraint — AI response vượt 75ch trên desktop",
+      "axis": "LAYOUT",
+      "severity": "P1",
+      "surface": "ai-chat",
+      "description": "Component MarkdownRenderer (render AI response trong chat) không có max-width constraint trên prose content. Container cha max-w-4xl (896px) cho phép text block rộng tới ~100+ characters per line trên desktop. Theo R8.4, prose max-width nên ≤ 75ch để đảm bảo readability. Trên viewport 1920px, message bubble chiếm max-w-[88%] của container 896px ≈ 788px — với text-base (16px) và font Plus Jakarta Sans, line length có thể đạt ~85–95 characters. Gán P1 vì ảnh hưởng readability trên desktop nhưng không phải WCAG violation bắt buộc.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/ai-chat-1920x1080.png" },
+        { "fileLine": "artifacts/mysticism-web/src/components/ui/markdown-renderer.tsx:420" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/ai-chat.tsx:553" }
+      ],
+      "recommendation": {
+        "what": "Thêm max-w-prose (65ch) hoặc max-w-[75ch] vào wrapper div của MarkdownRenderer hoặc vào .markdown-body class.",
+        "why": "Giới hạn line length ≤ 75ch cải thiện readability đáng kể trên desktop theo typography best practices và R8.4.",
+        "where": "artifacts/mysticism-web/src/components/ui/markdown-renderer.tsx hoặc artifacts/mysticism-web/src/pages/ai-chat.tsx."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 8.4" },
+        { "text": "Nielsen #8: Aesthetic and minimalist design" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-LAYOUT-03",
+      "title": "Type scale vượt 6 mức — arbitrary font sizes text-[8px] đến text-[11px]",
+      "axis": "LAYOUT",
+      "severity": "P1",
+      "surface": "xem-ngay-tot, tu-vi, lich-van-nien, lich-ca-nhan, sao-han, cat-hung, than-so-hoc, tu-dien, xem-que, xem-ten",
+      "description": "CSS custom properties trong index.css định nghĩa type scale 6 mức chuẩn: display (48px), h1 (36px), h2 (28px), h3 (22px), body (16px), small (14px). Tuy nhiên, source code sử dụng thêm ít nhất 4 arbitrary font sizes ngoài scale: text-[8px], text-[9px], text-[10px], text-[11px]. Tổng cộng ≥ 10 mức font size distinct trong production UI. Điều này vi phạm R8.7 (type scale ≤ 6 mức) và tạo visual inconsistency. Gán P1 vì inconsistency ≥ 3 surface và vi phạm design system guideline.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/than-so-hoc-360x800.png" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:108-117" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-vi.tsx:68,71,75,91,114,120,123,130" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-ngay-tot.tsx:24,159,176" }
+      ],
+      "recommendation": {
+        "what": "Thay thế tất cả text-[8px], text-[9px], text-[10px], text-[11px] bằng Tailwind scale gần nhất: text-[10px]/text-[11px] → text-xs (12px), text-[8px]/text-[9px] → custom utility hoặc loại bỏ.",
+        "why": "Tuân thủ R8.7 (type scale ≤ 6 mức), giảm visual inconsistency, và đảm bảo readability tối thiểu.",
+        "where": "≥ 10 files trong artifacts/mysticism-web/src/pages/ và src/components/ sử dụng arbitrary font sizes."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 1.3" },
+        { "text": "Nielsen #4: Consistency and standards" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-LAYOUT-04",
+      "title": "Touch target < 44px — date-input calendar trigger button 28x28px",
+      "axis": "LAYOUT",
+      "severity": "P1",
+      "surface": "than-so-hoc, bat-tu, tu-vi, phong-thuy, hop-tuoi, sao-han",
+      "description": "Component date-input.tsx có calendar trigger button với class h-7 w-7 = 28px × 28px, thấp hơn đáng kể so với ngưỡng 44px yêu cầu bởi R8.6. Button này là phương thức chính để mở date picker trên mobile — user phải tap chính xác vào vùng 28×28px. Gán P1 vì vi phạm project requirement trên ≥ 3 surface và ảnh hưởng usability trên mobile.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/than-so-hoc-360x800.png" },
+        { "fileLine": "artifacts/mysticism-web/src/components/ui/date-input.tsx:329" }
+      ],
+      "recommendation": {
+        "what": "Tăng kích thước button lên h-11 w-11 (44px) hoặc giữ visual size nhỏ nhưng thêm padding/min-height để touch area đạt 44px.",
+        "why": "Đảm bảo touch target ≥ 44px theo R8.6, cải thiện tap accuracy trên mobile đặc biệt cho user có motor impairment.",
+        "where": "artifacts/mysticism-web/src/components/ui/date-input.tsx — chỉ cần sửa 1 file."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 2.5.5 (Level AAA)" },
+        { "text": "ux-ui-upgrade Req 8.6" },
+        { "text": "Nielsen #7: Flexibility and efficiency of use" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-LAYOUT-05",
+      "title": "Calendar grid cells borderline 44px trên viewport 360px",
+      "axis": "LAYOUT",
+      "severity": "P2",
+      "surface": "lich-van-nien, xem-ngay-tot, lich-ca-nhan",
+      "description": "Calendar grid trên 3 surface sử dụng grid-cols-7 với gap-1 (4px). Trên viewport 360px với px-4 (16px mỗi bên) và container padding, mỗi cell có chiều rộng ≈ 43.4px — borderline ngưỡng 44px. Gán P2 vì borderline (không rõ ràng vi phạm) và chỉ ảnh hưởng trên viewport nhỏ nhất (360px).",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/home-360x800.png" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-ngay-tot.tsx:174" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/lich-van-nien.tsx:187" }
+      ],
+      "recommendation": {
+        "what": "Thêm min-h-[44px] vào calendar day buttons hoặc đảm bảo cell height ≥ 44px qua padding.",
+        "why": "Guarantee touch target ≥ 44px trên mọi viewport ≥ 360px theo R8.6.",
+        "where": "artifacts/mysticism-web/src/pages/lich-van-nien.tsx, xem-ngay-tot.tsx, lich-ca-nhan.tsx — calendar grid button elements."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 8.6" },
+        { "text": "WCAG 2.1 SC 2.5.5 (Level AAA)" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-LAYOUT-06",
+      "title": "Footer heading hierarchy — h2 trong footer có thể conflict với page heading structure",
+      "axis": "LAYOUT",
+      "severity": "INFO",
+      "surface": "footer",
+      "description": "footer.tsx sử dụng <h2> cho section headings (Modules, Tài khoản, Chính sách) và <h3> cho sub-group headings. Đây là pattern hợp lệ khi footer nằm trong <footer> landmark — screen readers phân biệt được heading trong footer vs main content. Ghi nhận đã kiểm tra — không phải vi phạm thực sự vì <footer> landmark cung cấp đủ context cho assistive technology.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/components/layout/footer.tsx:160,175,189" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — pattern hợp lệ với footer landmark.",
+        "why": "Screen readers phân biệt heading trong footer vs main content qua landmark context.",
+        "where": "artifacts/mysticism-web/src/components/layout/footer.tsx"
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.3.1 (Level A)" }
+      ]
+    },
+    {
+      "id": "F-LAYOUT-07",
+      "title": "Horizontal scroll — không phát hiện vấn đề",
+      "axis": "LAYOUT",
+      "severity": "INFO",
+      "surface": "toàn bộ",
+      "description": "Đã kiểm tra toàn bộ surface trên viewport 360px. Mọi page sử dụng container mx-auto px-4 hoặc tương đương, không có element nào overflow viewport width. data-table.tsx xử lý đúng bằng overflow-x-auto md:overflow-visible. Không phát hiện vấn đề.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/home-360x800.png" },
+        { "screenshot": "./audit-evidence/responsive/ai-chat-360x800.png" },
+        { "screenshot": "./audit-evidence/responsive/than-so-hoc-360x800.png" },
+        { "fileLine": "artifacts/mysticism-web/src/components/data-table.tsx:163" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — horizontal scroll được xử lý đúng.",
+        "why": "Mọi surface đã có overflow constraint phù hợp.",
+        "where": "N/A"
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 8.1" }
+      ]
+    },
+    {
+      "id": "F-MODULE-01",
+      "title": "Inline SVG charts thiếu role=img và aria-label — screen reader không nhận diện biểu đồ",
+      "axis": "MODULE",
+      "severity": "P0",
+      "surface": "xem-ten, than-so-hoc, phong-thuy, hop-tuoi, bat-tu",
+      "description": "5 Module_Page render biểu đồ SVG trực tiếp (inline) thay vì sử dụng ChartBase component (đã có sẵn role=img + aria-label). Các SVG này thiếu hoàn toàn accessible name: (1) xem-ten.tsx — radar ngũ cách; (2) than-so-hoc.tsx — radar 5 chỉ số; (3) phong-thuy.tsx — la bàn 8 hướng; (4) hop-tuoi.tsx — radar hợp tuổi + score ring; (5) bat-tu.tsx — donut ngũ hành. Screen reader sẽ bỏ qua hoàn toàn các biểu đồ này hoặc đọc từng path/circle/text element riêng lẻ. Đây là vi phạm WCAG 2.1 SC 1.1.1 Level A (non-text content phải có text alternative). Gán P0 vì vi phạm WCAG Level A bắt buộc trên 5 surface.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-ten.tsx:51" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:289" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/phong-thuy.tsx:54" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/hop-tuoi.tsx:37" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx:57" }
+      ],
+      "recommendation": {
+        "what": "Thêm role=img và aria-label mô tả nội dung biểu đồ bằng tiếng Việt cho mỗi inline SVG, hoặc refactor để sử dụng ChartBase component.",
+        "why": "Tuân thủ WCAG 2.1 SC 1.1.1 (Level A) — mọi non-text content phải có text alternative. Screen reader users hiện tại không nhận được thông tin nào từ 5 biểu đồ này.",
+        "where": "artifacts/mysticism-web/src/pages/xem-ten.tsx, than-so-hoc.tsx, phong-thuy.tsx, hop-tuoi.tsx, bat-tu.tsx — mỗi file có 1–2 inline SVG cần bổ sung."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.1.1 (Level A)" },
+        { "text": "ux-ui-upgrade Req 9.2" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-MODULE-02",
+      "title": "Chart labels fontSize 5–9 không đọc được trên mobile",
+      "axis": "MODULE",
+      "severity": "P1",
+      "surface": "xem-ten, than-so-hoc, phong-thuy, hop-tuoi, bat-tu",
+      "description": "Các inline SVG chart sử dụng <text> elements với fontSize rất nhỏ trong viewBox coordinate space: xem-ten.tsx dùng fontSize=5; than-so-hoc.tsx dùng fontSize=6; phong-thuy.tsx dùng fontSize=4.5 và 6; hop-tuoi.tsx dùng fontSize=7.5 và 9; bat-tu.tsx dùng fontSize=7.5. Trên mobile viewport 360px, các SVG có max-w-[200px] hoặc max-w-[180px] — tỉ lệ scale xuống khiến text rendered size ≈ 2–5px, hoàn toàn không đọc được bằng mắt thường. Gán P1 vì ảnh hưởng readability trên mobile cho 5 surface.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/xem-ten.tsx:68" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:302" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/phong-thuy.tsx:81,86" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/hop-tuoi.tsx:50" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx:63" }
+      ],
+      "recommendation": {
+        "what": "Tăng fontSize trong viewBox space sao cho rendered size ≥ 12px trên mobile. Hoặc refactor sang ChartBase + ChartSegment pattern với tooltip thay vì inline text labels.",
+        "why": "Đảm bảo chart labels đọc được trên mobile theo R9.3 — user cần biết mỗi trục/segment đại diện cho gì mà không cần zoom.",
+        "where": "5 files: xem-ten.tsx, than-so-hoc.tsx, phong-thuy.tsx, hop-tuoi.tsx, bat-tu.tsx — tất cả <text> elements trong inline SVG charts."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 9.3" },
+        { "text": "Nielsen #1: Visibility of system status" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-MODULE-03",
+      "title": "share-view lộ action buttons cho anonymous viewer",
+      "axis": "MODULE",
+      "severity": "P1",
+      "surface": "share-view",
+      "description": "share-view.tsx hiển thị 2 action buttons cho mọi viewer bao gồm anonymous: (1) Tra cứu lại với thông tin này — gọi storeReopenData() rồi navigate tới module page; (2) Mở {module} — link tới module page. Theo R9.7, share-view không được lộ action không khả dụng cho anonymous viewer. Cả 2 buttons đều hoạt động kỹ thuật nhưng tạo kỳ vọng sai: user anonymous sẽ tra cứu lại nhưng kết quả mới không được lưu vào lịch sử (yêu cầu auth). Gán P1 vì vi phạm R9.7 và có thể gây nhầm lẫn UX trên shared link flow.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/share-view.tsx:170-180" }
+      ],
+      "recommendation": {
+        "what": "Ẩn hoặc disable button Tra cứu lại với thông tin này cho anonymous viewer. Giữ Mở {module} nhưng thêm note nhỏ Đăng nhập để lưu kết quả. Kiểm tra auth state bằng useAuth() hook từ Clerk.",
+        "why": "Tuân thủ R9.7 (share-view không lộ action không khả dụng) và tránh expose input data của người chia sẻ qua reopen mechanism.",
+        "where": "artifacts/mysticism-web/src/pages/share-view.tsx, block render buttons (lines 170–180)."
+      },
+      "references": [
+        { "text": "Nielsen #6: Recognition rather than recall" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-MODULE-04",
+      "title": "share-view DataTable dùng div thay vì semantic table — thiếu thead scope=col",
+      "axis": "MODULE",
+      "severity": "P1",
+      "surface": "share-view",
+      "description": "share-view.tsx định nghĩa một DataTable function nội bộ render dữ liệu dạng key-value bằng <div className=space-y-2> với mỗi row là <div className=flex items-start gap-3>. Đây là dữ liệu tabular nhưng không sử dụng semantic HTML table. Screen reader không nhận diện đây là bảng dữ liệu và không thể navigate theo row/column. Dự án đã có DataTable component chuẩn với đầy đủ <thead scope=col> nhưng share-view không sử dụng. Gán P1 vì vi phạm WCAG 2.1 SC 1.3.1 (Level A).",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/share-view.tsx:63-77" },
+        { "fileLine": "artifacts/mysticism-web/src/components/data-table.tsx:163" }
+      ],
+      "recommendation": {
+        "what": "Refactor DataTable trong share-view để sử dụng semantic <table> với <thead> + <th scope=col>, hoặc import DataTable component chuẩn từ @/components/data-table.",
+        "why": "Tuân thủ WCAG 2.1 SC 1.3.1 (Level A) — dữ liệu tabular phải dùng semantic table markup để screen reader navigate đúng.",
+        "where": "artifacts/mysticism-web/src/pages/share-view.tsx, function DataTable (lines 63–77)."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.3.1 (Level A)" },
+        { "text": "ux-ui-upgrade Req 8.4" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-MODULE-05",
+      "title": "6 Module_Page thiếu EmptyState cho AI interpretation section",
+      "axis": "MODULE",
+      "severity": "P2",
+      "surface": "tu-vi, lich-van-nien, hop-tuoi, lich-ca-nhan, sao-han, tu-dien",
+      "description": "6 Module_Page không import EmptyState component và không có helper text/illustration cho trạng thái chưa có luận giải AI. So sánh: than-so-hoc.tsx, bat-tu.tsx, xem-que.tsx, xem-ten.tsx, phong-thuy.tsx, cat-hung.tsx, xem-ngay-tot.tsx đều có <EmptyState> — nhưng tu-vi.tsx, lich-van-nien.tsx, hop-tuoi.tsx, lich-ca-nhan.tsx, sao-han.tsx, tu-dien.tsx không có. Gán P2 vì đây là polish issue và chỉ ảnh hưởng discoverability.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-vi.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/hop-tuoi.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/lich-ca-nhan.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/sao-han.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/lich-van-nien.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-dien.tsx" }
+      ],
+      "recommendation": {
+        "what": "Thêm <EmptyState icon={<Sparkles />} title=Chưa có luận giải AI description=Nhấn nút bên trên để AI phân tích... /> vào AI section của 6 trang khi messages.length === 0 && !isStreaming.",
+        "why": "Tuân thủ R9.5 (empty state có helper text) và cải thiện discoverability.",
+        "where": "6 files: tu-vi.tsx, lich-van-nien.tsx, hop-tuoi.tsx, lich-ca-nhan.tsx, sao-han.tsx, tu-dien.tsx."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 5.7" },
+        { "text": "Nielsen #1: Visibility of system status" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-MODULE-06",
+      "title": "Module_Page không sử dụng ResultCard component — thứ tự thông tin không được enforce",
+      "axis": "MODULE",
+      "severity": "P2",
+      "surface": "toàn bộ 15 Module_Page",
+      "description": "ResultCard component được thiết kế với thứ tự slot cố định theo R9.1: header → keyNumbers → chart → table → aiSection → actions. Tuy nhiên, không có Module_Page nào import hoặc sử dụng ResultCard. Tất cả 15 trang tự render kết quả bằng combination của Card, CardContent, inline divs, và custom layout. Gán P2 vì gap với target state nhưng UX hiện tại vẫn acceptable.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/components/result-card.tsx:1" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:1-19" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-vi.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx" }
+      ],
+      "recommendation": {
+        "what": "Refactor các Module_Page để sử dụng ResultCard component cho phần hiển thị kết quả, truyền nội dung qua các slot.",
+        "why": "Enforce thứ tự thông tin nhất quán theo R9.1, tận dụng a11y features built-in, và giảm code duplication.",
+        "where": "15 files trong src/pages/ — ưu tiên các trang có đầy đủ sections (than-so-hoc, bat-tu, tu-vi, xem-ten) trước."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 8.1" },
+        { "text": "Nielsen #4: Consistency and standards" }
+      ],
+      "effort": "L"
+    },
+    {
+      "id": "F-MODULE-07",
+      "title": "Simultaneous motion — không phát hiện vấn đề",
+      "axis": "MODULE",
+      "severity": "INFO",
+      "surface": "toàn bộ Module_Page",
+      "description": "Đã kiểm tra tất cả 15 Module_Page cho simultaneous motion competition giữa chart và AI interpretation. Charts đều là static SVG (không có animation/transition). AI streaming sử dụng typing dots nhưng chỉ xuất hiện sau khi chart đã render hoàn chỉnh. Không có trường hợp chart animate đồng thời với AI streaming. Không phát hiện vấn đề.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:226" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx:281" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — không có simultaneous motion competition.",
+        "why": "Charts là static SVG, AI streaming bắt đầu riêng biệt.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-MODULE-08",
+      "title": "Emphasis levels — không phát hiện vấn đề",
+      "axis": "MODULE",
+      "severity": "INFO",
+      "surface": "toàn bộ Module_Page",
+      "description": "Đã kiểm tra emphasis levels trên các Module_Page trong single viewport. Mỗi trang sử dụng 3 mức nhấn mạnh chính: (1) font-bold + large size cho page heading và key numbers; (2) font-semibold cho section titles và card headers; (3) font-medium cho form labels và secondary text. Tổng cộng ≤ 3 mức nhấn mạnh per viewport. Không phát hiện vấn đề.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/tu-vi.tsx:244,250,378,437" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — emphasis levels ≤ 3 per viewport.",
+        "why": "Visual hierarchy rõ ràng và nhất quán.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-MODULE-09",
+      "title": "Gallery component hardcode light-only colors — không hỗ trợ dark mode",
+      "axis": "MODULE",
+      "severity": "P2",
+      "surface": "mockup-sandbox",
+      "description": "Gallery component trong App.tsx sử dụng hardcoded Tailwind gray utilities thay vì CSS variable-based design tokens đã định nghĩa trong index.css. Cụ thể: bg-gray-50, text-gray-900, text-gray-500, text-gray-400, bg-gray-100, text-gray-600. File index.css đã định nghĩa đầy đủ light/dark theme tokens nhưng Gallery không dùng. Gán P2 vì polish issue trên 1 surface, không ảnh hưởng end-user.",
+      "evidence": [
+        { "fileLine": "artifacts/mockup-sandbox/src/App.tsx:89-103" },
+        { "fileLine": "artifacts/mockup-sandbox/src/index.css:49-100" }
+      ],
+      "recommendation": {
+        "what": "Thay thế hardcoded gray utilities bằng design tokens: bg-gray-50 → bg-background, text-gray-900 → text-foreground, text-gray-500 → text-muted-foreground, bg-gray-100 → bg-muted.",
+        "why": "Đảm bảo Gallery phản ánh đúng theme hiện tại (light/dark) và nhất quán với base styling đã cấu hình.",
+        "where": "artifacts/mockup-sandbox/src/App.tsx, function Gallery() (lines 89–103)."
+      },
+      "references": [
+        { "text": "Nielsen #4: Consistency and standards" },
+        { "text": "ux-ui-upgrade Req 3.4" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-MODULE-10",
+      "title": "PreviewRenderer error state — inline color:red thiếu contrast trên light background",
+      "axis": "MODULE",
+      "severity": "P2",
+      "surface": "mockup-sandbox",
+      "description": "PreviewRenderer error state render <pre style={{ color: red, padding: 2rem, fontFamily: system-ui }}>. Vấn đề: (1) color: red = #ff0000 trên light background #ffffff → contrast ratio ≈ 4.0:1 — dưới ngưỡng 4.5:1 cho normal text theo WCAG 2.1 SC 1.4.3 Level AA. (2) fontFamily: system-ui override monospace expectation của <pre> tag. (3) Không dùng design token --destructive. Gán P2 vì light mode fail contrast nhưng đây là dev tool.",
+      "evidence": [
+        { "fileLine": "artifacts/mockup-sandbox/src/App.tsx:72-76" },
+        { "fileLine": "artifacts/mockup-sandbox/src/index.css:52" }
+      ],
+      "recommendation": {
+        "what": "Thay inline style bằng Tailwind classes sử dụng design tokens: <pre className=text-destructive bg-destructive/10 p-8 font-mono text-sm whitespace-pre-wrap rounded-md>.",
+        "why": "Đảm bảo contrast đọc được trên cả light và dark theme, giữ monospace font cho error traces.",
+        "where": "artifacts/mockup-sandbox/src/App.tsx, PreviewRenderer error return (line 72–76)."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.4.3 (Level AA)" },
+        { "text": "Nielsen #9: Help users recognize errors" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-MODULE-11",
+      "title": "URL hint hiển thị rõ ràng nhưng thiếu interactive affordance",
+      "axis": "MODULE",
+      "severity": "INFO",
+      "surface": "mockup-sandbox",
+      "description": "Đã kiểm tra URL hint display. Gallery render URL hint bằng <code> element với styling bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 — text rõ ràng, có visual distinction. getPreviewExamplePath() function tính đúng basePath + /preview/ComponentName. Hint text đặt trong paragraph cuối với prefix Access component previews at — context rõ ràng. Không phát hiện vấn đề về visibility hoặc clarity.",
+      "evidence": [
+        { "fileLine": "artifacts/mockup-sandbox/src/App.tsx:97-101" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — URL hint hiển thị rõ ràng với visual distinction.",
+        "why": "Dev tool — user copy-paste URL là acceptable pattern.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-INTERACTION-01",
+      "title": "AI chat page — 28 suggestion tab stops trước textarea gây friction cho keyboard users",
+      "axis": "INTERACTION",
+      "severity": "P1",
+      "surface": "ai-chat",
+      "description": "Trang ai-chat.tsx ở empty state có 14 SuggestionGrid buttons + 14 SuggestionChips buttons = 28 tab stops trước khi keyboard user đến được textarea input. User phải nhấn Tab 28+ lần để bắt đầu gõ tin nhắn — flow chính của trang. Đây không phải vi phạm WCAG Level A (tab order vẫn logical) nhưng vi phạm R10.1 (tab order natural) và Nielsen #7 (efficiency). Gán P1 vì ảnh hưởng usability nghiêm trọng cho keyboard-only users trên flow chính.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/keyboard/flow-c-ai-chat.md" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/ai-chat.tsx:430-470" }
+      ],
+      "recommendation": {
+        "what": "Thêm role=toolbar hoặc role=group với aria-label cho suggestion container, và implement roving tabindex (chỉ 1 tab stop cho cả group, Arrow keys navigate giữa items). Hoặc đặt textarea trước suggestions trong DOM order.",
+        "why": "Giảm tab stops từ 28+ xuống 2–3 cho keyboard users, tuân thủ R10.1 và cải thiện efficiency.",
+        "where": "artifacts/mysticism-web/src/pages/ai-chat.tsx, refactor SuggestionGrid và SuggestionChips components."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 2.4.3 (Level A)" },
+        { "text": "Nielsen #7: Flexibility and efficiency of use" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-INTERACTION-02",
+      "title": "Focus ring opacity giảm (ring-primary/40, ring-primary/50) có thể borderline contrast 3:1",
+      "axis": "INTERACTION",
+      "severity": "P2",
+      "surface": "home, navbar",
+      "description": "Nhiều interactive elements dùng focus ring với opacity giảm: Module cards trên home dùng focus-visible:ring-2 ring-primary/50 ring-offset-2 (50% opacity), navbar logo dùng ring-primary/40. Với primary color HSL(43, 74%, 49%) tại 50% opacity trên dark background, effective contrast có thể giảm xuống borderline 3:1. Gán P2 vì pass kỹ thuật trên hầu hết scenarios nhưng borderline trên một số combinations.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/keyboard/flow-a-home-to-module.md" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/home.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/components/layout/navbar.tsx" }
+      ],
+      "recommendation": {
+        "what": "Tăng opacity lên ring-primary/70 hoặc ring-primary (100%) cho tất cả focus-visible rings, hoặc dùng ring-ring token (đã set = primary 100%).",
+        "why": "Đảm bảo focus ring contrast ≥ 3:1 theo R10.2 và WCAG 2.4.7 trên mọi theme.",
+        "where": "Global search ring-primary/40 và ring-primary/50 trong src/pages/ và src/components/layout/ — thay bằng ring-ring hoặc ring-primary."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 2.4.7 (Level AA)" },
+        { "text": "ux-ui-upgrade Req 3.6" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-INTERACTION-03",
+      "title": "Module_Page forms thiếu aria-invalid và aria-describedby trên raw input elements",
+      "axis": "INTERACTION",
+      "severity": "P0",
+      "surface": "than-so-hoc, bat-tu, tu-vi, phong-thuy, xem-ten, hop-tuoi, sao-han, xem-ngay-tot",
+      "description": "Các Module_Page forms sử dụng raw <input> elements thay vì <Input> component từ @/components/ui/input (đã có built-in aria-invalid + aria-describedby + error message rendering). Khi validation fail, error message render bằng <p className=text-xs text-red-400> riêng biệt không có id và input không có aria-invalid=true hoặc aria-describedby trỏ tới error message. Screen reader users sẽ không biết input đang ở trạng thái lỗi và không nghe được error message khi focus input. Đây là vi phạm WCAG 2.1 SC 3.3.1 Level A và SC 1.3.1 Level A. Gán P0 vì vi phạm WCAG Level A bắt buộc trên nhiều surface.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/keyboard/flow-a-home-to-module.md" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:165-180" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/bat-tu.tsx" },
+        { "fileLine": "artifacts/mysticism-web/src/components/ui/input.tsx:147-148" }
+      ],
+      "recommendation": {
+        "what": "Refactor Module_Page forms để sử dụng <Input> component từ @/components/ui/input, hoặc thêm thủ công aria-invalid và aria-describedby vào raw inputs và id vào error <p>.",
+        "why": "Tuân thủ WCAG 2.1 SC 3.3.1 + SC 1.3.1 (Level A) — screen reader users phải được thông báo trạng thái lỗi và nội dung error message khi focus input.",
+        "where": "8+ files trong src/pages/: than-so-hoc.tsx, bat-tu.tsx, tu-vi.tsx, phong-thuy.tsx, xem-ten.tsx, hop-tuoi.tsx, sao-han.tsx, xem-ngay-tot.tsx."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.3.1 (Level A)" },
+        { "text": "WCAG 2.1 SC 3.3.1 (Level A)" },
+        { "text": "ux-ui-upgrade Req 3.5" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-INTERACTION-04",
+      "title": "Theme toggle flash — thiếu inline script trong head để apply theme trước React hydration",
+      "axis": "INTERACTION",
+      "severity": "P1",
+      "surface": "toàn bộ",
+      "description": "index.html không có inline <script> trong <head> để đọc localStorage và apply theme class (dark/light) lên <html> trước khi React mount. Flow hiện tại: HTML load → CSS :root block apply dark tokens (default) → React mount → ThemeProvider → useEffect → applyThemeToDocument(theme). Nếu user đã chọn light theme, sẽ có flash: dark → light trong khoảng thời gian React hydration (100–500ms trên mobile). Gán P1 vì flash gây jarring experience trên mọi page load cho users đã chọn light theme.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/index.html" },
+        { "fileLine": "artifacts/mysticism-web/src/contexts/theme.tsx:133-137" }
+      ],
+      "recommendation": {
+        "what": "Thêm inline <script> blocking trong <head> đọc localStorage.getItem(theme) và gắn class dark/light lên <html> ngay lập tức.",
+        "why": "Đảm bảo theme class có mặt trước khi CSS render lần đầu, loại bỏ flash hoàn toàn.",
+        "where": "artifacts/mysticism-web/index.html, thêm <script> ngay sau <meta> tags trong <head>."
+      },
+      "references": [
+        { "text": "ux-ui-upgrade Req 3.4" },
+        { "text": "Nielsen #1: Visibility of system status" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-INTERACTION-05",
+      "title": "Form error text text-red-400 contrast borderline trên dark background",
+      "axis": "INTERACTION",
+      "severity": "P2",
+      "surface": "than-so-hoc, bat-tu, tu-vi, phong-thuy, xem-ten, hop-tuoi",
+      "description": "Module_Page forms hiển thị error messages bằng <p className=text-xs text-red-400>. Tailwind text-red-400 = #f87171. Contrast #f87171 vs effective dark background ≈ 5.2:1 — pass cho normal text. Tuy nhiên, text-red-400 không dùng design token --destructive — inconsistency với design system. Gán P2 vì pass kỹ thuật nhưng inconsistency với design system tokens.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/pages/than-so-hoc.tsx:181" },
+        { "fileLine": "artifacts/mysticism-web/src/index.css:91" },
+        { "toolingOutput": "./audit-evidence/axe/than-so-hoc.json" }
+      ],
+      "recommendation": {
+        "what": "Thay text-red-400 bằng text-destructive-foreground hoặc tạo token --error-text với giá trị đảm bảo ≥ 4.5:1 trên cả dark và light backgrounds.",
+        "why": "Đảm bảo consistency với design system tokens và maintain contrast ≥ 4.5:1 trên mọi theme.",
+        "where": "8+ files trong src/pages/ dùng text-red-400 cho error messages."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 1.4.3 (Level AA)" }
+      ],
+      "effort": "M"
+    },
+    {
+      "id": "F-INTERACTION-06",
+      "title": "Sign-in page Đăng ký link thiếu focus-visible ring",
+      "axis": "INTERACTION",
+      "severity": "P2",
+      "surface": "sign-in",
+      "description": "Trang sign-in.tsx có link Đăng ký bên dưới Clerk widget với className text-primary hover:text-primary/80 underline-offset-4 hover:underline — có hover styles nhưng không có focus-visible: ring class. Keyboard user Tab tới link này sẽ không thấy focus indicator rõ ràng. Đây là vi phạm WCAG 2.1 SC 2.4.7 Level AA. Gán P2 vì chỉ ảnh hưởng 1 link trên 1 surface.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/keyboard/flow-b-sign-in.md" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/sign-in.tsx" }
+      ],
+      "recommendation": {
+        "what": "Thêm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm vào className của link Đăng ký.",
+        "why": "Tuân thủ WCAG 2.1 SC 2.4.7 (Level AA) — keyboard users cần visible focus indicator trên mọi interactive element.",
+        "where": "artifacts/mysticism-web/src/pages/sign-in.tsx, link Đăng ký element."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 2.4.7 (Level AA)" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-INTERACTION-07",
+      "title": "ai-chat page thiếu main landmark — không có skip-to-content target",
+      "axis": "INTERACTION",
+      "severity": "P1",
+      "surface": "ai-chat",
+      "description": "ai-chat page không có <main id=main tabIndex={-1}> landmark, khác với các page khác. SkipLink component mount ở root (App.tsx) trỏ tới #main — trên ai-chat page, click skip link sẽ không navigate tới đâu vì target không tồn tại. Đây là vi phạm WCAG 2.1 SC 2.4.1 Level A (bypass blocks mechanism phải hoạt động). Kết hợp với 28+ suggestion tab stops (F-INTERACTION-01), keyboard user không có cách nào skip navbar + suggestions để đến input nhanh. Gán P1 vì vi phạm WCAG Level A trên flow quan trọng.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/keyboard/flow-c-ai-chat.md" },
+        { "fileLine": "artifacts/mysticism-web/src/pages/ai-chat.tsx" }
+      ],
+      "recommendation": {
+        "what": "Thêm <main id=main tabIndex={-1} className=outline-none ...> wrapper quanh main content area của ai-chat page.",
+        "why": "Tuân thủ WCAG 2.1 SC 2.4.1 (Level A) — SkipLink cần target hợp lệ để keyboard users bypass navbar.",
+        "where": "artifacts/mysticism-web/src/pages/ai-chat.tsx, wrap main content trong <main> element."
+      },
+      "references": [
+        { "text": "WCAG 2.1 SC 2.4.1 (Level A)" },
+        { "text": "Nielsen #7: Flexibility and efficiency of use" }
+      ],
+      "effort": "S"
+    },
+    {
+      "id": "F-INTERACTION-08",
+      "title": "Dialog/drawer behavior — không phát hiện vấn đề",
+      "axis": "INTERACTION",
+      "severity": "INFO",
+      "surface": "mobile-drawer, date-input, profile",
+      "description": "Đã kiểm tra 3 dialog/overlay patterns: (1) MobileDrawer — dùng Radix Sheet + FocusTrap, Esc closes, focus trap khi open, return focus on close. (2) DateInput calendar — dùng Radix Popover, Esc closes, focus returns to trigger. (3) AlertDialog trong profile — Radix AlertDialog có focus trap, Esc closes, return focus. Tất cả đều tuân thủ R10.3. Không phát hiện vấn đề.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/components/layout/mobile-drawer.tsx:218-230" },
+        { "fileLine": "artifacts/mysticism-web/src/components/ui/date-input.tsx" },
+        { "toolingOutput": "./audit-evidence/keyboard/flow-a-home-to-module.md" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — dialog/drawer behavior tuân thủ đầy đủ.",
+        "why": "Radix primitives cung cấp Esc close, focus trap, và return focus built-in.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-INTERACTION-09",
+      "title": "PWA install prompt — không phát hiện vấn đề",
+      "axis": "INTERACTION",
+      "severity": "INFO",
+      "surface": "pwa-install-prompt",
+      "description": "Đã kiểm tra PwaInstallPrompt component theo R10.11: (1) Không phải full-screen modal — render <aside role=region>. (2) Có dismiss — Bỏ qua button + X close button. (3) 14-day cooldown — DISMISS_COOLDOWN_MS = 14 * 24 * 3600 * 1000. (4) Reduced motion honored — motion-reduce:animate-none. (5) iOS Safari fallback — inline 3-step guide. Không phát hiện vấn đề.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/components/pwa-install-prompt.tsx:210-220" },
+        { "fileLine": "artifacts/mysticism-web/src/pwa/pwa-prompt-state.ts:37" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — PWA install prompt tuân thủ đầy đủ R10.11.",
+        "why": "Non-modal, dismissible, 14-day cooldown, reduced-motion honored.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-INTERACTION-10",
+      "title": "Toast feedback — không phát hiện vấn đề",
+      "axis": "INTERACTION",
+      "severity": "INFO",
+      "surface": "toàn bộ",
+      "description": "Đã kiểm tra toast system: (1) showToast() wrapper enforce Vietnamese title. (2) Sonner richColors=true — variant error tự áp destructive tones. (3) Error toast có retry option. (4) Duration 4000ms. (5) Position responsive: top-center mobile, bottom-right desktop. (6) Sonner tự gắn role=status hoặc role=alert. Không phát hiện vấn đề.",
+      "evidence": [
+        { "fileLine": "artifacts/mysticism-web/src/lib/toast.ts:97-125" },
+        { "fileLine": "artifacts/mysticism-web/src/components/ui/sonner.tsx:67-95" }
+      ],
+      "recommendation": {
+        "what": "Không cần thay đổi — toast feedback tuân thủ đầy đủ.",
+        "why": "Vietnamese titles, rich colors, retry CTA, responsive position, ARIA roles.",
+        "where": "N/A"
+      },
+      "references": []
+    },
+    {
+      "id": "F-INTERACTION-11",
+      "title": "Gallery page có AI default feel — excessive centering và empty space",
+      "axis": "INTERACTION",
+      "severity": "P2",
+      "surface": "mockup-sandbox",
+      "description": "Gallery component dùng layout min-h-screen flex items-center justify-center p-8 — center cả vertical lẫn horizontal trong toàn bộ viewport height. Với nội dung chỉ gồm 1 heading + 2 paragraphs (khoảng 80px height), phần còn lại là empty space khổng lồ. Pattern này là dấu hiệu AI default feel theo R11.3. Gán P2 vì đây là dev tool (không phải production surface) và vấn đề thuần aesthetic.",
+      "evidence": [
+        { "fileLine": "artifacts/mockup-sandbox/src/App.tsx:89" },
+        { "fileLine": "artifacts/mockup-sandbox/src/App.tsx:90" }
+      ],
+      "recommendation": {
+        "what": "Đổi layout sang top-aligned với reasonable padding: min-h-screen bg-background p-6 pt-16. Bỏ vertical centering (items-center justify-center).",
+        "why": "Tránh AI default feel theo R11.3, tạo ấn tượng dev tool có chủ đích thay vì placeholder.",
+        "where": "artifacts/mockup-sandbox/src/App.tsx, function Gallery() layout classes."
+      },
+      "references": [
+        { "text": "Nielsen #8: Aesthetic and minimalist design" }
+      ],
+      "effort": "S"
+    }
+  ]
+}

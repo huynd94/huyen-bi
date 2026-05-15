@@ -1,0 +1,20 @@
+{
+  "error": "axe-core audit pending - requires running app at localhost",
+  "route": "/",
+  "slug": "home",
+  "timestamp": null,
+  "summary": {
+    "total": 0,
+    "critical": 0,
+    "serious": 0,
+    "moderate": 0,
+    "minor": 0
+  },
+  "violations": {
+    "critical": [],
+    "serious": [],
+    "moderate": [],
+    "minor": []
+  },
+  "note": "Run axe-core on localhost with: npx @axe-core/cli http://localhost:5173/ --save axe/home.json"
+}

@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "auditor": "Kiro agent",
+    "auditDate": "2025-01-15",
+    "repoCommit": "abc1234def5678",
+    "appVersion": "1.0.0",
+    "browsers": ["Chrome 131.0.6778.139"],
+    "viewports": [
+      { "name": "mobile", "width": 360, "height": 800 }
+    ]
+  },
+  "scope": {
+    "auditedSurfaces": ["home"],
+    "skippedSurfaces": [],
+    "unauditedStates": []
+  },
+  "rubric": {
+    "severityDefinitions": {
+      "P0": "WCAG violation",
+      "P1": "Nielsen heuristic",
+      "P2": "Polish",
+      "INFO": "No issue"
+    },
+    "heuristicSets": ["Nielsen 10"]
+  },
+  "totals": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 0,
+    "INFO": 1,
+    "byAxis": {
+      "ANIM": 1,
+      "LAYOUT": 0,
+      "MODULE": 0,
+      "INTERACTION": 0
+    }
+  },
+  "findings": [
+    {
+      "id": "F-ANIM-01",
+      "title": "Wrong severity value",
+      "axis": "ANIM",
+      "severity": "CRITICAL",
+      "surface": "home",
+      "description": "This finding has an invalid severity value.",
+      "evidence": [{ "fileLine": "src/app.tsx:1" }],
+      "recommendation": { "what": "Fix", "why": "Broken", "where": "app.tsx" },
+      "references": [{ "text": "WCAG 2.1 SC 1.1.1 (Level A)" }]
+    }
+  ]
+}

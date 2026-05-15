@@ -1,0 +1,15 @@
+{
+  "name": "frontend-ux-ui-audit-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "description": "Verification scripts for the Frontend UX/UI Audit deliverables (TS1–TS6)",
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.5"
+  }
+}

@@ -8,6 +8,7 @@
     "build": "corepack pnpm run typecheck && corepack pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
     "typecheck": "corepack pnpm run typecheck:libs && corepack pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "audit:verify": "node .kiro/specs/frontend-ux-ui-audit/scripts/audit-verify.mjs",
     "test:audit-remediation": "pnpm --filter @workspace/api-server run test:param-validators && pnpm --filter @workspace/api-server run test:mysticism-auth && pnpm --filter @workspace/api-server run test:trust-proxy-wiring && pnpm --filter @workspace/api-server run test:security-headers && pnpm --filter @workspace/api-server run test:message-order && pnpm --filter @workspace/api-server run test:csrf && pnpm --filter @workspace/api-server run test:readings-params && pnpm --filter @workspace/api-server run test:share-cap && pnpm --filter @workspace/api-server run test:logger-redact && pnpm --filter @workspace/api-server run test:public-config && pnpm --filter @workspace/mysticism-web run test:escape-html && pnpm --filter @workspace/mysticism-web run test:result-actions"
   },
   "private": true,

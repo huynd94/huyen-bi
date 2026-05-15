@@ -1,0 +1,7 @@
+{
+  "error": "Lighthouse audit pending - requires running app at localhost. Local dev server not available during automated audit pass.",
+  "route": "/ai-chat",
+  "slug": "ai-chat",
+  "expectedCategories": ["performance", "accessibility", "best-practices", "seo"],
+  "fallback": "Run manually: npx lighthouse http://localhost:5173/ai-chat --output=json --output-path=./ai-chat.json --chrome-flags=\"--headless\""
+}

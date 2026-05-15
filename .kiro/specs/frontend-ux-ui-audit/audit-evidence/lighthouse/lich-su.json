@@ -1,0 +1,7 @@
+{
+  "error": "Lighthouse audit pending - requires running app at localhost. Local dev server not available during automated audit pass.",
+  "route": "/lich-su",
+  "slug": "lich-su",
+  "expectedCategories": ["performance", "accessibility", "best-practices", "seo"],
+  "fallback": "Run manually: npx lighthouse http://localhost:5173/lich-su --output=json --output-path=./lich-su.json --chrome-flags=\"--headless\""
+}

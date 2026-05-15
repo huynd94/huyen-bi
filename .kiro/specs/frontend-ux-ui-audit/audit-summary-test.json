@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "auditor": "test"
+  },
+  "scope": {},
+  "rubric": {},
+  "totals": {
+    "P0": 1,
+    "P1": 1,
+    "P2": 0,
+    "INFO": 0,
+    "byAxis": {
+      "ANIM": 1,
+      "LAYOUT": 1,
+      "MODULE": 0,
+      "INTERACTION": 0
+    }
+  },
+  "findings": [
+    {
+      "id": "F-ANIM-01",
+      "severity": "P0",
+      "title": "Test",
+      "axis": "ANIM",
+      "surface": "home"
+    },
+    {
+      "id": "F-LAYOUT-01",
+      "severity": "P1",
+      "title": "Test2",
+      "axis": "LAYOUT",
+      "surface": "home"
+    }
+  ]
+}
