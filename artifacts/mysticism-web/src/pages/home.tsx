@@ -395,19 +395,22 @@ export default function Home() {
               <div className="magic-line mx-auto mt-2 max-w-xs" />
             </div>
 
-            {/* Grid responsive: 1 / 2 / 3 / 4–5 cột (Requirement 12.2).
-                `xl:grid-cols-4` cho 4 cột ở Breakpoint_Large; nhóm "Tra
-                Cứu" có 5 module nên dùng `xl:grid-cols-5` để vừa một
-                hàng — đáp ứng đoạn "4 hoặc 5 cột". */}
-            <div
-              className={
-                group.modules.length === 5
-                  ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-                  : "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              }
-            >
+            {/* Flex-based centering: naturally centers items when the last
+                row is incomplete. Responsive widths on cards replicate the
+                previous 1 / 2 / 3 / 4–5 column behavior (Requirement 12.2)
+                while centering incomplete rows (Bug 1.2 fix). */}
+            <div className="flex flex-wrap justify-center gap-4">
               {group.modules.map((m) => (
-                <ModuleCardItem key={m.href} module={m} />
+                <div
+                  key={m.href}
+                  className={
+                    group.modules.length === 5
+                      ? "w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(20%-0.8rem)]"
+                      : "w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)] xl:w-[calc(25%-0.75rem)]"
+                  }
+                >
+                  <ModuleCardItem module={m} />
+                </div>
               ))}
             </div>
           </div>

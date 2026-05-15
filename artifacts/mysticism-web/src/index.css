@@ -165,26 +165,26 @@
   --popover: 40 30% 100%;
   --popover-foreground: 260 40% 10%;
   --popover-border: 260 10% 80%;
-  --primary: 43 74% 42%;
+  --primary: 43 74% 32%;
   --primary-foreground: 0 0% 100%;
   --secondary: 270 20% 92%;
   --secondary-foreground: 260 40% 15%;
   --muted: 40 20% 92%;
   --muted-foreground: 260 20% 30%;
-  --accent: 43 74% 42%;
+  --accent: 43 74% 32%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 65% 42%;
   --destructive-foreground: 0 0% 100%;
   --input: 260 10% 80%;
-  --ring: 43 74% 42%;
+  --ring: 43 74% 32%;
   --sidebar: 40 30% 98%;
   --sidebar-foreground: 260 40% 10%;
   --sidebar-border: 260 10% 80%;
-  --sidebar-primary: 43 74% 42%;
+  --sidebar-primary: 43 74% 32%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 270 20% 92%;
   --sidebar-accent-foreground: 260 40% 15%;
-  --sidebar-ring: 43 74% 42%;
+  --sidebar-ring: 43 74% 32%;
 }
 
 @layer base {
@@ -205,6 +205,9 @@
   filter: blur(80px);
   opacity: 0;
   animation: orb-appear 2s ease forwards;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .orb-1 {
   width: 55vw; height: 55vw;
@@ -312,6 +315,8 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer-sweep 4s linear infinite;
+  will-change: background-position;
+  transform: translateZ(0);
 }
 
 /* ── Glow Pulse (for stat numbers, icons) ── */
@@ -321,6 +326,7 @@
 }
 .glow-pulse {
   animation: glow-pulse 3s ease-in-out infinite;
+  will-change: text-shadow;
 }
 
 /* ── Ripple Button ── */
