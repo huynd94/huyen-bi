@@ -24,6 +24,28 @@ export const AMBIENT_OPACITY_LIGHT_MAX = 0.15 as const;
  */
 export const AMBIENT_LIGHT_TO_DARK_RATIO_MAX = 0.6 as const;
 
+// ─── Star & Cloud Configuration Constants ────────────────────────────────────
+
+/** Number of star points in the star field CSS background */
+export const STAR_FIELD_COUNT = 60;
+
+/** Twinkle animation duration range in seconds */
+export const STAR_TWINKLE_DURATION_RANGE = [4, 8] as const;
+
+/** Drift animation duration for star field in seconds */
+export const STAR_DRIFT_DURATION = 90;
+
+/** Number of cloud elements */
+export const CLOUD_COUNT = 5;
+
+/** Cloud drift animation duration range in seconds */
+export const CLOUD_DRIFT_DURATION_RANGE = [30, 80] as const;
+
+/** Cloud opacity range */
+export const CLOUD_OPACITY_RANGE = [0.4, 0.8] as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * Tính opacity wrapper của `Ambient_Background` theo theme hiện tại.
  *
@@ -130,6 +152,28 @@ export function AmbientBg() {
       data-reduced-motion={reducedMotion ? "true" : "false"}
       style={{ opacity: wrapperOpacity }}
     >
+      {/* Star field layer — rendered only in dark mode */}
+      {theme === "dark" && (
+        <div
+          className="ambient-star-field"
+          style={reducedMotion ? STATIC_LAYER_STYLE : undefined}
+        />
+      )}
+
+      {/* Cloud field layer — rendered only in light mode */}
+      {theme === "light" && (
+        <div
+          className="ambient-cloud-field"
+          style={reducedMotion ? STATIC_LAYER_STYLE : undefined}
+        >
+          <div className="ambient-cloud ambient-cloud-1" />
+          <div className="ambient-cloud ambient-cloud-2" />
+          <div className="ambient-cloud ambient-cloud-3" />
+          <div className="ambient-cloud ambient-cloud-4" />
+          <div className="ambient-cloud ambient-cloud-5" />
+        </div>
+      )}
+
       <div className="orb orb-1" style={layerStyle} />
       <div className="orb orb-2" style={layerStyle} />
       <div className="orb orb-3" style={layerStyle} />

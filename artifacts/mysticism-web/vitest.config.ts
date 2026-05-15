@@ -23,6 +23,7 @@ export default defineConfig({
     include: [
       "src/**/*.property.test.{ts,tsx}",
       "src/**/*.a11y.test.{ts,tsx}",
+      "src/**/*.unit.test.{ts,tsx}",
     ],
     css: false,
   },
