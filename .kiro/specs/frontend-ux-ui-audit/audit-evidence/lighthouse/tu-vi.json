@@ -1,0 +1,7 @@
+{
+  "error": "Lighthouse audit pending - requires running app at localhost. Local dev server not available during automated audit pass.",
+  "route": "/tu-vi",
+  "slug": "tu-vi",
+  "expectedCategories": ["performance", "accessibility", "best-practices", "seo"],
+  "fallback": "Run manually: npx lighthouse http://localhost:5173/tu-vi --output=json --output-path=./tu-vi.json --chrome-flags=\"--headless\""
+}

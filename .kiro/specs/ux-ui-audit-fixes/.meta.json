@@ -1,0 +1,23 @@
+{
+  "taskIdMap": {
+    "1": { "status": "not_started" },
+    "2": { "status": "not_started" },
+    "3": { "status": "not_started" },
+    "3.1": { "status": "not_started" },
+    "3.2": { "status": "not_started" },
+    "3.3": { "status": "not_started" },
+    "4": { "status": "not_started" },
+    "4.1": { "status": "not_started" },
+    "4.2": { "status": "not_started" },
+    "4.3": { "status": "not_started" },
+    "5": { "status": "not_started" },
+    "5.1": { "status": "not_started" },
+    "5.2": { "status": "not_started" },
+    "5.3": { "status": "not_started" },
+    "6": { "status": "not_started" },
+    "6.1": { "status": "not_started" },
+    "6.2": { "status": "not_started" },
+    "6.3": { "status": "not_started" },
+    "7": { "status": "not_started" }
+  }
+}

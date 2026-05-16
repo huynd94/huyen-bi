@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "auditor": "Kiro agent",
+    "auditDate": "2025-01-15",
+    "repoCommit": "abc1234def5678",
+    "appVersion": "1.0.0",
+    "browsers": ["Chrome 131.0.6778.139"],
+    "viewports": [
+      { "name": "mobile", "width": 360, "height": 800 },
+      { "name": "tablet", "width": 768, "height": 1024 },
+      { "name": "desktop", "width": 1280, "height": 800 },
+      { "name": "wide", "width": 1920, "height": 1080 }
+    ]
+  },
+  "scope": {
+    "auditedSurfaces": ["home", "than-so-hoc", "bat-tu"],
+    "skippedSurfaces": [
+      { "surface": "__clerk-mock-x", "reason": "dev mock file" }
+    ],
+    "unauditedStates": []
+  },
+  "rubric": {
+    "severityDefinitions": {
+      "P0": "WCAG A/AA violation or data loss",
+      "P1": "Nielsen heuristic violation with workaround",
+      "P2": "Polish issue on ≤ 2 surfaces",
+      "INFO": "Axis checked, no issue found"
+    },
+    "heuristicSets": ["Nielsen 10", "WCAG 2.1 AA", "CWV", "Material Motion", "ux-ui-upgrade"]
+  },
+  "totals": {
+    "P0": 1,
+    "P1": 1,
+    "P2": 1,
+    "INFO": 1,
+    "byAxis": {
+      "ANIM": 1,
+      "LAYOUT": 1,
+      "MODULE": 1,
+      "INTERACTION": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "F-ANIM-01",
+      "title": "Ambient background opacity exceeds threshold",
+      "axis": "ANIM",
+      "severity": "P0",
+      "surface": "home",
+      "description": "The ambient-bg component renders at 42% opacity in dark mode, exceeding the 35% maximum.",
+      "evidence": [
+        { "fileLine": "src/components/ambient-bg.tsx:42" }
+      ],
+      "recommendation": {
+        "what": "Reduce opacity to ≤ 35%",
+        "why": "Exceeds design spec threshold causing visual distraction",
+        "where": "src/components/ambient-bg.tsx"
+      },
+      "references": [{ "text": "ux-ui-upgrade Req 10.8" }],
+      "effort": "S"
+    },
+    {
+      "id": "F-LAYOUT-01",
+      "title": "Horizontal scroll on mobile at 360px",
+      "axis": "LAYOUT",
+      "severity": "P1",
+      "surface": "than-so-hoc",
+      "description": "Page overflows horizontally at 360px viewport width due to fixed-width table.",
+      "evidence": [
+        { "screenshot": "./audit-evidence/responsive/than-so-hoc-360x800.png" }
+      ],
+      "recommendation": {
+        "what": "Add overflow-x-auto wrapper to result table",
+        "why": "Prevents horizontal scroll on narrow viewports",
+        "where": "src/pages/than-so-hoc.tsx"
+      },
+      "references": [{ "text": "WCAG 2.1 SC 1.4.10 (Level AA)" }],
+      "effort": "S"
+    },
+    {
+      "id": "F-MODULE-01",
+      "title": "Chart missing role and aria-label",
+      "axis": "MODULE",
+      "severity": "P2",
+      "surface": "bat-tu",
+      "description": "SVG chart does not have role=\"img\" or aria-label for screen readers.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/axe/bat-tu.json" }
+      ],
+      "recommendation": {
+        "what": "Add role=\"img\" and aria-label to chart SVG",
+        "why": "Screen readers cannot interpret the chart content",
+        "where": "src/components/bat-tu-chart.tsx"
+      },
+      "references": [{ "text": "WCAG 2.1 SC 1.1.1 (Level A)" }],
+      "effort": "S"
+    },
+    {
+      "id": "F-INTERACTION-01",
+      "title": "INTERACTION axis checked — no issues found",
+      "axis": "INTERACTION",
+      "severity": "INFO",
+      "surface": "home",
+      "description": "All interaction patterns on the home surface were tested and found compliant.",
+      "evidence": [
+        { "toolingOutput": "./audit-evidence/axe/home.json" }
+      ],
+      "recommendation": {
+        "what": "No action needed",
+        "why": "Compliant",
+        "where": "N/A"
+      },
+      "references": []
+    }
+  ]
+}

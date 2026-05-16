@@ -1,0 +1,7 @@
+{
+  "error": "Lighthouse audit pending - requires running app at localhost. Local dev server not available during automated audit pass.",
+  "route": "/profile",
+  "slug": "profile",
+  "expectedCategories": ["performance", "accessibility", "best-practices", "seo"],
+  "fallback": "Run manually: npx lighthouse http://localhost:5173/profile --output=json --output-path=./profile.json --chrome-flags=\"--headless\""
+}
