@@ -348,8 +348,24 @@
     stars-field-drift 90s ease-in-out infinite alternate;
 }
 
+.ambient-star-field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(3px 3px at 15% 20%, hsl(43 90% 80% / 0.9) 0%, transparent 100%),
+    radial-gradient(4px 4px at 78% 15%, hsl(43 80% 85% / 0.85) 0%, transparent 100%),
+    radial-gradient(3px 3px at 35% 70%, hsl(40 95% 82% / 0.8) 0%, transparent 100%),
+    radial-gradient(4px 4px at 85% 65%, hsl(43 85% 78% / 0.95) 0%, transparent 100%),
+    radial-gradient(3px 3px at 55% 40%, hsl(45 90% 85% / 0.7) 0%, transparent 100%),
+    radial-gradient(4px 4px at 22% 85%, hsl(43 80% 80% / 0.9) 0%, transparent 100%),
+    radial-gradient(3px 3px at 68% 90%, hsl(40 90% 83% / 0.75) 0%, transparent 100%),
+    radial-gradient(4px 4px at 92% 45%, hsl(43 95% 82% / 1.0) 0%, transparent 100%);
+  animation: stars-field-twinkle 8s ease-in-out infinite;
+}
+
 @keyframes stars-field-twinkle {
-  0%, 100% { opacity: 0.3; }
+  0%, 100% { opacity: 0.5; }
   50%      { opacity: 1; }
 }
 
@@ -357,6 +373,13 @@
   0%   { transform: translate(0, 0) translateZ(0); }
   50%  { transform: translate(2vw, 1vh) translateZ(0); }
   100% { transform: translate(-1vw, -0.5vh) translateZ(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-star-field::after {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 /* ── Ambient Background Cloud Field (Light Mode) ── */
@@ -367,7 +390,7 @@
 }
 .ambient-cloud {
   position: absolute;
-  background: rgba(255, 255, 255, 0.9);
+  background: hsl(200 60% 75% / 0.85);
   border-radius: 50% 50% 45% 55% / 60% 55% 50% 45%;
   filter: blur(12px);
   will-change: transform;
@@ -378,7 +401,7 @@
   height: 60px;
   top: 12%;
   left: -10%;
-  opacity: 0.6;
+  opacity: 0.7;
   animation: cloud-drift 35s linear infinite;
 }
 .ambient-cloud-2 {
@@ -386,7 +409,7 @@
   height: 80px;
   top: 30%;
   left: -15%;
-  opacity: 0.5;
+  opacity: 0.65;
   animation: cloud-drift 50s linear 8s infinite;
 }
 .ambient-cloud-3 {
@@ -394,7 +417,7 @@
   height: 55px;
   top: 55%;
   left: -10%;
-  opacity: 0.7;
+  opacity: 0.85;
   animation: cloud-drift 40s linear 15s infinite;
 }
 .ambient-cloud-4 {
@@ -402,7 +425,7 @@
   height: 70px;
   top: 72%;
   left: -12%;
-  opacity: 0.45;
+  opacity: 0.6;
   animation: cloud-drift 65s linear 5s infinite;
 }
 .ambient-cloud-5 {
@@ -410,7 +433,7 @@
   height: 50px;
   top: 88%;
   left: -8%;
-  opacity: 0.8;
+  opacity: 0.9;
   animation: cloud-drift 75s linear 22s infinite;
 }
 
