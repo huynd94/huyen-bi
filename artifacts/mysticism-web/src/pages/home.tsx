@@ -375,8 +375,9 @@ export default function Home() {
         <section
           key={group.id}
           id={group.id}
+          aria-label={group.label}
           aria-labelledby={`${group.id}-heading`}
-          className="relative z-10 px-4 py-14 md:py-16"
+          className="home-deferred-section relative z-10 px-4 py-14 md:py-16"
         >
           <div className="mx-auto max-w-6xl space-y-8" data-reveal>
             <div className="space-y-2 text-center">
@@ -419,8 +420,9 @@ export default function Home() {
 
       {/* ── Quote ───────────────────────────────────────────────────── */}
       <section
+        aria-label="Trích dẫn cổ học"
         aria-labelledby="quote-heading"
-        className="relative z-10 px-4 py-14"
+        className="home-deferred-section relative z-10 px-4 py-14"
       >
         <div className="mx-auto max-w-3xl text-center" data-reveal>
           <Card className="space-y-3 border-primary/25 bg-primary/5 px-8 py-10">
@@ -444,8 +446,9 @@ export default function Home() {
 
       {/* ── Điểm khác biệt ─────────────────────────────────────────── */}
       <section
+        aria-label="Điểm Khác Biệt"
         aria-labelledby="features-heading"
-        className="relative z-10 px-4 py-16"
+        className="home-deferred-section relative z-10 px-4 py-16"
       >
         <div className="mx-auto max-w-6xl space-y-8" data-reveal>
           <div className="space-y-2 text-center">
@@ -490,8 +493,9 @@ export default function Home() {
 
       {/* ── CTA cuối ───────────────────────────────────────────────── */}
       <section
+        aria-label="Sẵn Sàng Khám Phá"
         aria-labelledby="cta-heading"
-        className="relative z-10 px-4 py-16"
+        className="home-deferred-section relative z-10 px-4 py-16"
       >
         <div className="mx-auto max-w-3xl" data-reveal>
           <Card className="space-y-5 border-primary/25 bg-card/70 p-10 text-center">
