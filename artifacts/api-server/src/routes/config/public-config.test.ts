@@ -261,17 +261,15 @@ try {
     getUserCalls = [];
     const ADMIN_USER_ID = "user_admin_test_public_config";
     const adminApp = makeApp((req, _res, next) => {
-      // Minimal shape that satisfies `requestHasAuthObject` ("auth" in req)
-      // and the `req.auth(options)` call inside @clerk/express's `getAuth`.
-      // The authObject contract only needs `userId` and `tokenType` for
-      // this code path; `debug` is called by signed-out/invalid fallbacks,
-      // so a no-op keeps it safe if the token-type branch ever changes.
-      (req as express.Request & { auth: (opts?: unknown) => unknown }).auth =
-        () => ({
-          userId: ADMIN_USER_ID,
-          tokenType: "session_token",
-          debug: () => ({}),
-        });
+      // @clerk/express v2 brands req.auth with a global symbol before
+      // `getAuth(req)` accepts it as a Clerk auth object.
+      const auth = () => ({
+        userId: ADMIN_USER_ID,
+        tokenType: "session_token",
+        debug: () => ({}),
+      });
+      Object.assign(auth, { [Symbol.for("@clerk/express.auth")]: true });
+      (req as express.Request & { auth: (opts?: unknown) => unknown }).auth = auth;
       next();
     });
     const admin = await listen(adminApp);

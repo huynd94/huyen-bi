@@ -30,7 +30,7 @@ import { LocalErrorBoundary } from "@/components/root-error-boundary";
  *
  * Tất cả nội dung text consumer truyền vào (`title`, `summary`,
  * `result`) đều là plain text. Chúng KHÔNG bao giờ được render qua
- * `dangerouslySetInnerHTML`, không bao giờ được nội suy vào HTML
+ * React raw-HTML escape hatch, không bao giờ được nội suy vào HTML
  * template — chỉ qua `textContent` (trong JSX) hoặc `Blob` UTF-8
  * (cho file `.txt`).
  */
@@ -74,8 +74,8 @@ export interface PrintDocumentOptions {
  *
  * Every user-supplied string (`title`, `moduleName`, `result`) flows
  * through `textContent` or the DOM-native `document.title` setter —
- * never through `innerHTML`, a raw HTML template, or `document.write`.
- * This closes the XSS vector that existed in the prior `document.write`
+ * never through raw HTML assignment or template writing.
+ * This closes the XSS vector that existed in the prior print-template
  * template (post-opus-audit-remediation design §3 / H1).
  *
  * Exported because `package.json` script `test:result-actions` runs

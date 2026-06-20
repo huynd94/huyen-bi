@@ -7,12 +7,21 @@
  *
  * Usage: tsx --import ./src/hooks/__clerk-mock-loading-register.ts <test-file>
  */
-import { resolve as defaultResolve, load as defaultLoad } from "node:module";
+
+type ResolveHook = (
+  specifier: string,
+  context: { parentURL?: string; conditions?: string[] },
+) => Promise<{ url: string; shortCircuit?: boolean }>;
+
+type LoadHook = (
+  url: string,
+  context: { format?: string },
+) => Promise<{ format?: string; source?: string | ArrayBuffer | Uint8Array; shortCircuit?: boolean }>;
 
 export async function resolve(
   specifier: string,
   context: { parentURL?: string; conditions?: string[] },
-  nextResolve: typeof defaultResolve,
+  nextResolve: ResolveHook,
 ) {
   if (specifier === "@clerk/react" || specifier.startsWith("@clerk/react/")) {
     return {
@@ -26,7 +35,7 @@ export async function resolve(
 export async function load(
   url: string,
   context: { format?: string },
-  nextLoad: typeof defaultLoad,
+  nextLoad: LoadHook,
 ) {
   if (url === "clerk-react-loading-mock://mock") {
     return {

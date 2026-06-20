@@ -92,8 +92,8 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@clerk/localizations": "^4.5.0",
-    "@clerk/react": "^6.3.0",
+    "@clerk/localizations": "^4.9.1",
+    "@clerk/react": "^6.10.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1"
   }

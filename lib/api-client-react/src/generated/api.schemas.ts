@@ -29,6 +29,73 @@ export interface PublicConfig {
   adminConfigured?: boolean | null;
 }
 
+export interface JsonObject {
+  [key: string]: unknown;
+}
+
+export type ErrorResponseIssuesItem = { [key: string]: unknown };
+
+export interface ErrorResponse {
+  error: string;
+  issues?: ErrorResponseIssuesItem[];
+}
+
+export interface SavedReading {
+  id: number;
+  module: string;
+  title: string;
+  input_data: JsonObject;
+  result_data: JsonObject;
+  notes?: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface SharedReading {
+  id: number;
+  module: string;
+  title: string;
+  input_data: JsonObject;
+  result_data: JsonObject;
+  created_at: string;
+}
+
+export interface CreateReadingBody {
+  /**
+   * @minLength 1
+   * @maxLength 50
+   */
+  module: string;
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title: string;
+  input_data?: JsonObject;
+  result_data?: JsonObject;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+export interface PatchReadingBody {
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
+  title?: string;
+  /** @maxLength 2000 */
+  notes?: string | null;
+}
+
+export interface DeleteReadingResponse {
+  success: boolean;
+}
+
+export interface ShareReadingResponse {
+  token: string;
+  expiresAt: string;
+}
+
 export interface OpenaiConversation {
   id: number;
   title: string;

@@ -47,6 +47,104 @@ export const GetPublicConfigResponse = zod
   );
 
 /**
+ * @summary List saved readings for the authenticated user
+ */
+export const ListReadingsResponseItem = zod.object({
+  id: zod.number(),
+  module: zod.string(),
+  title: zod.string(),
+  input_data: zod.record(zod.string(), zod.unknown()),
+  result_data: zod.record(zod.string(), zod.unknown()),
+  notes: zod.string().nullish(),
+  created_at: zod.coerce.date(),
+  updated_at: zod.coerce.date().optional(),
+});
+export const ListReadingsResponse = zod.array(ListReadingsResponseItem);
+
+/**
+ * @summary Save a new reading for the authenticated user
+ */
+export const createReadingBodyModuleMax = 50;
+
+export const createReadingBodyTitleMax = 200;
+
+export const createReadingBodyNotesMax = 2000;
+
+export const CreateReadingBody = zod.object({
+  module: zod.string().min(1).max(createReadingBodyModuleMax),
+  title: zod.string().min(1).max(createReadingBodyTitleMax),
+  input_data: zod.record(zod.string(), zod.unknown()).optional(),
+  result_data: zod.record(zod.string(), zod.unknown()).optional(),
+  notes: zod.string().max(createReadingBodyNotesMax).nullish(),
+});
+
+/**
+ * @summary Update saved reading title or notes
+ */
+export const PatchReadingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const patchReadingBodyTitleMax = 200;
+
+export const patchReadingBodyNotesMax = 2000;
+
+export const PatchReadingBody = zod.object({
+  title: zod.string().min(1).max(patchReadingBodyTitleMax).optional(),
+  notes: zod.string().max(patchReadingBodyNotesMax).nullish(),
+});
+
+export const PatchReadingResponse = zod.object({
+  id: zod.number(),
+  module: zod.string(),
+  title: zod.string(),
+  input_data: zod.record(zod.string(), zod.unknown()),
+  result_data: zod.record(zod.string(), zod.unknown()),
+  notes: zod.string().nullish(),
+  created_at: zod.coerce.date(),
+  updated_at: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Delete a saved reading
+ */
+export const DeleteReadingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteReadingResponse = zod.object({
+  success: zod.boolean(),
+});
+
+/**
+ * @summary Create or reuse an active share token for a saved reading
+ */
+export const ShareReadingParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ShareReadingResponse = zod.object({
+  token: zod.string(),
+  expiresAt: zod.coerce.date(),
+});
+
+/**
+ * @summary Get a saved reading through a public share token
+ */
+export const GetSharedReadingParams = zod.object({
+  token: zod.coerce.string(),
+});
+
+export const GetSharedReadingResponse = zod.object({
+  id: zod.number(),
+  module: zod.string(),
+  title: zod.string(),
+  input_data: zod.record(zod.string(), zod.unknown()),
+  result_data: zod.record(zod.string(), zod.unknown()),
+  created_at: zod.coerce.date(),
+});
+
+/**
  * @summary List all conversations
  */
 export const ListOpenaiConversationsResponseItem = zod.object({

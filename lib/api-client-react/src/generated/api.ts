@@ -19,13 +19,20 @@ import type {
 import type {
   AiInterpretBody,
   CreateOpenaiConversationBody,
+  CreateReadingBody,
+  DeleteReadingResponse,
+  ErrorResponse,
   HealthStatus,
   OpenaiConversation,
   OpenaiConversationWithMessages,
   OpenaiError,
   OpenaiMessage,
+  PatchReadingBody,
   PublicConfig,
+  SavedReading,
   SendOpenaiMessageBody,
+  ShareReadingResponse,
+  SharedReading,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -182,6 +189,509 @@ export function useGetPublicConfig<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetPublicConfigQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List saved readings for the authenticated user
+ */
+export const getListReadingsUrl = () => {
+  return `/api/readings`;
+};
+
+export const listReadings = async (
+  options?: RequestInit,
+): Promise<SavedReading[]> => {
+  return customFetch<SavedReading[]>(getListReadingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListReadingsQueryKey = () => {
+  return [`/api/readings`] as const;
+};
+
+export const getListReadingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listReadings>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listReadings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListReadingsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listReadings>>> = ({
+    signal,
+  }) => listReadings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listReadings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListReadingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listReadings>>
+>;
+export type ListReadingsQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List saved readings for the authenticated user
+ */
+
+export function useListReadings<
+  TData = Awaited<ReturnType<typeof listReadings>>,
+  TError = ErrorType<ErrorResponse>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listReadings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListReadingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save a new reading for the authenticated user
+ */
+export const getCreateReadingUrl = () => {
+  return `/api/readings`;
+};
+
+export const createReading = async (
+  createReadingBody: CreateReadingBody,
+  options?: RequestInit,
+): Promise<SavedReading> => {
+  return customFetch<SavedReading>(getCreateReadingUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createReadingBody),
+  });
+};
+
+export const getCreateReadingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createReading>>,
+    TError,
+    { data: BodyType<CreateReadingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createReading>>,
+  TError,
+  { data: BodyType<CreateReadingBody> },
+  TContext
+> => {
+  const mutationKey = ["createReading"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createReading>>,
+    { data: BodyType<CreateReadingBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createReading(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateReadingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createReading>>
+>;
+export type CreateReadingMutationBody = BodyType<CreateReadingBody>;
+export type CreateReadingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Save a new reading for the authenticated user
+ */
+export const useCreateReading = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createReading>>,
+    TError,
+    { data: BodyType<CreateReadingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createReading>>,
+  TError,
+  { data: BodyType<CreateReadingBody> },
+  TContext
+> => {
+  return useMutation(getCreateReadingMutationOptions(options));
+};
+
+/**
+ * @summary Update saved reading title or notes
+ */
+export const getPatchReadingUrl = (id: number) => {
+  return `/api/readings/${id}`;
+};
+
+export const patchReading = async (
+  id: number,
+  patchReadingBody: PatchReadingBody,
+  options?: RequestInit,
+): Promise<SavedReading> => {
+  return customFetch<SavedReading>(getPatchReadingUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(patchReadingBody),
+  });
+};
+
+export const getPatchReadingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchReading>>,
+    TError,
+    { id: number; data: BodyType<PatchReadingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof patchReading>>,
+  TError,
+  { id: number; data: BodyType<PatchReadingBody> },
+  TContext
+> => {
+  const mutationKey = ["patchReading"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof patchReading>>,
+    { id: number; data: BodyType<PatchReadingBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return patchReading(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PatchReadingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchReading>>
+>;
+export type PatchReadingMutationBody = BodyType<PatchReadingBody>;
+export type PatchReadingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Update saved reading title or notes
+ */
+export const usePatchReading = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof patchReading>>,
+    TError,
+    { id: number; data: BodyType<PatchReadingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof patchReading>>,
+  TError,
+  { id: number; data: BodyType<PatchReadingBody> },
+  TContext
+> => {
+  return useMutation(getPatchReadingMutationOptions(options));
+};
+
+/**
+ * @summary Delete a saved reading
+ */
+export const getDeleteReadingUrl = (id: number) => {
+  return `/api/readings/${id}`;
+};
+
+export const deleteReading = async (
+  id: number,
+  options?: RequestInit,
+): Promise<DeleteReadingResponse> => {
+  return customFetch<DeleteReadingResponse>(getDeleteReadingUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteReadingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteReading>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteReading>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteReading"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteReading>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteReading(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteReadingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteReading>>
+>;
+
+export type DeleteReadingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete a saved reading
+ */
+export const useDeleteReading = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteReading>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteReading>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteReadingMutationOptions(options));
+};
+
+/**
+ * @summary Create or reuse an active share token for a saved reading
+ */
+export const getShareReadingUrl = (id: number) => {
+  return `/api/readings/${id}/share`;
+};
+
+export const shareReading = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ShareReadingResponse> => {
+  return customFetch<ShareReadingResponse>(getShareReadingUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getShareReadingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareReading>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof shareReading>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["shareReading"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof shareReading>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return shareReading(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ShareReadingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof shareReading>>
+>;
+
+export type ShareReadingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Create or reuse an active share token for a saved reading
+ */
+export const useShareReading = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof shareReading>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof shareReading>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getShareReadingMutationOptions(options));
+};
+
+/**
+ * @summary Get a saved reading through a public share token
+ */
+export const getGetSharedReadingUrl = (token: string) => {
+  return `/api/share/${token}`;
+};
+
+export const getSharedReading = async (
+  token: string,
+  options?: RequestInit,
+): Promise<SharedReading> => {
+  return customFetch<SharedReading>(getGetSharedReadingUrl(token), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetSharedReadingQueryKey = (token: string) => {
+  return [`/api/share/${token}`] as const;
+};
+
+export const getGetSharedReadingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSharedReading>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedReading>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSharedReadingQueryKey(token);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getSharedReading>>
+  > = ({ signal }) => getSharedReading(token, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!token,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSharedReading>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetSharedReadingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSharedReading>>
+>;
+export type GetSharedReadingQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a saved reading through a public share token
+ */
+
+export function useGetSharedReading<
+  TData = Awaited<ReturnType<typeof getSharedReading>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  token: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getSharedReading>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetSharedReadingQueryOptions(token, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

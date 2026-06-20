@@ -36,7 +36,7 @@ export const readingsApi = {
   }): Promise<SavedReading> =>
     apiFetch("/api/readings", { method: "POST", body: JSON.stringify(payload) }),
 
-  update: (id: number, payload: { notes?: string; title?: string }): Promise<SavedReading> =>
+  update: (id: number, payload: { notes?: string | null; title?: string }): Promise<SavedReading> =>
     apiFetch(`/api/readings/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
 
   remove: (id: number): Promise<{ success: boolean }> =>

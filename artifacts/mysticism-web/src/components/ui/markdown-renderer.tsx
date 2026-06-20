@@ -41,6 +41,22 @@ function isExternalLink(href: string): boolean {
   }
 }
 
+function sanitizeMarkdownHref(href: string): string | null {
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("//")) return null;
+
+  const schemeMatch = /^[a-z][a-z0-9+.-]*:/i.exec(trimmed);
+  if (schemeMatch) {
+    const scheme = schemeMatch[0].toLowerCase();
+    return ["http:", "https:", "mailto:", "tel:"].includes(scheme) ? trimmed : null;
+  }
+
+  return trimmed;
+}
+
 function parseInline(text: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const tokenPattern = /(\*\*\*.+?\*\*\*|\*\*.+?\*\*|\*.+?\*|`.+?`|\[.+?\]\(.+?\))/g;
@@ -59,19 +75,24 @@ function parseInline(text: string): ReactNode[] {
       const labelEnd = token.indexOf("](");
       const label = token.slice(1, labelEnd);
       const href = token.slice(labelEnd + 2, -1);
-      const external = isExternalLink(href);
-      nodes.push(
-        <a
-          key={key}
-          href={href}
-          className="text-primary underline underline-offset-2 hover:text-primary/80"
-          {...(external
-            ? { target: "_blank", rel: "noopener noreferrer" }
-            : {})}
-        >
-          {label}
-        </a>
-      );
+      const safeHref = sanitizeMarkdownHref(href);
+      if (!safeHref) {
+        nodes.push(<span key={key}>{label}</span>);
+      } else {
+        const external = isExternalLink(safeHref);
+        nodes.push(
+          <a
+            key={key}
+            href={safeHref}
+            className="text-primary underline underline-offset-2 hover:text-primary/80"
+            {...(external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+          >
+            {label}
+          </a>
+        );
+      }
     } else if (token.startsWith("***") && token.endsWith("***")) {
       nodes.push(<strong key={key}><em>{token.slice(3, -3)}</em></strong>);
     } else if (token.startsWith("**") && token.endsWith("**")) {
