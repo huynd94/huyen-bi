@@ -16,6 +16,8 @@ tags:
     description: OpenAI AI chat and operations
   - name: mysticism
     description: Mysticism AI interpretation endpoints
+  - name: readings
+    description: Saved readings and public share links
 paths:
   /healthz:
     get:
@@ -48,6 +50,168 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PublicConfig"
+  /readings:
+    get:
+      operationId: listReadings
+      tags: [readings]
+      summary: List saved readings for the authenticated user
+      responses:
+        "200":
+          description: List of saved readings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedReading"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createReading
+      tags: [readings]
+      summary: Save a new reading for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReadingBody"
+      responses:
+        "201":
+          description: Created saved reading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedReading"
+        "400":
+          description: Invalid body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /readings/{id}:
+    patch:
+      operationId: patchReading
+      tags: [readings]
+      summary: Update saved reading title or notes
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchReadingBody"
+      responses:
+        "200":
+          description: Updated saved reading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedReading"
+        "400":
+          description: Invalid id or body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Reading not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteReading
+      tags: [readings]
+      summary: Delete a saved reading
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteReadingResponse"
+        "400":
+          description: Invalid id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Reading not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /readings/{id}/share:
+    post:
+      operationId: shareReading
+      tags: [readings]
+      summary: Create or reuse an active share token for a saved reading
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share token for the reading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareReadingResponse"
+        "400":
+          description: Invalid id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Reading not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /share/{token}:
+    get:
+      operationId: getSharedReading
+      tags: [readings]
+      summary: Get a saved reading through a public share token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Public shared reading
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedReading"
+        "404":
+          description: Share link invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /openai/conversations:
     get:
       operationId: listOpenaiConversations
@@ -222,6 +386,126 @@ components:
         - model
         - rateLimitPerHour
         - rateLimitPerDay
+    JsonObject:
+      type: object
+      additionalProperties: true
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        issues:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+      required:
+        - error
+    SavedReading:
+      type: object
+      properties:
+        id:
+          type: integer
+        module:
+          type: string
+        title:
+          type: string
+        input_data:
+          $ref: "#/components/schemas/JsonObject"
+        result_data:
+          $ref: "#/components/schemas/JsonObject"
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - module
+        - title
+        - input_data
+        - result_data
+        - created_at
+    SharedReading:
+      type: object
+      properties:
+        id:
+          type: integer
+        module:
+          type: string
+        title:
+          type: string
+        input_data:
+          $ref: "#/components/schemas/JsonObject"
+        result_data:
+          $ref: "#/components/schemas/JsonObject"
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - module
+        - title
+        - input_data
+        - result_data
+        - created_at
+    CreateReadingBody:
+      type: object
+      properties:
+        module:
+          type: string
+          minLength: 1
+          maxLength: 50
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        input_data:
+          $ref: "#/components/schemas/JsonObject"
+        result_data:
+          $ref: "#/components/schemas/JsonObject"
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      required:
+        - module
+        - title
+    PatchReadingBody:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        notes:
+          type: string
+          maxLength: 2000
+          nullable: true
+      minProperties: 1
+      additionalProperties: false
+    DeleteReadingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+    ShareReadingResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+      required:
+        - token
+        - expiresAt
     OpenaiConversation:
       type: object
       properties:

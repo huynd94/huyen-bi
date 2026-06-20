@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB:       ${POSTGRES_DB:-huyenbi}
       POSTGRES_USER:     ${POSTGRES_USER:-huyenbi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-huyenbi_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -49,7 +49,7 @@ services:
     environment:
       NODE_ENV:              production
       PORT:                  3001
-      DATABASE_URL:          postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:-huyenbi_secret}@postgres:5432/${POSTGRES_DB:-huyenbi}
+      DATABASE_URL:          postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-huyenbi}
       CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY:-}
       CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
       # When the api sits behind the nginx container in the same bridge network,

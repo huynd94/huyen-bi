@@ -82,11 +82,28 @@ router.patch("/readings/:id", requireClerkUser, async (req: AuthenticatedRequest
     return;
   }
   const { notes, title } = parsed.data;
+  const hasNotes = Object.prototype.hasOwnProperty.call(parsed.data, "notes");
   try {
+    const updates: string[] = [];
+    const params: unknown[] = [];
+
+    if (hasNotes) {
+      params.push(notes ?? null);
+      updates.push(`notes = $${params.length}`);
+    }
+    if (title !== undefined) {
+      params.push(title);
+      updates.push(`title = $${params.length}`);
+    }
+
+    params.push(id, req.userId);
+    const idParam = params.length - 1;
+    const userParam = params.length;
+
     const { rows } = await pool.query(
-      `UPDATE saved_readings SET notes = COALESCE($1, notes), title = COALESCE($2, title), updated_at = NOW()
-       WHERE id = $3 AND user_id = $4 RETURNING *`,
-      [notes, title, id, req.userId],
+      `UPDATE saved_readings SET ${updates.join(", ")}, updated_at = NOW()
+       WHERE id = $${idParam} AND user_id = $${userParam} RETURNING *`,
+      params,
     );
     if (!rows.length) {
       res.status(404).json({ error: "Không tìm thấy" });

@@ -442,6 +442,32 @@
   100% { transform: translateX(120%) translateZ(0); }
 }
 
+@media (max-width: 767px), (hover: none), (update: slow) {
+  body {
+    background-image: none;
+  }
+
+  .orb {
+    filter: blur(36px);
+    animation: orb-appear 0.8s ease forwards !important;
+    transform: none;
+    will-change: opacity;
+  }
+
+  .ambient-star-field,
+  .ambient-star-field::after,
+  .ambient-stars,
+  .ambient-cloud {
+    animation: none !important;
+    transform: none;
+    will-change: auto;
+  }
+
+  .ambient-cloud {
+    filter: blur(6px);
+  }
+}
+
 /* ── Scroll Reveal ── */
 [data-reveal] {
   opacity: 0;
@@ -461,6 +487,15 @@
 [data-revealed="true"] {
   opacity: 1 !important;
   transform: none !important;
+}
+
+@media (max-width: 767px), (hover: none), (update: slow) {
+  @supports (content-visibility: auto) {
+    .home-deferred-section {
+      content-visibility: auto;
+      contain-intrinsic-size: 1px 560px;
+    }
+  }
 }
 
 /* ── Shimmer Heading ── */
@@ -531,6 +566,43 @@
   background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), hsl(43 90% 65% / 0.8), hsl(var(--primary) / 0.6), transparent);
   transform-origin: center;
   animation: magic-line-grow 1.2s ease-out forwards;
+}
+
+@media (max-width: 767px), (hover: none), (update: slow) {
+  .shimmer-text,
+  .glow-pulse,
+  .float-badge,
+  .magic-line {
+    animation: none !important;
+    will-change: auto;
+  }
+
+  .shimmer-text {
+    background-position: center;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-revealed="true"] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .orb,
+  .ambient-stars,
+  .ambient-star-field,
+  .ambient-star-field::after,
+  .ambient-cloud,
+  .shimmer-text,
+  .glow-pulse,
+  .float-badge,
+  .magic-line {
+    animation: none !important;
+    will-change: auto;
+  }
 }
 
 /* ── Star Cursor ──

@@ -50,11 +50,15 @@ FROM node:22-slim AS runner
 
 WORKDIR /app
 
+RUN groupadd --system huyenbi && useradd --system --gid huyenbi --home-dir /app huyenbi
+
 # Copy production node_modules từ pnpm deploy (chứa @google/generative-ai và các external deps)
-COPY --from=builder /prod/node_modules ./node_modules
+COPY --from=builder --chown=huyenbi:huyenbi /prod/node_modules ./node_modules
 
 # Copy dist từ builder (esbuild bundle)
-COPY --from=builder /app/artifacts/api-server/dist ./dist
+COPY --from=builder --chown=huyenbi:huyenbi /app/artifacts/api-server/dist ./dist
+
+USER huyenbi
 
 EXPOSE 3001
 
