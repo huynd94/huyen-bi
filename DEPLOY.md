@@ -89,6 +89,7 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_live_...
 
 # Tuỳ chọn
 WEB_PORT=80
+APP_VERSION=4.1.0
 # CORS_ALLOWED_ORIGINS=https://huyenbi.io.vn,https://preview.huyenbi.io.vn
 ```
 
@@ -100,6 +101,7 @@ docker compose up --build -d
 
 > Lần đầu build mất 3–5 phút do tải dependencies và compile TypeScript.
 > Dockerfile dùng `node:22-slim` và corepack tự kéo pnpm theo `packageManager` pin.
+> Compose tag image build từ source bằng `APP_VERSION` (mặc định `4.1.0`) thay vì `latest`, ví dụ `huyen-bi-api:4.1.0` và `huyen-bi-web:4.1.0`.
 
 ### Kiểm tra
 

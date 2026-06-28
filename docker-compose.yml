@@ -38,6 +38,7 @@ services:
   # AI key được cấu hình qua Admin Panel trong giao diện web
   # ----------------------------------------------------------
   api:
+    image: huyen-bi-api:${APP_VERSION:-4.1.0}
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -67,6 +68,7 @@ services:
   # Clerk publishable key được bake vào bundle lúc docker build
   # ----------------------------------------------------------
   web:
+    image: huyen-bi-web:${APP_VERSION:-4.1.0}
     build:
       context: .
       dockerfile: Dockerfile.web
