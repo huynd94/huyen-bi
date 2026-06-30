@@ -536,60 +536,60 @@ export function SaoHanKnowledge() {
 
       <KBSection title="Cơ sở lý thuyết — Cửu Diệu Tinh">
         <p className="leading-relaxed">
-          Sao hạn hàng năm dựa trên hệ thống <strong className="text-primary">Cửu Diệu Tinh</strong> (九曜星) — 9 ngôi sao hành tinh trong thiên văn cổ đại Trung Hoa, kết hợp với <strong className="text-primary">Hệ Lạc Thư</strong> (luân chuyển theo chu kỳ 9 năm). Mỗi người, căn cứ vào năm sinh, được gán vào một trong 9 sao, và các sao sẽ luân phiên theo thứ tự từng năm.
+          Sao hạn hàng năm dựa trên hệ thống <strong className="text-primary">Cửu Diệu</strong> (九曜) — 9 ngôi sao luân phiên chiếu mệnh mỗi người theo chu kỳ 9 năm. Sao chiếu của một năm được xác định bằng <strong className="text-primary">tuổi mụ</strong> (tuổi âm: năm xem − năm sinh + 1) và <strong className="text-primary">giới tính</strong>, khởi tính từ năm 10 tuổi.
         </p>
         <KBGrid
           items={[
-            { label: "9 Sao", value: "Nhất Bạch → Cửu Tử", color: "text-primary" },
+            { label: "9 Sao", value: "La Hầu → Mộc Đức", color: "text-primary" },
             { label: "9 năm", value: "1 vòng chu kỳ", color: "text-primary" },
-            { label: "Lạc Thư", value: "Nền tảng phân bổ", color: "text-primary" },
-            { label: "Can Chi", value: "Xác định sao gốc", color: "text-primary" },
+            { label: "Tuổi mụ", value: "Năm − năm sinh + 1", color: "text-primary" },
+            { label: "Nam / Nữ", value: "Thứ tự sao khác nhau", color: "text-primary" },
           ]}
         />
       </KBSection>
 
-      <KBSection title="9 Ngôi Sao & Ý nghĩa">
+      <KBSection title="9 Ngôi Sao Cửu Diệu & Ý nghĩa">
         <KBTable
-          headers={["Sao", "Ngũ Hành", "Tính chất", "Đánh giá"]}
+          headers={["Sao", "Tính chất", "Đánh giá"]}
           rows={[
-            ["Nhất Bạch Thủy Tinh", "Thủy", "Trí tuệ, học vấn, quý nhân", "Tốt"],
-            ["Nhị Hắc Thổ Tinh", "Thổ", "Bệnh tật, chướng ngại, mệt mỏi", "Cẩn thận"],
-            ["Tam Bích Mộc Tinh", "Mộc", "Tranh chấp, thị phi, kiện tụng", "Cẩn thận"],
-            ["Tứ Lục Mộc Tinh", "Mộc", "Văn chương, tình cảm, sáng tạo", "Tốt"],
-            ["Ngũ Hoàng Thổ Tinh", "Thổ", "Tai họa, bệnh nặng, thất bại lớn", "Xấu nhất"],
-            ["Lục Bạch Kim Tinh", "Kim", "Quyền lực, lãnh đạo, may mắn", "Rất tốt"],
-            ["Thất Xích Kim Tinh", "Kim", "Đao kiếm, rủi ro, vật lộn", "Cẩn thận"],
-            ["Bát Bạch Thổ Tinh", "Thổ", "Tài lộc, bất động sản, thịnh vượng", "Rất tốt"],
-            ["Cửu Tử Hỏa Tinh", "Hỏa", "Hỷ sự, danh vọng, sáng rực", "Tốt (hỷ sự)"],
+            ["Thái Dương", "Công danh, tài lộc, quý nhân (đặc biệt tốt với nam)", "Tốt"],
+            ["Thái Âm", "Tài lộc, hỷ sự (hợp nữ giới)", "Tốt"],
+            ["Mộc Đức", "Bình an, hỷ khánh, sức khỏe", "Tốt"],
+            ["Thổ Tú", "Thị phi vặt, lục súc khó nuôi", "Bình (xấu nhẹ)"],
+            ["Thủy Diệu", "Phúc lộc nhưng dễ thị phi, sông nước", "Bình"],
+            ["Vân Hớn", "Đề phòng thị phi, kiện tụng, máu huyết", "Bình (hung nhẹ)"],
+            ["La Hầu", "Khẩu thiệt, thị phi, tật ách (nặng với nam)", "Xấu"],
+            ["Kế Đô", "Ám muội, tai tiếng (nặng với nữ)", "Xấu"],
+            ["Thái Bạch", "Hao tài, mất của — \"sạch cửa nhà\"", "Xấu"],
           ]}
         />
         <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-          Ngũ Hoàng (5) và Nhị Hắc (2) là hai sao hung nhất. Lục Bạch (6) và Bát Bạch (8) là hai sao cát nhất trong giai đoạn Vận 8–9 hiện nay.
+          Ba sao tốt: Thái Dương, Thái Âm, Mộc Đức. Ba sao xấu: La Hầu, Kế Đô, Thái Bạch. Ba sao trung tính: Thổ Tú, Thủy Diệu, Vân Hớn.
         </p>
       </KBSection>
 
-      <KBSection title="Cách tính sao gốc theo năm sinh">
+      <KBSection title="Cách xác định sao chiếu theo tuổi">
         <p className="leading-relaxed">
-          Sao gốc được tính từ <strong className="text-primary">năm sinh Dương lịch</strong>. Công thức rút gọn phổ biến:
+          Tính theo <strong className="text-primary">tuổi mụ</strong> và giới tính, khởi từ năm 10 tuổi. Nam và nữ có thứ tự sao khác nhau:
         </p>
         <div className="bg-background/30 rounded-lg px-4 py-3 font-mono text-xs space-y-1.5 border border-primary/10">
-          <div>Nam: Sao gốc = (11 − tổng chữ số năm sinh) mod 9</div>
-          <div>Nữ: Sao gốc = (4 + tổng chữ số năm sinh) mod 9</div>
-          <div className="text-primary mt-2">Ví dụ (Nam, sinh 1990): 1+9+9+0 = 19 → 1+9 = 10 → 1+0 = 1</div>
-          <div className="text-primary">→ (11 − 1) = 10 mod 9 = <strong>Nhất Bạch</strong></div>
+          <div>Nam (từ 10 tuổi): La Hầu, Thổ Tú, Thủy Diệu, Thái Bạch, Thái Dương, Vân Hớn, Kế Đô, Thái Âm, Mộc Đức…</div>
+          <div>Nữ (từ 10 tuổi): Kế Đô, Vân Hớn, Mộc Đức, Thái Âm, Thổ Tú, La Hầu, Thái Dương, Thái Bạch, Thủy Diệu…</div>
+          <div className="text-primary mt-2">Ví dụ (Nam sinh 1990, xem năm 2026): tuổi mụ = 2026 − 1990 + 1 = 37</div>
+          <div className="text-primary">(37 − 10) mod 9 = 0 → <strong>La Hầu</strong> (hạn Tam Kheo)</div>
         </div>
         <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-          Sau đó, sao di chuyển theo thứ tự nghịch (Nam đi lui) hoặc thuận (Nữ đi tới) qua bảng Lạc Thư mỗi năm để tìm ra sao hạn cho từng năm cụ thể.
+          Kèm theo sao là <strong className="text-primary">niên hạn</strong> (Huỳnh Tuyền, Tam Kheo, Ngũ Mộ, Thiên Tinh, Toán Tận, Thiên La, Địa Võng, Diêm Vương) tra theo tuổi và giới tính.
         </p>
       </KBSection>
 
       <KBSection title="Gợi ý hóa giải sao xấu">
         <div className="space-y-2">
           {[
-            { sao: "Ngũ Hoàng (5) — Nguy hiểm nhất", bien: "Treo chuông gió kim loại, đặt vật phẩm ngũ hành Kim, tránh động thổ hướng Ngũ Hoàng trong năm." },
-            { sao: "Nhị Hắc (2) — Bệnh tật", bien: "Dùng đồ vật màu trắng/bạc, treo gương bát quái, bổ sung khí Kim để hóa Thổ sinh bệnh." },
-            { sao: "Tam Bích (3) — Thị phi", bien: "Đặt vật phẩm màu đỏ (Hỏa khắc Mộc), hạn chế tranh luận, kiện tụng trong năm." },
-            { sao: "Thất Xích (7) — Rủi ro", bien: "Đặt bình nước hoặc vật phẩm Thủy, tránh đầu tư mạo hiểm và xung đột bạo lực." },
+            { sao: "La Hầu — Khẩu thiệt, thị phi (nặng với nam)", bien: "Giữ mồm miệng, cẩn thận giấy tờ và sức khỏe; kỵ tháng 1 và 7 âm lịch. Có thể cúng sao giải hạn đầu năm." },
+            { sao: "Kế Đô — Ám muội, tai tiếng (nặng với nữ)", bien: "Tránh thị phi, đề phòng tiểu nhân hãm hại; kỵ tháng 3 và 9 âm lịch." },
+            { sao: "Thái Bạch — Hao tài", bien: "Tránh đầu tư lớn, cho vay mượn; đề phòng mất cắp; kỵ tháng 5 âm lịch." },
+            { sao: "Vân Hớn — Máu huyết, kiện tụng", bien: "Tránh tranh chấp, cẩn thận tai nạn liên quan lửa và máu; nữ đề phòng sinh nở." },
           ].map((item, i) => (
             <div key={i} className="rounded-lg bg-background/20 border border-primary/10 p-3">
               <p className="text-xs font-semibold text-red-400 mb-1">{item.sao}</p>

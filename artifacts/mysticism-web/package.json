@@ -23,6 +23,7 @@
     "test:bat-tu": "tsx src/lib/bat-tu.test.ts",
     "test:tu-vi": "tsx src/lib/tu-vi.test.ts",
     "test:dai-van": "tsx src/lib/dai-van.test.ts",
+    "test:cuu-dieu": "tsx src/lib/cuu-dieu.test.ts",
     "test:result-actions": "tsx src/components/result-actions.test.ts",
     "test:unauth-exploration": "tsx src/hooks/use-sse-chat-unauth.exploration.test.ts && tsx --import ./src/hooks/__clerk-mock-register.ts src/hooks/use-ai-sse-chat-unauth.exploration.test.ts",
     "test:unauth-preservation": "tsx --import ./src/hooks/__clerk-mock-preservation-register.ts src/hooks/use-sse-chat-preservation.test.ts",
