@@ -226,3 +226,53 @@ export function formatLunar(lunar: LunarDate): string {
 
 export const THIEN_CAN_LIST = THIEN_CAN;
 export const DIA_CHI_LIST = DIA_CHI;
+
+// ─── Solar terms (Tiết Khí) — used by Bát Tự / Tứ Trụ ────────────────────────
+//
+// The Bazi month pillar is keyed to the *solar* term, not the lunar month: the
+// month branch advances at each of the 12 "tiết" (major solar terms spaced 30°
+// apart in solar longitude, starting at Lập Xuân ≈ 315°). getSunLongitudeDeg
+// returns the ecliptic longitude in degrees (0–360) for finer resolution than
+// the 30°-bucketed helper used by the lunar conversion.
+
+function getSunLongitudeDeg(jdn: number, timeZone: number): number {
+  const T = (jdn - 2451545.5 - timeZone / 24) / 36525;
+  const T2 = T * T;
+  const dr = Math.PI / 180;
+  const M = 357.5291 + 35999.0503 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
+  const L0 = 280.46646 + 36000.76983 * T + 0.0003032 * T2;
+  const DL =
+    (1.9146 - 0.004817 * T - 0.000014 * T2) * Math.sin(dr * M) +
+    (0.019993 - 0.000101 * T) * Math.sin(dr * 2 * M) +
+    0.00029 * Math.sin(dr * 3 * M);
+  let L = L0 + DL;
+  L = L - 360 * Math.floor(L / 360);
+  return L;
+}
+
+/**
+ * The Bazi month branch (Địa Chi of the month pillar) for a solar date.
+ *
+ * Returns the Earthly-Branch index where the month of "Dần" (Tiger, branch
+ * index 2) begins at Lập Xuân (sun longitude 315°). Each subsequent 30° of
+ * solar longitude advances the branch by one.
+ *
+ * Mapping (longitude → branch):
+ *   315°–345° Dần(2), 345°–15° Mão(3), 15°–45° Thìn(4), 45°–75° Tỵ(5),
+ *   75°–105° Ngọ(6), 105°–135° Mùi(7), 135°–165° Thân(8), 165°–195° Dậu(9),
+ *   195°–225° Tuất(10), 225°–255° Hợi(11), 255°–285° Tý(0), 285°–315° Sửu(1).
+ */
+export function getMonthBranchIndex(dd: number, mm: number, yy: number, timeZone = 7): number {
+  const jd = jdFromDate(dd, mm, yy);
+  const lon = getSunLongitudeDeg(jd, timeZone);
+  // Shift so that 315° (Lập Xuân) maps to 0, then bucket every 30°.
+  const shifted = (lon - 315 + 360) % 360;
+  const step = Math.floor(shifted / 30); // 0 at Dần
+  return (2 + step) % 12;
+}
+
+/** Julian day number for a solar date (exposed for day-pillar calculations). */
+export function getJulianDay(dd: number, mm: number, yy: number): number {
+  return jdFromDate(dd, mm, yy);
+}
+

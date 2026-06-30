@@ -223,7 +223,7 @@ export function BatuKnowledge() {
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-2">
-          Lưu ý: Phiên bản hiện tại sử dụng thuật toán tính Tứ Trụ đơn giản hóa. Tứ Trụ chính xác yêu cầu tra cứu lịch vạn niên và tiết khí mặt trời chuyên sâu.
+          Trụ ngày được tính từ số ngày Julian (chính xác theo can chi ngày); trụ tháng xác định theo <strong className="text-primary">tiết khí mặt trời</strong> với can tháng suy từ can năm (Ngũ Hổ Độn); trụ giờ suy từ can ngày (Ngũ Thử Độn); năm tính theo mốc <strong className="text-primary">Lập Xuân</strong>. Phân bố Ngũ Hành được thống kê thực tế từ 8 chữ (gồm cả tàng can trong địa chi).
         </p>
       </KBSection>
     </div>
