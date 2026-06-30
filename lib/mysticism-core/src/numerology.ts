@@ -22,6 +22,15 @@ function reduceToSingleDigitOrMaster(num: number): number {
   return reduceToSingleDigitOrMaster(sum);
 }
 
+/**
+ * Public alias for the numerology reduction rule (reduce to a single digit,
+ * preserving Master Numbers 11/22/33). Shared so other features — e.g. name
+ * analysis (Xem Tên) — use the exact same rule as the Thần Số Học page.
+ */
+export function reduceNumerology(num: number): number {
+  return reduceToSingleDigitOrMaster(num);
+}
+
 export function computeSoulNumber(name: string): number {
   const vowels = ['A', 'E', 'I', 'O', 'U'];
   return computeNameNumber(name, (char) => vowels.includes(char.toUpperCase()));

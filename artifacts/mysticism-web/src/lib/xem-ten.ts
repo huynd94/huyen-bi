@@ -1,10 +1,14 @@
 // Name analysis using Pythagorean numerology (adapted for Vietnamese names)
-// Each character/word contributes to different scores
+// Each character/word contributes to different scores.
+//
+// Note: this is a hybrid system — it overlays the Japanese/Chinese Tam Tài –
+// Ngũ Cách (five-grid) framework onto Pythagorean letter values. The number
+// reduction uses the shared rule from @workspace/mysticism-core so a name's
+// Soul/Personality/Destiny numbers match the Thần Số Học page exactly.
+import { reduceNumerology } from "@workspace/mysticism-core";
 
 function reduceToSingleOrMaster(n: number): number {
-  if (n === 11 || n === 22 || n === 33) return n;
-  if (n < 10) return n;
-  return reduceToSingleOrMaster(n.toString().split("").reduce((a, c) => a + parseInt(c), 0));
+  return reduceNumerology(n);
 }
 
 const CHAR_VALUES: Record<string, number> = {

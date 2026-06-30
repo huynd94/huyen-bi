@@ -12,6 +12,7 @@ export * from "./ming-gua";
 export * from "./iching";
 export * from "./bat-tu";
 export * from "./tu-vi";
+export * from "./dai-van";
 export * from "./sao-han";
 export * from "./lunar-calendar";
 export * from "./daily-fortune";
