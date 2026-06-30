@@ -9,6 +9,7 @@
 
 export * from "./numerology";
 export * from "./ming-gua";
+export * from "./iching";
 export * from "./sao-han";
 export * from "./lunar-calendar";
 export * from "./daily-fortune";

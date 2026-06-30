@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { type Hexagram } from "@/lib/iching";
+import { type Hexagram } from "@workspace/mysticism-core";
 
 interface Props {
   hexagram: Hexagram;
