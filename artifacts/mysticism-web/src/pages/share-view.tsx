@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { readingsApi, type SavedReading } from "@/lib/readings-api";
 import { storeReopenData } from "@/lib/reopen-reading";
@@ -190,6 +191,8 @@ export default function ShareViewPage() {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }

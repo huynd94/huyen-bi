@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { LichVanNienKnowledge } from "@/components/knowledge-base";
 import { buildMonthCalendar, formatLunar, getGioHoangDao, type DayInfo } from "@workspace/mysticism-core";
@@ -288,6 +289,8 @@ export default function LichVanNienPage() {
           <LichVanNienKnowledge />
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
