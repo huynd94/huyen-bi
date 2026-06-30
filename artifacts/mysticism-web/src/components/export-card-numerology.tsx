@@ -1,5 +1,5 @@
 import { forwardRef } from "react";
-import { getNumberMeaning } from "@/lib/numerology";
+import { getNumberMeaning } from "@workspace/mysticism-core";
 
 interface Props {
   name: string;

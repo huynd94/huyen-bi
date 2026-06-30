@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CalendarSearch } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { findGoodDays, PURPOSE_LIST, type Purpose, type GoodDay } from "@/lib/xem-ngay-tot";
-import { formatLunar } from "@/lib/lunar-calendar";
+import { formatLunar } from "@workspace/mysticism-core";
 
 const MONTH_NAMES = ["Tháng 1","Tháng 2","Tháng 3","Tháng 4","Tháng 5","Tháng 6","Tháng 7","Tháng 8","Tháng 9","Tháng 10","Tháng 11","Tháng 12"];
 const DAY_NAMES = ["CN","T2","T3","T4","T5","T6","T7"];

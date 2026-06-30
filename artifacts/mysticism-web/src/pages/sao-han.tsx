@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { getMultiYearForecast, type AnnualStarResult } from "@/lib/sao-han";
+import { getMultiYearForecast, type AnnualStarResult } from "@workspace/mysticism-core";
 import { dateInputToDisplay, validateDateDisplay } from "@/lib/form-utils";
 
 const LUCK_COLOR: Record<string, string> = {
