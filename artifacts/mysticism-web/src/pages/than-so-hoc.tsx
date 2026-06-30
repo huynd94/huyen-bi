@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { useAutoHistory } from "@/lib/use-auto-history";
 import { SaveReadingBtn } from "@/components/save-reading-btn";
@@ -421,6 +422,8 @@ export default function NumerologyPage() {
           <NumerologyKnowledge />
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 }
