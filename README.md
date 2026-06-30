@@ -2,7 +2,7 @@
 
 > Nền tảng huyền học toàn diện: 15 mô-đun tra cứu bao gồm Thần Số Học, Bát Tự Tứ Trụ, Kinh Dịch, Cát Hung, Tử Vi Đẩu Số, Phong Thuỷ, Hợp Tuổi, Xem Ngày Tốt, Sao Hạn và Trợ lý AI — giao diện tiếng Việt, chủ đề tối huyền bí, tài khoản người dùng, lưu & chia sẻ lá số.
 
-![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.2-c9a227?style=for-the-badge&labelColor=0d0818)
+![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.3-c9a227?style=for-the-badge&labelColor=0d0818)
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express)
@@ -72,6 +72,8 @@
 | **Key AI dùng chung** | Admin cấu hình key qua UI, giới hạn lượt gọi theo IP |
 | **PWA** | Cài đặt như app gốc trên di động (beforeinstallprompt) |
 | **SEO & AEO** | `robots.txt`, `sitemap.xml`, `llms.txt`, Open Graph + Twitter Card; Lighthouse SEO 100 |
+| **Trang landing SEO** | Trang tĩnh `/kb/<mô-đun>` được prerender (nội dung đầy đủ + JSON-LD Article/FAQ/Breadcrumb) cho crawler không chạy JS |
+| **Nhắc nhở Web Push** | Thông báo "vận hôm nay" (Can Chi, Thần Số) + cảnh báo sao hạn từ lá số đã lưu; cấu hình tại Hồ Sơ |
 | **Accessibility** | WCAG AA contrast, viewport cho phép zoom, `role="img"`/`aria-label` cho glyph; Lighthouse A11y 100 |
 | **Responsive** | Mobile, tablet, desktop |
 | **Navbar dropdown** | 5 nhóm: Số Học, Mệnh Lý, Tiên Tri, Tra Cứu, Trợ lý AI |
@@ -124,12 +126,13 @@ monorepo (pnpm workspaces, pnpm@10 pinned via packageManager)
 │   ├── api-spec/          # OpenAPI 3.1 source
 │   ├── api-zod/           # Generated zod schemas (validation)
 │   ├── api-client-react/  # Generated react-query hooks
+│   ├── mysticism-core/    # Lib tính toán thuần (web + worker + SSG dùng chung)
 │   └── db/                # Drizzle schema + pg pool
 ├── docker/
-│   └── nginx.conf         # Nginx: static files + proxy /api/*
-├── Dockerfile.api         # Backend: esbuild bundle, Node 22
+│   └── nginx.conf         # Nginx: static files + /kb landing + proxy /api/*
+├── Dockerfile.api         # Backend: esbuild bundle (api + worker), Node 22
 ├── Dockerfile.web         # Frontend: Vite build → Nginx
-├── docker-compose.yml     # Postgres + API + Web (3 service)
+├── docker-compose.yml     # Postgres + API + Worker + Web (4 service)
 ├── .env.example           # Mẫu biến môi trường
 └── DEPLOY.md              # Hướng dẫn deploy chi tiết
 ```
@@ -902,6 +905,22 @@ artifacts/mysticism-web/public/
 ## Nhật ký phát triển
 
 Lịch sử các đợt nâng cấp và hardening quan trọng, sắp xếp theo thời gian gần nhất.
+
+### v4.3.0 — Nhắc nhở Web Push & Trang landing SEO (2026-06-30)
+
+**Scope:** Hai hướng tính năng lớn — giữ chân người dùng (Web Push) và tăng traffic (SEO landing tĩnh) — trên nền package tính toán dùng chung mới.
+
+| Nhóm | Tóm tắt |
+|------|---------|
+| `@workspace/mysticism-core` | Tách lib tính toán thuần (Thần Số, Sao Hạn, Lịch Âm, Vận hôm nay) ra package dùng chung cho web + worker + build script |
+| Web Push | Schema `push_subscriptions` / `reminder_prefs` / `notification_jobs`; endpoint `/api/push/*` (Clerk-gated); service worker `sw.js`; UI bật/tắt nhắc nhở tại Hồ Sơ |
+| Worker | Container `huyen-bi-worker` riêng: scheduler theo timezone + giờ, hàng đợi job trên Postgres (`FOR UPDATE SKIP LOCKED`), retry/backoff, prune subscription chết, gửi "vận hôm nay" + sao hạn |
+| SEO landing | Trang tĩnh prerender `/kb/<mô-đun>` (nội dung đầy đủ, không collapse) + JSON-LD Article/FAQPage/BreadcrumbList; nginx phục vụ trực tiếp, không rơi vào SPA shell |
+| Sitemap | `sitemap.xml` sinh tự động khi build (15 route SPA + 4 trang /kb), single source of truth |
+
+**Kiến trúc:** Worker là tiến trình tách biệt (cùng image API, đổi command), hàng đợi durable trên Postgres — không cần broker ngoài. Web Push degrade an toàn khi thiếu khóa VAPID.
+
+---
 
 ### v4.2.0 — Audit Remediation: SEO, A11y, Lint & Dependency Hygiene (2026-06-30)
 
