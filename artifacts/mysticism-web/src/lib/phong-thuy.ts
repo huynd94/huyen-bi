@@ -1,4 +1,6 @@
-export type Gua = 1 | 2 | 3 | 4 | 6 | 7 | 8 | 9;
+import { computeMingGua, type GuaNumber } from "@workspace/mysticism-core";
+
+export type Gua = GuaNumber;
 
 export type GuaGroup = "east" | "west";
 
@@ -20,28 +22,11 @@ export interface GuaInfo {
   directions: DirectionInfo[];
 }
 
-function reduceYear(year: number): number {
-  let n = year;
-  while (n > 9) {
-    n = n.toString().split("").reduce((a, b) => a + parseInt(b), 0);
-  }
-  return n;
-}
-
-export function computeMingGua(year: number, gender: "nam" | "nu"): Gua {
-  const r = reduceYear(year);
-  let gua: number;
-  if (gender === "nam") {
-    gua = 10 - r;
-    if (gua === 10 || gua === 0) gua = 1;
-    if (gua === 5) gua = 2;
-  } else {
-    gua = r + 5;
-    while (gua > 9) gua -= 9;
-    if (gua === 5) gua = 8;
-  }
-  return gua as Gua;
-}
+// Re-export the canonical Kua calculation from mysticism-core. The Phong Thủy
+// page only collects a birth *year* (no full date), so the Tết boundary cannot
+// be resolved here — callers that have a full DOB should use
+// computeMingGuaFromDob from @workspace/mysticism-core instead.
+export { computeMingGua };
 
 const DIRECTION_NAMES: Record<string, { vi: string; short: string }> = {
   N: { vi: "Bắc", short: "B" },

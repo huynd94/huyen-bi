@@ -1,3 +1,5 @@
+import { computeMingGuaFromDob, getGuaMeta, isSameGroup, type GuaNumber } from "@workspace/mysticism-core";
+
 const THIEN_CAN = ["Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý"];
 const DIA_CHI = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
 const ZODIAC_VN = ["Chuột", "Trâu", "Hổ", "Mèo", "Rồng", "Rắn", "Ngựa", "Dê", "Khỉ", "Gà", "Chó", "Lợn"];
@@ -5,34 +7,7 @@ const ZODIAC_VN = ["Chuột", "Trâu", "Hổ", "Mèo", "Rồng", "Rắn", "Ngự
 export interface GenderPerson { dob: string; gender: "nam" | "nu"; }
 
 // ─── Ming Gua (Mệnh Quái) ────────────────────────────────────────────────────
-export function computeMingGua(year: number, gender: "nam" | "nu"): number {
-  const lastTwo = year % 100;
-  const digitSum = Math.floor(lastTwo / 10) + (lastTwo % 10);
-  const reduced = digitSum >= 10 ? Math.floor(digitSum / 10) + (digitSum % 10) : digitSum;
-  if (gender === "nam") {
-    const g = 10 - reduced;
-    return g === 0 ? 9 : g === 5 ? 2 : g;
-  } else {
-    const g = 5 + reduced;
-    const r = g > 9 ? g - 9 : g;
-    return r === 5 ? 8 : r;
-  }
-}
-
-// East group: 1(Khảm),3(Chấn),4(Tốn),9(Ly) / West group: 2(Khôn),6(Càn),7(Đoài),8(Cấn)
-const EAST_GROUP = [1, 3, 4, 9];
-const WEST_GROUP = [2, 6, 7, 8];
-
-const GUA_INFO: Record<number, { name: string; element: string; direction: string }> = {
-  1: { name: "Khảm", element: "Thuỷ", direction: "Bắc" },
-  2: { name: "Khôn", element: "Thổ", direction: "Tây Nam" },
-  3: { name: "Chấn", element: "Mộc", direction: "Đông" },
-  4: { name: "Tốn", element: "Mộc", direction: "Đông Nam" },
-  6: { name: "Càn", element: "Kim", direction: "Tây Bắc" },
-  7: { name: "Đoài", element: "Kim", direction: "Tây" },
-  8: { name: "Cấn", element: "Thổ", direction: "Đông Bắc" },
-  9: { name: "Ly", element: "Hoả", direction: "Nam" },
-};
+// Calculation lives in @workspace/mysticism-core (century-aware + Tết-aware).
 
 // ─── Can Chi year ─────────────────────────────────────────────────────────────
 function getCanChiYear(year: number): { can: string; chi: string; chiIndex: number } {
@@ -88,9 +63,8 @@ function getNguHanhCanRel(yearA: number, yearB: number): { type: string; score: 
 }
 
 // ─── Ming Gua house group compatibility ──────────────────────────────────────
-function getMingGuaCompat(guaA: number, guaB: number): { type: string; score: number; desc: string } {
-  const sameGroup = (EAST_GROUP.includes(guaA) && EAST_GROUP.includes(guaB)) || (WEST_GROUP.includes(guaA) && WEST_GROUP.includes(guaB));
-  if (sameGroup) return { type: "Đồng Cung", score: 88, desc: "Cùng nhóm Đông/Tây — phong thủy và hướng tốt trùng nhau, sống chung rất thuận." };
+function getMingGuaCompat(guaA: GuaNumber, guaB: GuaNumber): { type: string; score: number; desc: string } {
+  if (isSameGroup(guaA, guaB)) return { type: "Đồng Cung", score: 88, desc: "Cùng nhóm Đông/Tây — phong thủy và hướng tốt trùng nhau, sống chung rất thuận." };
   return { type: "Dị Cung", score: 50, desc: "Khác nhóm Đông/Tây — hướng tốt ngược nhau, cần cân bằng khi bố trí không gian sống." };
 }
 
@@ -101,7 +75,13 @@ function reduceNum(n: number): number {
   return reduceNum(n.toString().split("").map(Number).reduce((a, b) => a + b, 0));
 }
 function computeLifePath(dob: string): number {
-  return reduceNum(dob.replace(/\D/g, "").split("").map(Number).reduce((a, b) => a + b, 0));
+  // Standard Pythagorean method: reduce day, month, and year separately, then
+  // combine. Matches @workspace/mysticism-core.computeLifePathNumber so the
+  // "số đường đời" shown here is consistent with the Thần Số Học page and
+  // preserves Master Numbers correctly (a flat digit sum does not).
+  const [d, m, y] = dob.split("/").map(Number);
+  if ([d, m, y].some((n) => Number.isNaN(n))) return 0;
+  return reduceNum(reduceNum(d) + reduceNum(m) + reduceNum(y));
 }
 // Harmonious number pairs
 const COMPAT_NUMS: [number, number, number][] = [
@@ -138,7 +118,8 @@ export function analyzeCompatibility(dob1: string, gender1: "nam" | "nu", dob2: 
   const [d1, m1, y1] = dob1.split("/").map(Number);
   const [d2, m2, y2] = dob2.split("/").map(Number);
   const cc1 = getCanChiYear(y1); const cc2 = getCanChiYear(y2);
-  const gua1 = computeMingGua(y1, gender1); const gua2 = computeMingGua(y2, gender2);
+  const gua1 = computeMingGuaFromDob(dob1, gender1).gua;
+  const gua2 = computeMingGuaFromDob(dob2, gender2).gua;
   const lp1 = computeLifePath(dob1); const lp2 = computeLifePath(dob2);
   const zodiacRel = getZodiacRelation(cc1.chiIndex, cc2.chiIndex);
   const nguHanhRel = getNguHanhCanRel(y1, y2);
@@ -155,8 +136,8 @@ export function analyzeCompatibility(dob1: string, gender1: "nam" | "nu", dob2: 
     ? `${cc1.chi} và ${cc2.chi} ở mức trung bình. Cần hiểu nhau sâu hơn, tôn trọng và linh hoạt thích nghi.`
     : `${cc1.chi} và ${cc2.chi} có nhiều xung khắc. Cần nhiều nỗ lực để xây dựng mối quan hệ bền vững.`;
   return {
-    person1: { year: y1, can: cc1.can, chi: cc1.chi, zodiac: ZODIAC_VN[cc1.chiIndex], mingGua: gua1, guaName: GUA_INFO[gua1]?.name ?? "?", lifePathNum: lp1 },
-    person2: { year: y2, can: cc2.can, chi: cc2.chi, zodiac: ZODIAC_VN[cc2.chiIndex], mingGua: gua2, guaName: GUA_INFO[gua2]?.name ?? "?", lifePathNum: lp2 },
+    person1: { year: y1, can: cc1.can, chi: cc1.chi, zodiac: ZODIAC_VN[cc1.chiIndex], mingGua: gua1, guaName: getGuaMeta(gua1).name, lifePathNum: lp1 },
+    person2: { year: y2, can: cc2.can, chi: cc2.chi, zodiac: ZODIAC_VN[cc2.chiIndex], mingGua: gua2, guaName: getGuaMeta(gua2).name, lifePathNum: lp2 },
     zodiacRel, nguHanhRel, guaRel, numScore, totalScore, verdict, verdictColor, summary,
   };
 }
