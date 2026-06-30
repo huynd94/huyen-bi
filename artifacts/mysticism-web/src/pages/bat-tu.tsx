@@ -201,7 +201,7 @@ export default function BatuPage() {
             <p className="text-muted-foreground text-lg">Lập lá số Tử Bình, phân tích sự cân bằng Ngũ Hành.</p>
           </div>
 
-          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Thông tin bản mệnh</CardTitle>
               <CardDescription>Nhập ngày sinh (dương lịch) và giờ sinh để lập lá số.</CardDescription>
@@ -422,7 +422,7 @@ export default function BatuPage() {
 
               {/* Đại Vận section */}
               {daiVan && (
-                <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+                <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
                   <CardHeader>
                     <CardTitle className="text-2xl text-primary">Đại Vận (8 vận 10 năm)</CardTitle>
                     <CardDescription>{daiVan.note}</CardDescription>
@@ -454,7 +454,7 @@ export default function BatuPage() {
                 </Card>
               )}
 
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5 mt-8">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5 mt-8">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary flex items-center justify-between flex-wrap gap-3">
                     <span>Hỏi AI về lá số của bạn</span>
@@ -465,7 +465,7 @@ export default function BatuPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {messages.filter((m) => m.role === "assistant").map((msg, i) => (
-                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
                       {msg.content ? <MarkdownRenderer content={msg.content} /> : (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           {[0, 150, 300].map((d) => <span key={d} className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${d}ms` }} />)}

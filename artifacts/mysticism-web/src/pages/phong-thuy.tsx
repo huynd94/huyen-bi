@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Bed, Briefcase, Flame, DoorOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getGuaInfo, COMPASS_POSITIONS, type GuaInfo, type DirectionInfo } from "@/lib/phong-thuy";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
@@ -146,7 +146,7 @@ export default function PhongThuyPage() {
             <p className="text-muted-foreground text-lg">Xác định hướng tốt xấu theo Bát Trạch Phong Thuỷ dựa trên năm sinh.</p>
           </div>
 
-          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Tính Mệnh Quái</CardTitle>
               <CardDescription>Nhập năm sinh và giới tính để tìm Mệnh Quái và các hướng tốt xấu.</CardDescription>
@@ -178,12 +178,12 @@ export default function PhongThuyPage() {
                       Giới tính
                     </Label>
                     <div className="flex gap-3">
-                      {[{ v: "nam", l: "♂ Nam" }, { v: "nu", l: "♀ Nữ" }].map(g => (
+                      {[{ v: "nam", icon: "♂", l: "Nam" }, { v: "nu", icon: "♀", l: "Nữ" }].map(g => (
                         <button key={g.v} type="button" onClick={() => setGender(g.v as "nam" | "nu")}
                           className={cn("flex-1 py-2.5 rounded-lg border text-sm font-medium transition-all duration-200",
                             gender === g.v ? "border-primary bg-primary/20 text-primary" : "border-border/50 text-muted-foreground hover:border-primary/30"
                           )}>
-                          {g.l}
+                          <span role="img" aria-label={g.l}>{g.icon}</span> {g.l}
                         </button>
                       ))}
                     </div>
@@ -208,7 +208,7 @@ export default function PhongThuyPage() {
                 />
               </div>
               {/* Quái info */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-xl overflow-hidden">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-md overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
                 <CardHeader className="text-center">
                   <p className="text-xs tracking-widest uppercase text-primary/50">Mệnh Quái của bạn</p>
@@ -259,7 +259,7 @@ export default function PhongThuyPage() {
               </div>
 
               {/* AI */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary flex items-center justify-between flex-wrap gap-3">
                     <span>Tư vấn bố trí nhà cửa từ AI</span>
@@ -270,7 +270,7 @@ export default function PhongThuyPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {messages.filter(m => m.role === "assistant").map((msg, i) => (
-                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
                       {msg.content ? <MarkdownRenderer content={msg.content} /> : (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           {[0, 150, 300].map(d => <span key={d} className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${d}ms` }}/>)}
@@ -293,13 +293,13 @@ export default function PhongThuyPage() {
                 <CardHeader><CardTitle className="text-xl text-primary">Gợi ý áp dụng</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
                   {[
-                    { icon: "🛏", title: "Phòng ngủ", desc: `Đặt đầu giường hướng về ${result.directions[0]?.direction} (${result.directions[0]?.name}) để tăng cường sinh khí và sức khoẻ.` },
-                    { icon: "💼", title: "Bàn làm việc", desc: `Ngồi làm việc hướng về ${result.directions[1]?.direction} (${result.directions[1]?.name}) để thu hút may mắn sự nghiệp.` },
-                    { icon: "🔥", title: "Bếp nấu", desc: `Tránh bố trí bếp ở hướng ${result.directions.filter(d => d.quality === "inauspicious")[0]?.direction} để không phạm vào ${result.directions.filter(d => d.quality === "inauspicious")[0]?.name}.` },
-                    { icon: "🚪", title: "Cửa chính", desc: `Cửa vào nhà hướng ${result.directions[0]?.direction} hoặc ${result.directions[1]?.direction} là tốt nhất cho người thuộc ${result.group === "east" ? "Đông Tứ Mệnh" : "Tây Tứ Mệnh"}.` },
+                    { Icon: Bed, title: "Phòng ngủ", desc: `Đặt đầu giường hướng về ${result.directions[0]?.direction} (${result.directions[0]?.name}) để tăng cường sinh khí và sức khoẻ.` },
+                    { Icon: Briefcase, title: "Bàn làm việc", desc: `Ngồi làm việc hướng về ${result.directions[1]?.direction} (${result.directions[1]?.name}) để thu hút may mắn sự nghiệp.` },
+                    { Icon: Flame, title: "Bếp nấu", desc: `Tránh bố trí bếp ở hướng ${result.directions.filter(d => d.quality === "inauspicious")[0]?.direction} để không phạm vào ${result.directions.filter(d => d.quality === "inauspicious")[0]?.name}.` },
+                    { Icon: DoorOpen, title: "Cửa chính", desc: `Cửa vào nhà hướng ${result.directions[0]?.direction} hoặc ${result.directions[1]?.direction} là tốt nhất cho người thuộc ${result.group === "east" ? "Đông Tứ Mệnh" : "Tây Tứ Mệnh"}.` },
                   ].map((tip, i) => (
                     <div key={i} className="flex gap-3 p-3 rounded-lg bg-background/30 border border-border/30">
-                      <span className="text-2xl">{tip.icon}</span>
+                      <span className="text-2xl text-primary shrink-0" aria-hidden="true"><tip.Icon className="w-6 h-6" /></span>
                       <div><p className="text-sm font-semibold text-foreground/80">{tip.title}</p><p className="text-xs text-muted-foreground mt-0.5">{tip.desc}</p></div>
                     </div>
                   ))}

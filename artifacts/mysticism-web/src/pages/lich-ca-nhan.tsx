@@ -125,7 +125,7 @@ export default function LichCaNhanPage() {
             <p className="text-muted-foreground text-lg">Xem ngày tốt xấu theo thần số học cá nhân hóa theo ngày sinh của bạn.</p>
           </div>
 
-          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Nhập ngày sinh</CardTitle>
               <CardDescription>Hệ thống tính toán Số Cá Nhân Ngày (Personal Day) riêng cho bạn.</CardDescription>
@@ -183,7 +183,7 @@ export default function LichCaNhanPage() {
               </div>
 
               {/* Calendar */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <Button variant="ghost" size="sm" onClick={prevMonth} className="text-muted-foreground hover:text-primary">

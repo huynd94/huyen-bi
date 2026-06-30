@@ -327,7 +327,7 @@ export default function TuViPage() {
                         : "border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground"
                     )}
                   >
-                    <span className="text-base">{g.icon}</span>{g.label}
+                    <span className="text-base" role="img" aria-label={g.label}>{g.icon}</span>{g.label}
                   </button>
                 ))}
               </div>

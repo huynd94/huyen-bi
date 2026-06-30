@@ -43,7 +43,7 @@ function StarCard({ data, current }: { data: AnnualStarResult; current: boolean 
       {/* Main star */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-background/30">
         <div className="w-10 h-10 rounded-full border border-border/30 flex items-center justify-center bg-background/40">
-          <span className={cn("text-lg font-bold", typeColor)}>★</span>
+          <span className={cn("text-lg font-bold", typeColor)} role="img" aria-label="Sao">★</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">

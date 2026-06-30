@@ -145,7 +145,7 @@ export default function NumerologyPage() {
             <p className="text-muted-foreground text-lg">Khám phá ý nghĩa ẩn giấu đằng sau tên gọi và ngày sinh của bạn.</p>
           </div>
 
-          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Nhập thông tin</CardTitle>
               <CardDescription>Họ tên đầy đủ và ngày sinh dương lịch để tính các con số huyền học.</CardDescription>
@@ -242,7 +242,7 @@ export default function NumerologyPage() {
               </div>
 
               {/* Radar Chart + Summary */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-xl overflow-hidden">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-md overflow-hidden">
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row items-center gap-8">
                     <div className="flex-1 space-y-3">
@@ -359,7 +359,7 @@ export default function NumerologyPage() {
                   22: "Đại kiến trúc sư, thực hiện giấc mơ lớn",
                 };
                 return (
-                  <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl overflow-hidden">
+                  <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md overflow-hidden">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-xl text-primary">Nhịp Cá Nhân Theo Năm</CardTitle>
                       <CardDescription>Chu kỳ năng lượng 9 năm — mỗi năm mang một sứ mệnh riêng.</CardDescription>
@@ -384,7 +384,7 @@ export default function NumerologyPage() {
                 );
               })()}
 
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5 mt-8">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5 mt-8">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary flex items-center justify-between flex-wrap gap-3">
                     <span>Hỏi AI về kết quả của bạn</span>
@@ -395,7 +395,7 @@ export default function NumerologyPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {messages.filter((m) => m.role === "assistant").map((msg, i) => (
-                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
                       {msg.content ? (
                         <MarkdownRenderer content={msg.content} />
                       ) : (
