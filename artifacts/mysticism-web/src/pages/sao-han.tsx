@@ -10,24 +10,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { getMultiYearForecast, type AnnualStarResult } from "@workspace/mysticism-core";
+import { getSaoHanForecast, type SaoHanResult } from "@workspace/mysticism-core";
 import { dateInputToDisplay, validateDateDisplay } from "@/lib/form-utils";
 
-const LUCK_COLOR: Record<string, string> = {
-  "Đại Lợi": "text-yellow-400 border-yellow-400/40 bg-yellow-400/10",
+const OVERALL_COLOR: Record<string, string> = {
   "Tốt": "text-green-400 border-green-400/40 bg-green-400/10",
-  "Trung Bình": "text-amber-400 border-amber-400/40 bg-amber-400/10",
-  "Cẩn Thận": "text-orange-400 border-orange-400/40 bg-orange-400/10",
-  "Hóa Giải": "text-red-400 border-red-400/40 bg-red-400/10",
+  "Bình": "text-amber-400 border-amber-400/40 bg-amber-400/10",
+  "Xấu": "text-red-400 border-red-400/40 bg-red-400/10",
 };
 
-const STAR_TYPE_COLOR: Record<string, string> = {
-  cat: "text-yellow-300", hung: "text-red-400", trung: "text-amber-300",
+const NATURE_COLOR: Record<string, string> = {
+  tot: "text-green-300", xau: "text-red-400", trung: "text-amber-300",
 };
 
-function StarCard({ data, current }: { data: AnnualStarResult; current: boolean }) {
-  const luckCls = LUCK_COLOR[data.overallLuck] ?? "text-muted-foreground border-border/30";
-  const typeColor = STAR_TYPE_COLOR[data.mainStar.type];
+function StarCard({ data, current }: { data: SaoHanResult; current: boolean }) {
+  const overallCls = OVERALL_COLOR[data.overall] ?? "text-muted-foreground border-border/30";
+  const natureColor = NATURE_COLOR[data.sao.nature];
   return (
     <div className={cn("rounded-xl border p-4 space-y-3 transition-all", current ? "border-primary/60 bg-primary/8 shadow-[0_0_20px_hsl(var(--primary)/0.1)]" : "border-border/25 bg-card/20")}>
       <div className="flex items-start justify-between gap-2">
@@ -36,71 +34,53 @@ function StarCard({ data, current }: { data: AnnualStarResult; current: boolean 
             <span className="text-lg font-bold text-foreground">{data.year}</span>
             {current && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/40 font-semibold">NĂM NAY</span>}
           </div>
-          <div className="text-xs text-muted-foreground mt-0.5">Năm {data.canChi} • Bản mệnh {data.birthCanChi}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Tuổi mụ {data.age} • Hạn: {data.han}</div>
         </div>
-        <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border", luckCls)}>{data.overallLuck}</span>
+        <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border", overallCls)}>{data.overall}</span>
       </div>
 
       {/* Main star */}
       <div className="flex items-center gap-3 p-3 rounded-lg bg-background/30">
         <div className="w-10 h-10 rounded-full border border-border/30 flex items-center justify-center bg-background/40">
-          <span className={cn("text-lg font-bold", typeColor)} role="img" aria-label="Sao">★</span>
+          <span className={cn("text-lg font-bold", natureColor)} role="img" aria-label="Sao">★</span>
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className={cn("font-bold text-sm", typeColor)}>{data.mainStar.name}</span>
-            <span className="text-xs text-muted-foreground">{data.mainStar.viet}</span>
+            <span className={cn("font-bold text-sm", natureColor)}>{data.sao.name}</span>
             <span className={cn("text-[10px] px-1.5 py-0.5 rounded font-medium",
-              data.mainStar.type === "cat" ? "bg-yellow-500/15 text-yellow-300" : data.mainStar.type === "hung" ? "bg-red-500/15 text-red-300" : "bg-amber-500/15 text-amber-300")}>
-              {data.mainStar.strength}
+              data.sao.nature === "tot" ? "bg-green-500/15 text-green-300" : data.sao.nature === "xau" ? "bg-red-500/15 text-red-300" : "bg-amber-500/15 text-amber-300")}>
+              {data.sao.nature === "tot" ? "Cát" : data.sao.nature === "xau" ? "Hung" : "Bình"}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{data.mainStar.desc}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{data.sao.meaning}</p>
         </div>
-      </div>
-
-      {/* Secondary stars */}
-      {data.secondaryStars.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {data.secondaryStars.map((s, i) => (
-            <span key={i} className={cn("text-[10px] px-2 py-0.5 rounded-full border font-medium",
-              s.type === "cat" ? "border-green-500/30 text-green-300 bg-green-500/8" : "border-amber-500/30 text-amber-300 bg-amber-500/8")}>
-              {s.name}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Areas */}
-      <div className="flex flex-wrap gap-1">
-        {data.mainStar.areas.map((a, i) => (
-          <span key={i} className="text-[10px] px-2 py-0.5 rounded bg-background/40 text-muted-foreground">{a}</span>
-        ))}
       </div>
 
       {/* Advice */}
-      <p className="text-xs text-primary/70 italic leading-relaxed border-l-2 border-primary/30 pl-3">{data.mainStar.advice}</p>
+      <p className="text-xs text-primary/70 italic leading-relaxed border-l-2 border-primary/30 pl-3">{data.sao.advice}</p>
     </div>
   );
 }
 
 export default function SaoHanPage() {
   const [dob, setDob] = useState(""); const [dobInput, setDobInput] = useState("");
+  const [gender, setGender] = useState<"nam" | "nu">("nam");
   const [error, setError] = useState("");
-  const [results, setResults] = useState<AnnualStarResult[] | null>(null);
+  const [results, setResults] = useState<SaoHanResult[] | null>(null);
   const currentYear = new Date().getFullYear();
 
   useAutoHistory(results ? {
     module: "sao-han",
     moduleName: "Sao Hạn Hàng Năm",
     title: `Sao Hạn — sinh ngày ${dob}`,
-    summary: `Năm ${currentYear}: ${results.find(r => r.year === currentYear)?.mainStar.name || ""} (${results.find(r => r.year === currentYear)?.overallLuck || ""})`,
-    result: results.map(r => `Năm ${r.year} (${r.canChi}): ${r.mainStar.name} — ${r.overallLuck}. ${r.mainStar.advice}`).join("\n"),
+    summary: `Năm ${currentYear}: ${results.find(r => r.year === currentYear)?.sao.name || ""} (${results.find(r => r.year === currentYear)?.overall || ""})`,
+    result: results.map(r => `Năm ${r.year} (tuổi ${r.age}): ${r.sao.name} — ${r.overall}, hạn ${r.han}. ${r.sao.advice}`).join("\n"),
   } : null);
 
   useEffect(() => {
     const d = popReopenData("sao-han");
     if (d?.dob) { setDob(String(d.dob)); setDobInput(displayToInputDate(String(d.dob))); }
+    if (d?.gioiTinh) setGender(d.gioiTinh as "nam" | "nu");
   }, []);
 
   const handleCalculate = () => {
@@ -108,7 +88,7 @@ export default function SaoHanPage() {
     setError(err ?? "");
     if (err) return;
     const birthYear = parseInt(dob.split("/")[2], 10);
-    setResults(getMultiYearForecast(birthYear, currentYear - 1, 7));
+    setResults(getSaoHanForecast(birthYear, gender, currentYear - 1, 7));
   };
 
   const handleDate = (v: string) => { setDobInput(v); setDob(dateInputToDisplay(v)); };
@@ -123,7 +103,7 @@ export default function SaoHanPage() {
           <div className="text-center space-y-3">
             <p className="text-xs tracking-[0.3em] uppercase text-primary/60">Hạn Vận</p>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-md">Sao Hạn Hàng Năm</h1>
-            <p className="text-muted-foreground text-lg">Tra cứu sao chiếu mệnh và vận hạn qua các năm theo tuổi Can Chi.</p>
+            <p className="text-muted-foreground text-lg">Tra cứu sao Cửu Diệu chiếu mệnh và niên hạn theo tuổi mụ và giới tính.</p>
           </div>
 
           <Card className="bg-card/40 backdrop-blur-sm border-primary/20">
@@ -143,6 +123,18 @@ export default function SaoHanPage() {
                 </div>
                 {error && <p className="text-xs text-red-400">{error}</p>}
               </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-foreground/80">Giới tính</Label>
+                <div className="flex gap-2">
+                  {([["nam", "Nam"], ["nu", "Nữ"]] as const).map(([v, label]) => (
+                    <button key={v} type="button" onClick={() => setGender(v)}
+                      className={cn("flex-1 h-10 rounded-md border text-sm font-medium transition-all",
+                        gender === v ? "border-primary bg-primary/20 text-primary" : "border-border/50 text-muted-foreground hover:border-primary/30")}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <Button onClick={handleCalculate} disabled={!dobInput}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold tracking-wider disabled:opacity-40">
                 XEM SAO HẠN
@@ -161,8 +153,8 @@ export default function SaoHanPage() {
                 <SaveReadingBtn
                   module="sao-han"
                   title={`Sao Hạn — sinh ngày ${dob}`}
-                  inputData={{ dob }}
-                  resultData={{ years: results.map(r => ({ year: r.year, star: r.mainStar.name, luck: r.overallLuck })) }}
+                  inputData={{ dob, gioiTinh: gender }}
+                  resultData={{ years: results.map(r => ({ year: r.year, star: r.sao.name, luck: r.overall, han: r.han })) }}
                   variant="icon"
                 />
               </div>
