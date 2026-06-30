@@ -46,17 +46,17 @@
 |--------|-----------|-------|
 | **Thần Số Học** | `/than-so-hoc` | Số Đường đời, Linh hồn, Sứ mệnh, Nhân cách, Trưởng thành; biểu đồ radar ngũ giác SVG; dự báo 4 năm cá nhân |
 | **Bát Tự Tứ Trụ** | `/bat-tu` | 4 trụ Năm–Tháng–Ngày–Giờ, biểu đồ Ngũ Hành donut SVG, Đại Vận 8 trụ, so sánh ngũ hành 2 người |
-| **Xem Quẻ I Ching** | `/xem-que` | 64 quẻ Kinh Dịch, gieo quẻ ngẫu nhiên, hiển thị hào âm/dương SVG, lịch sử 10 lần gieo |
+| **Xem Quẻ I Ching** | `/xem-que` | Đủ 64 quẻ Kinh Dịch (tên Hán-Việt, thượng/hạ quái), gieo 3 đồng xu có hào động + quẻ biến, hiển thị hào âm/dương SVG, lịch sử 10 lần gieo |
 | **Cát Hung** | `/cat-hung` | Phân tích số điện thoại & biển số xe, so sánh 2 số cạnh nhau, gợi ý số điện thoại tốt hơn tương tự |
 | **Lịch Vạn Niên** | `/lich-van-nien` | Âm lịch, Can Chi, Hoàng Đạo/Hắc Đạo (1900–2100) |
-| **Tử Vi Đẩu Số** | `/tu-vi` | 12 cung Tử Vi, 14 chính tinh, Mệnh Cục |
+| **Tử Vi Đẩu Số** | `/tu-vi` | 12 cung Tử Vi, an 14 chính tinh theo chuẩn (vòng Tử Vi / Thiên Phủ), Mệnh Cục |
 | **Phong Thuỷ Bát Trạch** | `/phong-thuy` | Mệnh Quái cá nhân, la bàn SVG 4 hướng tốt / 4 hướng xấu, luận giải AI |
 | **Xem Tên** | `/xem-ten` | Ngũ Cách phân tích tên (Thiên/Nhân/Địa/Ngoại/Tổng Cách), Ngũ Hành tên, radar SVG |
 | **Lịch Cá Nhân** | `/lich-ca-nhan` | Năm–Tháng–Ngày Cá Nhân theo Thần Số, lịch tháng màu sắc năng lượng |
 | **Từ Điển Huyền Học** | `/tu-dien` | 5 tab tra cứu: Thiên Can, Địa Chi, Ngũ Hành, Bát Quái, Thần Số |
 | **Hợp Tuổi & Duyên Số** | `/hop-tuoi` | Tương hợp qua Mệnh Quái, Can Chi, Ngũ Hành, Thần Số; điểm 0–100, biểu đồ chi tiết |
 | **Xem Ngày Tốt** | `/xem-ngay-tot` | Tìm ngày Hoàng Đạo theo 9 mục đích (cưới, khai trương, động thổ...); lịch tháng tương tác |
-| **Sao Hạn Hàng Năm** | `/sao-han` | Sao chiếu mệnh 7 năm (Thái Tuế, Thái Dương, La Hầu, Phúc Tinh...); card vận hạn |
+| **Sao Hạn Hàng Năm** | `/sao-han` | Sao Cửu Diệu chiếu mệnh 7 năm theo tuổi mụ + giới tính (La Hầu, Kế Đô, Thái Bạch, Thái Dương, Thái Âm, Mộc Đức...) kèm niên hạn; card vận hạn |
 | **Lịch Sử Tra Cứu** | `/lich-su` | Xem lại, tìm kiếm, lọc và xóa lịch sử tra cứu lưu cục bộ; bảng thống kê |
 | **Trợ lý AI** | `/ai-chat` | Chat huyền học với AI, 14 câu gợi ý theo chủ đề, lưu lịch sử hội thoại |
 
@@ -126,7 +126,9 @@ monorepo (pnpm workspaces, pnpm@10 pinned via packageManager)
 │   ├── api-spec/          # OpenAPI 3.1 source
 │   ├── api-zod/           # Generated zod schemas (validation)
 │   ├── api-client-react/  # Generated react-query hooks
-│   ├── mysticism-core/    # Lib tính toán thuần (web + worker + SSG dùng chung)
+│   ├── mysticism-core/    # Lib tính toán thuần (web + worker + SSG dùng chung):
+│   │                      #   numerology · ming-gua · iching (64 quẻ) · bat-tu
+│   │                      #   tu-vi · dai-van · cuu-dieu (sao hạn) · lunar-calendar
 │   └── db/                # Drizzle schema + pg pool
 ├── docker/
 │   └── nginx.conf         # Nginx: static files + /kb landing + proxy /api/*
@@ -848,19 +850,15 @@ artifacts/mysticism-web/src/
 │   ├── sse-stream.ts         # SSE parser (rolling buffer, chunk-safe)
 │   ├── auth-config.ts        # isClerkEnabled flag
 │   ├── reopen-reading.ts     # Mở lại lá số từ profile/share
-│   ├── numerology.ts         # Thần Số Học
-│   ├── batu.ts               # Bát Tự + Ngũ Hành
-│   ├── dai-van.ts            # Đại Vận 8 trụ
-│   ├── iching.ts             # 64 quẻ Kinh Dịch
-│   ├── cat-hung.ts           # Phân tích Cát Hung
-│   ├── phong-thuy.ts         # Bát Trạch Ming Gua
-│   ├── xem-ten.ts            # Ngũ Cách phân tích tên
-│   ├── lich-ca-nhan.ts       # Lịch Cá Nhân
-│   ├── lunar-calendar.ts     # Dương↔Âm (Ho Ngoc Duc)
-│   ├── tu-vi.ts              # 12 cung Tử Vi + 14 chính tinh
-│   ├── hop-tuoi.ts           # Tương hợp Mệnh Quái + Ngũ Hành
+│   ├── batu.ts               # → shim @workspace/mysticism-core (Bát Tự)
+│   ├── dai-van.ts            # → shim @workspace/mysticism-core (Đại Vận)
+│   ├── cat-hung.ts           # Phân tích Cát Hung (sim/số)
+│   ├── phong-thuy.ts         # Bát Trạch (Mệnh Quái từ core + bảng 8 hướng)
+│   ├── xem-ten.ts            # Ngũ Cách phân tích tên (reduce dùng core)
+│   ├── lich-ca-nhan.ts       # Lịch Cá Nhân (Personal Year/Month/Day)
+│   ├── tu-vi.ts              # → shim @workspace/mysticism-core (Tử Vi)
+│   ├── hop-tuoi.ts           # Tương hợp Mệnh Quái + Ngũ Hành + Đường Đời
 │   ├── xem-ngay-tot.ts       # Tìm ngày Hoàng Đạo theo mục đích
-│   ├── sao-han.ts            # Sao hạn chiếu mệnh hàng năm
 │   ├── history.ts            # Lịch sử localStorage
 │   ├── share-utils.ts        # Chia sẻ kết quả qua URL
 │   └── form-utils.ts         # Tiện ích form (ngày, giờ, tên)
@@ -905,6 +903,27 @@ artifacts/mysticism-web/public/
 ## Nhật ký phát triển
 
 Lịch sử các đợt nâng cấp và hardening quan trọng, sắp xếp theo thời gian gần nhất.
+
+### v4.4.0 — Audit & sửa tính đúng các module huyền học (2026-06-30)
+
+**Scope:** Audit toàn bộ logic tính toán huyền học, sửa các lỗi sai/giả lập và đưa toàn bộ về `@workspace/mysticism-core` (dùng chung, có test). Mỗi thay đổi được đối chiếu với nguồn/lá số mẫu chuẩn trước khi merge.
+
+| Module | Tóm tắt thay đổi |
+|--------|------------------|
+| Thần Số Học | Sửa bug chữ `Đ` tiếng Việt bị bỏ qua (NFD không tách Đ) → mọi tên có Đ tính sai Sứ Mệnh/Linh Hồn/Nhân Cách; đổi Số Đường Đời sang phương pháp chuẩn (thu gọn ngày/tháng/năm riêng, bảo toàn Master Number); thêm thẻ **Con số chủ đạo** |
+| Mệnh Quái (`ming-gua`) | Gộp 2 bản trùng (Hợp Tuổi + Phong Thủy) về 1 hàm core; công thức century-aware (mốc 2000+), tính ranh giới Tết qua âm lịch; sửa lỗi trả Quái = 10 không hợp lệ |
+| Kinh Dịch (`iching`) | Nhúng đủ **64 quẻ** (tên Hán-Việt, thượng/hạ quái, hào suy từ quái nên luôn khớp tên) thay 48 quẻ placeholder; gieo **3 đồng xu** thật có hào động + quẻ biến |
+| Bát Tự / Tứ Trụ (`bat-tu`) | Trụ ngày theo số ngày Julian, trụ tháng theo **tiết khí** + Ngũ Hổ Độn, trụ giờ Ngũ Thử Độn, năm theo Lập Xuân; Ngũ Hành thống kê thật từ 8 chữ (gồm tàng can) thay số cứng |
+| Tử Vi (`tu-vi`) | An **14 chính tinh** theo chuẩn Tử Vi Đẩu Số (Cục→ngày sinh, vòng Tử Vi nghịch, vòng Thiên Phủ thuận) + phụ tinh; verify khớp 100% lá số "Tử Vi tại Ngọ" |
+| Đại Vận (`dai-van`) | Tuổi khởi vận theo **khoảng cách ngày tới tiết khí** (3 ngày ≈ 1 năm); trụ vận hợp lệ + Nạp Âm 60 hoa giáp |
+| Sao Hạn (`cuu-dieu`) | Hệ **Cửu Diệu** thật (La Hầu…Mộc Đức) theo tuổi mụ + giới tính + niên hạn; trang thêm chọn giới tính |
+| Xem Tên | Dùng chung hàm thu gọn số của core để nhất quán với Thần Số Học |
+
+**Kiến trúc:** Toàn bộ phép tính nằm ở `@workspace/mysticism-core`; trang web gọi qua shim mỏng (giữ nguyên import path). **13 bộ test** đối chiếu ca chuẩn (numerology, ming-gua, hop-tuoi, iching, bat-tu, tu-vi, dai-van, cuu-dieu, lunar, phong-thuy, lich-ca-nhan, cat-hung, xem-ngay-tot) — tất cả pass, typecheck toàn workspace sạch.
+
+> Lưu ý: kết quả Hợp Tuổi, Phong Thủy, Bát Tự, Tử Vi, Sao Hạn **thay đổi so với phiên bản trước** vì bản cũ sai/giả lập — bản mới mới là đúng.
+
+---
 
 ### v4.3.0 — Nhắc nhở Web Push & Trang landing SEO (2026-06-30)
 
