@@ -321,7 +321,7 @@ export function TuViKnowledge() {
           ]}
         />
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Khác với Bát Tự (dùng dương lịch), Tử Vi sử dụng <strong>ngày tháng năm âm lịch</strong> và <strong>giờ sinh</strong> để xác định vị trí cung mệnh và an sao. Phiên bản này sử dụng thuật toán đơn giản hóa phù hợp cho tham khảo phổ thông.
+          Khác với Bát Tự (dùng dương lịch), Tử Vi sử dụng <strong>ngày tháng năm âm lịch</strong> và <strong>giờ sinh</strong> để xác định vị trí cung mệnh và an sao. Phiên bản này an <strong className="text-primary">14 chính tinh</strong> theo đúng quy tắc cổ điển (vòng Tử Vi an nghịch, vòng Thiên Phủ an thuận) — vị trí Tử Vi suy từ Cục và ngày sinh âm lịch.
         </p>
       </KBSection>
 
