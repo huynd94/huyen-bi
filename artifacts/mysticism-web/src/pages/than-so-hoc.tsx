@@ -242,6 +242,40 @@ export default function NumerologyPage() {
                 />
               </div>
 
+              {/* Con số chủ đạo — Số Đường Đời nổi bật */}
+              {(() => {
+                const lpMeaning = getNumberMeaning(results.lifePath);
+                const isMaster = results.lifePath === 11 || results.lifePath === 22 || results.lifePath === 33;
+                return (
+                  <Card className="bg-gradient-to-br from-primary/15 via-card/40 to-card/40 backdrop-blur-sm border-primary/40 shadow-lg shadow-primary/10 overflow-hidden">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative shrink-0">
+                          <div className="w-28 h-28 rounded-full border-2 border-primary/50 bg-primary/10 flex items-center justify-center shadow-inner">
+                            <span className="text-6xl font-bold font-serif text-primary leading-none">{results.lifePath}</span>
+                          </div>
+                          {isMaster && (
+                            <span className="absolute -top-1 -right-1 text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground rounded-full px-2 py-0.5 shadow">
+                              Master
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 text-center sm:text-left space-y-2">
+                          <div className="text-[11px] uppercase tracking-[0.25em] text-primary/70 font-semibold">
+                            Con số chủ đạo
+                          </div>
+                          <h2 className="text-2xl font-bold text-foreground">{lpMeaning.title}</h2>
+                          <p className="text-sm text-foreground/80 leading-relaxed">{lpMeaning.description}</p>
+                          <p className="text-xs text-muted-foreground pt-1">
+                            Con số chủ đạo (Số Đường Đời) được tính từ ngày sinh và là con số quan trọng nhất, định hình toàn bộ hành trình cuộc đời bạn.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })()}
+
               {/* Radar Chart + Summary */}
               <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-md overflow-hidden">
                 <CardContent className="pt-6">

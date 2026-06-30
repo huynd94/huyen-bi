@@ -1,7 +1,18 @@
 export function computeLifePathNumber(dob: string): number {
-  // dob expected in DD/MM/YYYY
-  const digits = dob.replace(/\D/g, '').split('').map(Number);
-  return reduceToSingleDigitOrMaster(digits.reduce((a, b) => a + b, 0));
+  // dob expected in DD/MM/YYYY.
+  // Standard Pythagorean method: reduce day, month, and year independently,
+  // then sum and reduce again. Reducing each component separately preserves
+  // Master Numbers (11/22/33) correctly — a flat digit-sum can fabricate or
+  // destroy a Master Number depending on digit ordering.
+  const parts = dob.split('/');
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  const year = parseInt(parts[2], 10);
+  if (Number.isNaN(day) || Number.isNaN(month) || Number.isNaN(year)) return 0;
+  const reducedDay = reduceToSingleDigitOrMaster(day);
+  const reducedMonth = reduceToSingleDigitOrMaster(month);
+  const reducedYear = reduceToSingleDigitOrMaster(year);
+  return reduceToSingleDigitOrMaster(reducedDay + reducedMonth + reducedYear);
 }
 
 function reduceToSingleDigitOrMaster(num: number): number {
@@ -38,7 +49,15 @@ function computeNameNumber(name: string, filter: (char: string) => boolean): num
     I: 9, R: 9
   };
 
-  const str = name.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Vietnamese "Đ/đ" (U+0110/U+0111) is a distinct Latin letter, not "D" + a
+  // combining mark, so NFD does not decompose it. Map it to "D" explicitly
+  // before stripping diacritics, otherwise every name containing Đ (Đặng, Đỗ,
+  // Đào, Đức, ...) silently loses that letter from the calculation.
+  const str = name
+    .toUpperCase()
+    .replace(/Đ/g, 'D')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
   let sum = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str[i];

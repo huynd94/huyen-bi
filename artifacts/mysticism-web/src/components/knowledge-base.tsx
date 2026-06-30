@@ -89,11 +89,14 @@ export function NumerologyKnowledge() {
         <p className="leading-relaxed">
           Mọi con số đều được cộng các chữ số lại và lặp lại cho đến khi ra số từ 1–9, hoặc dừng lại tại <strong className="text-primary">số Master</strong> nếu tổng trung gian là 11, 22, hoặc 33.
         </p>
+        <p className="leading-relaxed">
+          Riêng <strong className="text-primary">Số Đường Đời</strong> được tính theo phương pháp chuẩn: thu gọn <em>ngày</em>, <em>tháng</em> và <em>năm</em> riêng từng phần trước, rồi mới cộng lại và thu gọn lần cuối. Cách này bảo toàn đúng số Master (11/22/33) ẩn trong từng thành phần.
+        </p>
         <div className="bg-background/30 rounded-lg px-4 py-3 font-mono text-xs space-y-1 border border-primary/10">
           <div>Ví dụ (Ngày sinh 15/08/1990):</div>
-          <div className="text-primary">1+5+0+8+1+9+9+0 = 33 → Số Master 33</div>
+          <div className="text-primary">Ngày 15 → 6 · Tháng 8 → 8 · Năm 1990 → 1 ⇒ 6+8+1 = 15 → <strong>6</strong></div>
           <div>Ví dụ khác (14/03/1985):</div>
-          <div className="text-primary">1+4+0+3+1+9+8+5 = 31 → 3+1 = <strong>4</strong></div>
+          <div className="text-primary">Ngày 14 → 5 · Tháng 3 → 3 · Năm 1985 → 5 ⇒ 5+3+5 = 13 → <strong>4</strong></div>
         </div>
       </KBSection>
 
@@ -101,7 +104,7 @@ export function NumerologyKnowledge() {
         <KBTable
           headers={["Chỉ số", "Nguồn tính", "Ý nghĩa"]}
           rows={[
-            ["Số đường đời", "Tổng tất cả chữ số trong ngày tháng năm sinh", "Con đường và sứ mệnh trong cuộc đời"],
+            ["Số đường đời", "Thu gọn riêng ngày, tháng, năm sinh rồi cộng lại", "Con đường và sứ mệnh trong cuộc đời — con số chủ đạo"],
             ["Số linh hồn", "Tổng giá trị các nguyên âm (A, E, I, O, U) trong tên", "Khát vọng và động lực nội tâm sâu thẳm"],
             ["Số định mệnh", "Tổng giá trị tất cả chữ cái trong tên đầy đủ", "Sứ mệnh cuộc đời và cách thế giới nhìn bạn"],
             ["Số nhân cách", "Tổng giá trị các phụ âm trong tên", "Hình ảnh bạn thể hiện ra bên ngoài"],
