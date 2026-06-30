@@ -276,3 +276,29 @@ export function getJulianDay(dd: number, mm: number, yy: number): number {
   return jdFromDate(dd, mm, yy);
 }
 
+/**
+ * Days from a birth date to the nearest month-defining solar term ("tiết"),
+ * used to compute the Đại Vận (major-luck) starting age.
+ *
+ * The 12 month-tiết sit at solar longitudes 315°, 345°, 15°, … (every 30°).
+ * `forward = true` counts days forward to the *next* tiết; `forward = false`
+ * counts days backward to the *previous* tiết. The traditional rule converts
+ * 3 days ≈ 1 year of starting age.
+ */
+export function daysToSolarTerm(dd: number, mm: number, yy: number, forward: boolean, timeZone = 7): number {
+  const startJd = jdFromDate(dd, mm, yy);
+  const bucket = (jd: number) => Math.floor(((getSunLongitudeDeg(jd, timeZone) - 315 + 360) % 360) / 30);
+  const startBucket = bucket(startJd);
+  let days = 0;
+  const step = forward ? 1 : -1;
+  // Scan day-by-day until the 30° month bucket changes (max ~31 days apart).
+  for (let i = 1; i <= 35; i++) {
+    if (bucket(startJd + step * i) !== startBucket) {
+      days = i;
+      break;
+    }
+  }
+  return days || 1;
+}
+
+
