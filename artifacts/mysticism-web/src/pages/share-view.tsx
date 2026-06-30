@@ -117,7 +117,7 @@ export default function ShareViewPage() {
           {error && (
             <Card className="bg-card/40 backdrop-blur-sm border-red-500/30 text-center py-12">
               <CardContent>
-                <div className="text-4xl mb-3">🔮</div>
+                <div className="text-4xl mb-3" role="img" aria-label="Quả cầu tiên tri">🔮</div>
                 <p className="text-red-400 font-semibold mb-2">Không thể tải lá số</p>
                 <p className="text-muted-foreground text-sm mb-6">{error}</p>
                 <Link href="/">

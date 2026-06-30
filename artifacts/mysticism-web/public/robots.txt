@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /profile
+Disallow: /lich-su
+Disallow: /share/
+
+Sitemap: https://huyenbi.io.vn/sitemap.xml

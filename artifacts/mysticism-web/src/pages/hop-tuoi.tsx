@@ -227,7 +227,7 @@ export default function HopTuoiPage() {
               {/* Person cards */}
               <div className="flex gap-4">
                 <PersonCard label="Người 1" p={result.person1} />
-                <div className="flex items-center justify-center text-4xl text-primary/30 font-bold shrink-0">♡</div>
+                <div className="flex items-center justify-center text-4xl text-primary/30 font-bold shrink-0" role="img" aria-label="Trái tim">♡</div>
                 <PersonCard label="Người 2" p={result.person2} />
               </div>
 

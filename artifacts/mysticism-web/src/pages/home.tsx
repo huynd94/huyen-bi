@@ -282,7 +282,7 @@ function ModuleCardItem({ module }: { module: ModuleCard }) {
             </p>
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-1.5 text-xs text-primary/70 transition-colors duration-200 group-hover:text-primary">
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-primary transition-colors duration-200 group-hover:text-primary">
           <span>Vào tra cứu</span>
           <span
             aria-hidden="true"

@@ -1,0 +1,26 @@
+# Huyền Bí
+
+> Nền tảng huyền học Việt Nam kết hợp các hệ thống cổ học phương Đông và phương Tây với trợ lý AI. Người dùng tra cứu Thần Số Học, Tử Vi, Bát Tự, Kinh Dịch, Phong Thủy và nhiều mô-đun khác, sau đó hỏi trợ lý AI để được luận giải chi tiết.
+
+Huyền Bí là một ứng dụng web (SPA React) phục vụ cộng đồng quan tâm tới huyền học và tử vi. Mọi luận giải chỉ mang tính tham khảo, không thay thế quyết định cá nhân. Nội dung bằng tiếng Việt.
+
+## Mô-đun chính
+
+- [Thần Số Học](https://huyenbi.io.vn/than-so-hoc): Số vận mệnh, năm cá nhân, chu kỳ đời người theo Pythagoras và phương Đông.
+- [Xem Tên](https://huyenbi.io.vn/xem-ten): Phân tích Ngũ Cách của họ tên (Thiên, Nhân, Địa, Ngoại, Tổng) và ngũ hành.
+- [Bát Tự Tứ Trụ](https://huyenbi.io.vn/bat-tu): Lập tứ trụ Can Chi, cân bằng Ngũ Hành, đại vận và tiểu vận.
+- [Tử Vi Đẩu Số](https://huyenbi.io.vn/tu-vi): Lá số 12 cung với chính tinh, phụ tinh và luận giải mệnh cục từ AI.
+- [Sao Hạn Hàng Năm](https://huyenbi.io.vn/sao-han): Tra cứu Thái Tuế, Thái Dương, La Hầu, Phúc Tinh.
+- [Xem Quẻ I Ching](https://huyenbi.io.vn/xem-que): Gieo quẻ Kinh Dịch và luận giải.
+- [Xem Ngày Tốt](https://huyenbi.io.vn/xem-ngay-tot): Chọn ngày giờ hoàng đạo theo việc.
+- [Hợp Tuổi & Duyên Số](https://huyenbi.io.vn/hop-tuoi): Xem hợp tuổi vợ chồng, đối tác.
+- [Phong Thủy Bát Trạch](https://huyenbi.io.vn/phong-thuy): Tính cung mệnh và hướng tốt xấu.
+- [Lịch Vạn Niên](https://huyenbi.io.vn/lich-van-nien): Lịch âm dương, can chi, tiết khí.
+- [Lịch Cá Nhân](https://huyenbi.io.vn/lich-ca-nhan): Lịch theo ngày sinh người dùng.
+- [Cát Hung](https://huyenbi.io.vn/cat-hung): Tra cứu cát hung phong thủy theo ngày.
+- [Từ Điển Huyền Học](https://huyenbi.io.vn/tu-dien): Tra cứu thuật ngữ huyền học.
+
+## Tài nguyên
+
+- [Trợ Lý AI](https://huyenbi.io.vn/ai-chat): Đặt câu hỏi huyền học cho trợ lý AI.
+- [Sitemap](https://huyenbi.io.vn/sitemap.xml): Danh sách trang công khai.

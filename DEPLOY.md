@@ -126,6 +126,22 @@ docker compose up --build -d
 
 > Database schema tự động migrate khi API server khởi động — không cần chạy migration thủ công.
 
+> ⚠️ **Đổi `POSTGRES_PASSWORD` sau lần chạy đầu:** Postgres chỉ áp mật khẩu khi
+> khởi tạo volume rỗng lần đầu. Nếu bạn sửa `POSTGRES_PASSWORD` trong `.env` khi
+> volume `postgres_data` đã tồn tại, mật khẩu cũ vẫn được giữ và API sẽ crash-loop
+> với lỗi `password authentication failed for user "huyenbi"` (trong khi healthcheck
+> của Postgres vẫn báo `healthy` vì nó dùng socket nội bộ). Cách xử lý — **xóa volume
+> rồi dựng lại** (CẢNH BÁO: thao tác này xoá toàn bộ dữ liệu trong DB):
+>
+> ```bash
+> docker compose down -v   # -v xoá volume postgres_data
+> docker compose up --build -d
+> ```
+>
+> Trên môi trường production có dữ liệu thật, đừng dùng `down -v`. Thay vào đó đổi
+> mật khẩu trực tiếp trong Postgres: `ALTER USER huyenbi WITH PASSWORD '...';` rồi
+> cập nhật `.env` cho khớp.
+
 ---
 
 ## Phương án B — Cài thủ công trên VPS (không dùng Docker)

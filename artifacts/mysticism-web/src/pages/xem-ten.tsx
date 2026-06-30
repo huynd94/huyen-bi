@@ -119,7 +119,7 @@ export default function XemTenPage() {
             <p className="text-muted-foreground text-lg">Phân tích ý nghĩa huyền số học ẩn chứa trong từng chữ của tên bạn.</p>
           </div>
 
-          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+          <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
             <CardHeader>
               <CardTitle className="text-2xl text-primary">Nhập họ và tên</CardTitle>
               <CardDescription>Nhập đầy đủ họ, tên đệm và tên để phân tích Ngũ Cách.</CardDescription>
@@ -161,7 +161,7 @@ export default function XemTenPage() {
                 />
               </div>
               {/* Score + Radar */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-xl overflow-hidden">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/30 shadow-md overflow-hidden">
                 <CardContent className="pt-6">
                   <div className="flex flex-col sm:flex-row items-center gap-8">
                     <div className="flex-1 text-center sm:text-left space-y-2">
@@ -200,7 +200,7 @@ export default function XemTenPage() {
                             <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary/80 border border-primary/20">{s}</span>
                           ))}
                         </div>
-                        <p className="text-[11px] text-orange-400/80 italic">⚠ {meaning.caution}</p>
+                        <p className="text-[11px] text-orange-400/80 italic"><span role="img" aria-label="Cảnh báo">⚠</span> {meaning.caution}</p>
                       </CardContent>
                     </Card>
                   );
@@ -233,7 +233,7 @@ export default function XemTenPage() {
               </div>
 
               {/* AI */}
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary flex items-center justify-between flex-wrap gap-3">
                     <span>Luận giải AI về tên của bạn</span>
@@ -244,7 +244,7 @@ export default function XemTenPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {messages.filter(m => m.role === "assistant").map((msg, i) => (
-                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+                    <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
                       {msg.content ? <MarkdownRenderer content={msg.content} /> : (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           {[0, 150, 300].map(d => <span key={d} className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: `${d}ms` }}/>)}

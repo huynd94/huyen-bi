@@ -123,7 +123,7 @@ export function AISettingsModal({ open, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-background border border-primary/30 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+      <div className="relative w-full max-w-lg bg-background border border-primary/30 rounded-2xl shadow-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
 
         {/* Header */}
         <div className="p-6 pb-4 border-b border-primary/10">

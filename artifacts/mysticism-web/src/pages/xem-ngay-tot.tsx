@@ -208,7 +208,7 @@ export default function XemNgayTotPage() {
                     {selectedDay.warnings.length > 0 && (
                       <div className="space-y-1.5">
                         {selectedDay.warnings.map((w, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-amber-300"><span className="mt-0.5 shrink-0">⚠</span>{w}</div>
+                          <div key={i} className="flex items-start gap-2 text-xs text-amber-300"><span className="mt-0.5 shrink-0" role="img" aria-label="Cảnh báo">⚠</span>{w}</div>
                         ))}
                       </div>
                     )}

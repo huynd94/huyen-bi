@@ -195,7 +195,7 @@ function AIPanel({ onAsk, isStreaming, messages }: {
   messages: { role: string; content: string }[];
 }) {
   return (
-    <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+    <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
       <CardHeader>
         <CardTitle className="text-xl text-primary flex items-center justify-between flex-wrap gap-2">
           <span>Luận giải chuyên sâu từ AI</span>
@@ -206,7 +206,7 @@ function AIPanel({ onAsk, isStreaming, messages }: {
       </CardHeader>
       <CardContent className="space-y-4">
         {messages.filter((m) => m.role === "assistant").map((msg, i) => (
-          <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+          <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
             {msg.content ? <MarkdownRenderer content={msg.content} /> : (
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -389,7 +389,7 @@ function ComparePhoneTab() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+      <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
         <CardHeader>
           <CardTitle className="text-2xl text-primary">So Sánh 2 Số Điện Thoại</CardTitle>
           <CardDescription>Nhập hai số để so sánh điểm cát hung và tìm số tốt hơn.</CardDescription>
@@ -634,7 +634,7 @@ export default function CatHungPage() {
             </TabsList>
 
             <TabsContent value="phone" className="space-y-8 mt-6">
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary">Số Điện Thoại</CardTitle>
                   <CardDescription>
@@ -824,7 +824,7 @@ export default function CatHungPage() {
             </TabsContent>
 
             <TabsContent value="plate" className="space-y-8 mt-6">
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary">Biển Số Xe</CardTitle>
                   <CardDescription>
@@ -889,7 +889,7 @@ export default function CatHungPage() {
               )}
             </TabsContent>
             <TabsContent value="bank" className="space-y-8 mt-6">
-              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl">
+              <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md">
                 <CardHeader>
                   <CardTitle className="text-2xl text-primary">Số Tài Khoản Ngân Hàng</CardTitle>
                   <CardDescription>

@@ -191,7 +191,7 @@ export default function IChingPage() {
                   isPdfExporting={isPdfExporting}
                 />
 
-                <Card className="bg-card/40 backdrop-blur-sm border-primary/40 shadow-2xl shadow-primary/10 relative overflow-hidden">
+                <Card className="bg-card/40 backdrop-blur-sm border-primary/40 shadow-md shadow-primary/10 relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
                   <CardHeader className="text-center pb-0">
                     {/* SVG Hexagram lines */}
@@ -247,7 +247,7 @@ export default function IChingPage() {
                   </Card>
                 )}
 
-                <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-xl shadow-primary/5 mt-8">
+                <Card className="bg-card/40 backdrop-blur-sm border-primary/20 shadow-md shadow-primary/5 mt-8">
                   <CardHeader>
                     <CardTitle className="text-2xl text-primary flex items-center justify-between flex-wrap gap-3">
                       <span>Hỏi AI về quẻ này</span>
@@ -258,7 +258,7 @@ export default function IChingPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {messages.filter((m) => m.role === "assistant").map((msg, i) => (
-                      <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-inner">
+                      <div key={i} className="px-5 py-4 rounded-lg bg-background/40 border border-primary/15 shadow-sm">
                         {msg.content ? (
                           <MarkdownRenderer content={msg.content} />
                         ) : (
