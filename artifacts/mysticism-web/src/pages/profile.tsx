@@ -16,6 +16,7 @@ import {
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
+import { ReminderSettings } from "@/components/reminder-settings";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -402,6 +403,9 @@ function ProfilePageInner() {
               lastLookup={stats.lastLookup}
             />
           )}
+
+          {/* Nhắc nhở vận hạn qua Web Push (Phase A) */}
+          <ReminderSettings />
 
           {/* Toolbar — search + module filter + compare CTA (Req 14.2, 14.3) */}
           <section

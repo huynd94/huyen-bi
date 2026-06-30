@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { hourToCanChi } from "@/lib/form-utils";
 import { calculateTuVi, THIEN_CAN, DIA_CHI, NGU_HANH_COLOR, type TuViResult, type CungInfo } from "@/lib/tu-vi";
 import { TuViKnowledge } from "@/components/knowledge-base";
-import { solarToLunar } from "@/lib/lunar-calendar";
+import { solarToLunar } from "@workspace/mysticism-core";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
 import { useExportImage } from "@/hooks/use-export-image";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";

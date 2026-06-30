@@ -1,4 +1,4 @@
-import { buildMonthCalendar, type DayInfo } from "./lunar-calendar";
+import { buildMonthCalendar, type DayInfo } from "@workspace/mysticism-core";
 
 export type Purpose =
   | "hon-nhan"

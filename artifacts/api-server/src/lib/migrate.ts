@@ -73,6 +73,50 @@ export async function runMigrations(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_share_tokens_reading_active
       ON share_tokens(reading_id, expires_at DESC)
       WHERE expires_at IS NOT NULL;
+
+    -- ── Web Push reminders (Phase A) ──────────────────────────────────────
+    -- Mirror @workspace/db schema: push-subscriptions, reminder-prefs,
+    -- notification-jobs. Account-scoped reminders + Postgres job queue.
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id         SERIAL PRIMARY KEY,
+      user_id    TEXT NOT NULL,
+      endpoint   TEXT NOT NULL,
+      p256dh     TEXT NOT NULL,
+      auth       TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subscriptions_endpoint
+      ON push_subscriptions(endpoint);
+    CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+      ON push_subscriptions(user_id);
+
+    CREATE TABLE IF NOT EXISTS reminder_prefs (
+      user_id        TEXT PRIMARY KEY,
+      daily_fortune  BOOLEAN NOT NULL DEFAULT TRUE,
+      sao_han        BOOLEAN NOT NULL DEFAULT FALSE,
+      timezone       TEXT NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
+      send_hour      INTEGER NOT NULL DEFAULT 7,
+      last_sent_date TEXT,
+      updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS notification_jobs (
+      id         SERIAL PRIMARY KEY,
+      type       TEXT NOT NULL,
+      user_id    TEXT NOT NULL,
+      payload    JSONB NOT NULL DEFAULT '{}',
+      status     TEXT NOT NULL DEFAULT 'pending',
+      attempts   INTEGER NOT NULL DEFAULT 0,
+      run_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_error TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- Worker claim query: WHERE status='pending' AND run_at <= NOW() ORDER BY run_at.
+    CREATE INDEX IF NOT EXISTS idx_notification_jobs_claim
+      ON notification_jobs(status, run_at);
   `);
 
   console.log("[migrate] Bảng database sẵn sàng.");

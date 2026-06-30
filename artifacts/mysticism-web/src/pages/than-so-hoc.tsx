@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Sparkles } from "lucide-react";
-import { computeLifePathNumber, computeSoulNumber, computeDestinyNumber, computePersonalityNumber, computeMaturityNumber, computePersonalYearNumber, getNumberMeaning } from "@/lib/numerology";
+import { computeLifePathNumber, computeSoulNumber, computeDestinyNumber, computePersonalityNumber, computeMaturityNumber, computePersonalYearNumber, getNumberMeaning } from "@workspace/mysticism-core";
 import { useAISSEChat } from "@/hooks/use-ai-sse-chat";
 import { useExportImage } from "@/hooks/use-export-image";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";

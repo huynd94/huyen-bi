@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { LichVanNienKnowledge } from "@/components/knowledge-base";
-import { buildMonthCalendar, formatLunar, getGioHoangDao, type DayInfo } from "@/lib/lunar-calendar";
+import { buildMonthCalendar, formatLunar, getGioHoangDao, type DayInfo } from "@workspace/mysticism-core";
 
 const DOW = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const MONTH_NAMES = ["", "Tháng Giêng", "Tháng Hai", "Tháng Ba", "Tháng Tư", "Tháng Năm", "Tháng Sáu",

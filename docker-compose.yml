@@ -38,7 +38,7 @@ services:
   # AI key được cấu hình qua Admin Panel trong giao diện web
   # ----------------------------------------------------------
   api:
-    image: huyen-bi-api:${APP_VERSION:-4.2.0}
+    image: huyen-bi-api:${APP_VERSION:-4.3.0}
     build:
       context: .
       dockerfile: Dockerfile.api
@@ -53,6 +53,11 @@ services:
       DATABASE_URL:          postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-huyenbi}
       CLERK_SECRET_KEY:      ${CLERK_SECRET_KEY:-}
       CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-}
+      # Web Push (VAPID). Generate once: `npx web-push generate-vapid-keys`.
+      # Leave blank to disable push reminders (API + worker degrade gracefully).
+      VAPID_PUBLIC_KEY:      ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY:     ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT:         ${VAPID_SUBJECT:-mailto:admin@huyenbi.io.vn}
       # When the api sits behind the nginx container in the same bridge network,
       # Express needs to trust the XFF header added by nginx so `req.ip` reflects
       # the real client. loopback,linklocal,uniquelocal covers Docker's private
@@ -64,11 +69,36 @@ services:
       - internal
 
   # ----------------------------------------------------------
+  # Worker — gửi nhắc nhở Web Push (vận hôm nay / sao hạn)
+  # Dùng lại image huyen-bi-api, chỉ đổi command sang worker entry.
+  # Hàng đợi job nằm trong Postgres (notification_jobs) nên không cần broker.
+  # ----------------------------------------------------------
+  worker:
+    image: huyen-bi-api:${APP_VERSION:-4.3.0}
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: huyen-bi-worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV:          production
+      DATABASE_URL:      postgresql://${POSTGRES_USER:-huyenbi}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-huyenbi}
+      VAPID_PUBLIC_KEY:  ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT:     ${VAPID_SUBJECT:-mailto:admin@huyenbi.io.vn}
+    command: ["node", "--enable-source-maps", "./dist/worker.mjs"]
+    networks:
+      - internal
+
+  # ----------------------------------------------------------
   # Web — Nginx phục vụ static files + proxy /api/*
   # Clerk publishable key được bake vào bundle lúc docker build
   # ----------------------------------------------------------
   web:
-    image: huyen-bi-web:${APP_VERSION:-4.2.0}
+    image: huyen-bi-web:${APP_VERSION:-4.3.0}
     build:
       context: .
       dockerfile: Dockerfile.web
