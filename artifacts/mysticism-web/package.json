@@ -17,6 +17,8 @@
     "test:sse": "tsx src/lib/sse-stream.test.ts",
     "test:escape-html": "tsx src/lib/escape-html.test.ts",
     "test:numerology": "tsx src/lib/numerology.test.ts",
+    "test:hop-tuoi": "tsx src/lib/hop-tuoi.test.ts",
+    "test:ming-gua": "tsx src/lib/ming-gua.test.ts",
     "test:result-actions": "tsx src/components/result-actions.test.ts",
     "test:unauth-exploration": "tsx src/hooks/use-sse-chat-unauth.exploration.test.ts && tsx --import ./src/hooks/__clerk-mock-register.ts src/hooks/use-ai-sse-chat-unauth.exploration.test.ts",
     "test:unauth-preservation": "tsx --import ./src/hooks/__clerk-mock-preservation-register.ts src/hooks/use-sse-chat-preservation.test.ts",

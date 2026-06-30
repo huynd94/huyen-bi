@@ -8,6 +8,7 @@
 // Add one re-export per calculation module below.
 
 export * from "./numerology";
+export * from "./ming-gua";
 export * from "./sao-han";
 export * from "./lunar-calendar";
 export * from "./daily-fortune";
