@@ -2,7 +2,7 @@
 
 > Nền tảng huyền học toàn diện: 15 mô-đun tra cứu bao gồm Thần Số Học, Bát Tự Tứ Trụ, Kinh Dịch, Cát Hung, Tử Vi Đẩu Số, Phong Thuỷ, Hợp Tuổi, Xem Ngày Tốt, Sao Hạn và Trợ lý AI — giao diện tiếng Việt, chủ đề tối huyền bí, tài khoản người dùng, lưu & chia sẻ lá số.
 
-![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.1-c9a227?style=for-the-badge&labelColor=0d0818)
+![Huyền Bí](https://img.shields.io/badge/Huy%E1%BB%87n%20B%C3%AD-v4.2-c9a227?style=for-the-badge&labelColor=0d0818)
 ![React](https://img.shields.io/badge/React-19.1-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=flat-square&logo=typescript)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express)
@@ -71,6 +71,8 @@
 | **Phân tích AI** | Giải nghĩa kết quả bằng AI, streaming SSE real-time |
 | **Key AI dùng chung** | Admin cấu hình key qua UI, giới hạn lượt gọi theo IP |
 | **PWA** | Cài đặt như app gốc trên di động (beforeinstallprompt) |
+| **SEO & AEO** | `robots.txt`, `sitemap.xml`, `llms.txt`, Open Graph + Twitter Card; Lighthouse SEO 100 |
+| **Accessibility** | WCAG AA contrast, viewport cho phép zoom, `role="img"`/`aria-label` cho glyph; Lighthouse A11y 100 |
 | **Responsive** | Mobile, tablet, desktop |
 | **Navbar dropdown** | 5 nhóm: Số Học, Mệnh Lý, Tiên Tri, Tra Cứu, Trợ lý AI |
 | **Hiệu ứng huyền bí** | Ambient orbs, star field, mystic cursor, scroll reveal, 3D tilt card |
@@ -397,7 +399,7 @@ Mỗi khi có tính năng mới, bản vá lỗi hoặc nâng cấp phụ thuộ
 ```bash
 # Sao lưu database (bắt buộc nếu có dữ liệu người dùng)
 # Docker:
-docker exec huyen-bi-db pg_dump -U postgres huyenbi > backup_$(date +%Y%m%d).sql
+docker exec huyen-bi-postgres pg_dump -U huyenbi huyenbi > backup_$(date +%Y%m%d).sql
 
 # VPS thủ công:
 pg_dump -U huyenbi huyenbi > backup_$(date +%Y%m%d).sql
@@ -540,7 +542,7 @@ docker compose up --build -d
 
 ```bash
 # Docker:
-docker exec -i huyen-bi-db psql -U postgres huyenbi < backup_YYYYMMDD.sql
+docker exec -i huyen-bi-postgres psql -U huyenbi huyenbi < backup_YYYYMMDD.sql
 
 # VPS:
 psql -U huyenbi huyenbi < backup_YYYYMMDD.sql
@@ -885,6 +887,14 @@ artifacts/api-server/src/
 
 docker/
 └── nginx.conf                # Static files + proxy /api/* (SSE ready)
+
+artifacts/mysticism-web/public/
+├── robots.txt                # SEO crawler directives + sitemap pointer
+├── sitemap.xml               # 15 trang công khai cho search engine
+├── llms.txt                  # Mô tả site cho AI crawler (AEO/GEO)
+├── manifest.json             # PWA manifest
+├── favicon.svg / icon-maskable.svg
+└── opengraph.jpg             # Ảnh share Open Graph / Twitter Card
 ```
 
 ---
@@ -892,6 +902,23 @@ docker/
 ## Nhật ký phát triển
 
 Lịch sử các đợt nâng cấp và hardening quan trọng, sắp xếp theo thời gian gần nhất.
+
+### v4.2.0 — Audit Remediation: SEO, A11y, Lint & Dependency Hygiene (2026-06-30)
+
+**Scope:** Đợt audit toàn diện (code · Docker · Chrome DevTools/Lighthouse) với verify end-to-end trên Docker Desktop.
+
+| Nhóm | Tóm tắt |
+|------|---------|
+| SEO | `robots.txt`, `sitemap.xml`, `llms.txt` phục vụ tĩnh qua nginx location riêng (đúng `Content-Type`, không còn rơi vào SPA fallback) |
+| Accessibility | Bỏ `maximum-scale=1` (cho phép zoom); sửa contrast nhãn thẻ module (WCAG 4.5:1); `role="img"` + `aria-label` cho glyph trang trí |
+| Design system | `lint:design` 144 → 0 vi phạm: shadow hợp lệ, lucide icons thay emoji phong thủy, allowlist cho hex trong SVG/PDF/meta và symbol data |
+| Dependencies | `happy-dom` ^20, `vitest` 3.2.6, `vite` ^7.3.6 — vá advisory dev-time (0 critical; `pnpm audit --prod` sạch) |
+| Dead code | Xóa `integrations-openai-ai-server`, `integrations-openai-ai-react`, `lib/integrations` (0 import) |
+| Docs | DEPLOY.md ghi chú pitfall stale Postgres volume khi đổi `POSTGRES_PASSWORD` |
+
+**Kết quả Lighthouse (desktop):** Accessibility 90→**100**, SEO 91→**100**, Best Practices **100**, Agentic Browsing 67→**100** (0 failure).
+
+---
 
 ### v4.1.1 — Bugfix: Thông báo đăng nhập thân thiện cho AI (2026-05-13)
 
