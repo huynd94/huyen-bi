@@ -279,7 +279,7 @@ export function IChingKnowledge() {
           ]}
         />
         <p className="text-xs text-muted-foreground">
-          Ứng dụng sử dụng thuật toán ngẫu nhiên xác suất tương đương phương pháp đồng xu để tạo quẻ tức thời.
+          Ứng dụng mô phỏng đúng phương pháp tung 3 đồng xu: mỗi hào có thể là hào động (hào 6 hoặc 9). Khi có hào động, quẻ chính sẽ chuyển hóa thành <strong className="text-primary">quẻ biến</strong> để gợi ý xu hướng phát triển.
         </p>
       </KBSection>
 
@@ -295,7 +295,7 @@ export function IChingKnowledge() {
             <div className="text-primary">— — Hào 1 ← Hạ quái (trigram dưới)</div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Tên quẻ kép = Thượng quái + Hạ quái. Ví dụ: Càn (☰) + Khảm (☵) = Quẻ Nhu (天水訟 · Thiên Thủy Tụng).
+            Tên quẻ kép = Thượng quái + Hạ quái. Ví dụ: Càn (☰) ở trên + Khảm (☵) ở dưới = Quẻ Tụng (天水訟 · Thiên Thủy Tụng).
           </p>
         </div>
       </KBSection>
