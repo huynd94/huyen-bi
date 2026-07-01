@@ -248,6 +248,7 @@ export default function NumerologyPage() {
                 const isMaster = results.lifePath === 11 || results.lifePath === 22 || results.lifePath === 33;
                 // Reduction breakdown for transparency (reduce day/month/year, then sum).
                 const reduce = (n: number): number => {
+                  if (!Number.isFinite(n) || n < 0) return 0;
                   if (n === 11 || n === 22 || n === 33) return n;
                   if (n < 10) return n;
                   return reduce(String(n).split("").reduce((a, b) => a + Number(b), 0));
