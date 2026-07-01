@@ -246,6 +246,18 @@ export default function NumerologyPage() {
               {(() => {
                 const lpMeaning = getNumberMeaning(results.lifePath);
                 const isMaster = results.lifePath === 11 || results.lifePath === 22 || results.lifePath === 33;
+                // Reduction breakdown for transparency (reduce day/month/year, then sum).
+                const reduce = (n: number): number => {
+                  if (n === 11 || n === 22 || n === 33) return n;
+                  if (n < 10) return n;
+                  return reduce(String(n).split("").reduce((a, b) => a + Number(b), 0));
+                };
+                const [dd, mm, yy] = dob.split("/").map((x) => parseInt(x, 10));
+                const rD = reduce(dd), rM = reduce(mm), rY = reduce(yy);
+                const breakdown =
+                  Number.isNaN(dd) || Number.isNaN(mm) || Number.isNaN(yy)
+                    ? null
+                    : `Ngày ${dd}→${rD} · Tháng ${mm}→${rM} · Năm ${yy}→${rY} ⇒ ${rD}+${rM}+${rY} = ${rD + rM + rY} → ${results.lifePath}`;
                 return (
                   <Card className="bg-gradient-to-br from-primary/15 via-card/40 to-card/40 backdrop-blur-sm border-primary/40 shadow-lg shadow-primary/10 overflow-hidden">
                     <CardContent className="pt-6">
@@ -271,6 +283,30 @@ export default function NumerologyPage() {
                           </p>
                         </div>
                       </div>
+
+                      {/* Cách tính minh bạch + lưu ý quy ước */}
+                      <details className="mt-5 rounded-lg border border-primary/15 bg-background/30 group">
+                        <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-medium text-primary/80 flex items-center justify-between gap-2 select-none">
+                          <span className="flex items-center gap-1.5">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Con số này được tính như thế nào?
+                          </span>
+                          <svg className="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/></svg>
+                        </summary>
+                        <div className="px-4 pb-4 pt-1 space-y-3 text-xs text-muted-foreground leading-relaxed">
+                          {breakdown && (
+                            <div className="font-mono text-[11px] text-primary/80 bg-background/40 rounded px-3 py-2 border border-primary/10">
+                              {breakdown}
+                            </div>
+                          )}
+                          <p>
+                            Ứng dụng dùng phương pháp <strong className="text-foreground/80">Pythagore chuẩn</strong>: thu gọn riêng ngày, tháng, năm rồi cộng lại và rút gọn về một chữ số (1–9), <strong className="text-foreground/80">giữ nguyên số Master 11, 22, 33</strong>.
+                          </p>
+                          <p>
+                            Một số trang khác có thể ra kết quả khác vì dùng quy ước riêng — ví dụ <em>giữ lại số 10</em> thay vì rút gọn tiếp về 1, hoặc cộng gộp tất cả chữ số một lần. Đây là khác biệt về <strong className="text-foreground/80">quy ước</strong>, không phải sai số. Kết quả của ứng dụng luôn nhất quán theo chuẩn Pythagore phổ biến nhất.
+                          </p>
+                        </div>
+                      </details>
                     </CardContent>
                   </Card>
                 );

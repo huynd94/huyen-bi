@@ -98,6 +98,9 @@ export function NumerologyKnowledge() {
           <div>Ví dụ khác (14/03/1985):</div>
           <div className="text-primary">Ngày 14 → 5 · Tháng 3 → 3 · Năm 1985 → 5 ⇒ 5+3+5 = 13 → <strong>4</strong></div>
         </div>
+        <p className="text-xs text-muted-foreground leading-relaxed mt-2">
+          <strong className="text-foreground/80">Vì sao kết quả có thể khác trang khác?</strong> Ứng dụng thu gọn triệt để về 1–9 (chỉ giữ số Master 11/22/33). Một số trang dùng quy ước riêng — ví dụ <em>giữ lại số 10</em> thay vì rút gọn về 1 (10 → 1), hoặc cộng gộp toàn bộ chữ số một lần. Đây là khác biệt <strong className="text-foreground/80">quy ước</strong>, không phải sai; ứng dụng luôn nhất quán theo chuẩn Pythagore phổ biến nhất.
+        </p>
       </KBSection>
 
       <KBSection title="4 chỉ số chính">
