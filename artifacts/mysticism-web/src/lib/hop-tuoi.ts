@@ -70,6 +70,7 @@ function getMingGuaCompat(guaA: GuaNumber, guaB: GuaNumber): { type: string; sco
 
 // ─── Numerology life path compatibility ───────────────────────────────────────
 function reduceNum(n: number): number {
+  if (!Number.isFinite(n) || n < 0) return 0;
   if (n === 11 || n === 22 || n === 33) return n;
   if (n < 10) return n;
   return reduceNum(n.toString().split("").map(Number).reduce((a, b) => a + b, 0));

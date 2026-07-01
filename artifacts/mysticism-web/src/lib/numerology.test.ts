@@ -15,6 +15,7 @@ import {
   computePersonalityNumber,
   computeMaturityNumber,
   computePersonalYearNumber,
+  reduceNumerology,
 } from "@workspace/mysticism-core";
 
 // --- Life Path: standard component-wise reduction ---
@@ -57,5 +58,16 @@ assert.equal(computeMaturityNumber(11, 22), 33, "maturity reduce(11+22=33) stays
 // 29/12 in 2026: day 29->11... but PY uses day(29)+month(12)+year-digits.
 // 29 + 12 + (2+0+2+6=10) = 51 -> 6
 assert.equal(computePersonalYearNumber("29/12/1990", 2026), 6, "PY 29/12 in 2026 = 6");
+
+// --- NaN/invalid-input safety (regression: infinite recursion → RangeError) ---
+// The reducers must terminate on NaN/Infinity/negative rather than recursing
+// forever ("Maximum call stack size exceeded").
+assert.equal(reduceNumerology(NaN), 0, "reduce(NaN) → 0, no stack overflow");
+assert.equal(reduceNumerology(-5), 0, "reduce(negative) → 0");
+assert.equal(reduceNumerology(Infinity), 0, "reduce(Infinity) → 0");
+assert.equal(computePersonalYearNumber("", NaN), 0, "PY invalid dob+year → 0");
+assert.equal(computePersonalYearNumber("bad", 2026), 0, "PY unparseable dob → 0");
+assert.equal(computeSoulNumber(""), 0, "empty name soul → 0");
+assert.equal(computeMaturityNumber(NaN, NaN), 0, "maturity NaN → 0");
 
 console.log("numerology: ok");

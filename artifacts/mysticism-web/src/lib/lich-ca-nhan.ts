@@ -1,6 +1,7 @@
 // Personal Year / Month / Day numerology calendar
 
 function reduce(n: number): number {
+  if (!Number.isFinite(n) || n < 0) return 0;
   if (n === 11 || n === 22 || n === 33) return n;
   if (n < 10) return n;
   return reduce(n.toString().split("").reduce((a, b) => a + parseInt(b), 0));

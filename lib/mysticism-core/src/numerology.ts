@@ -16,6 +16,10 @@ export function computeLifePathNumber(dob: string): number {
 }
 
 function reduceToSingleDigitOrMaster(num: number): number {
+  // Guard against NaN/Infinity/negative input: without this, NaN never
+  // satisfies `=== 11` nor `< 10`, and NaN.toString() sums back to NaN, so the
+  // recursion never terminates → "Maximum call stack size exceeded".
+  if (!Number.isFinite(num) || num < 0) return 0;
   if (num === 11 || num === 22 || num === 33) return num;
   if (num < 10) return num;
   const sum = num.toString().split('').map(Number).reduce((a, b) => a + b, 0);
@@ -84,8 +88,9 @@ export function computeMaturityNumber(lifePath: number, destiny: number): number
 export function computePersonalYearNumber(dob: string, year: number): number {
   // dob: DD/MM/YYYY
   const parts = dob.split("/");
-  const day = parseInt(parts[0]);
-  const month = parseInt(parts[1]);
+  const day = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10);
+  if (Number.isNaN(day) || Number.isNaN(month) || !Number.isFinite(year)) return 0;
   const yearDigits = year.toString().split("").map(Number).reduce((a, b) => a + b, 0);
   return reduceToSingleDigitOrMaster(day + month + yearDigits);
 }
